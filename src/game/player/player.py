@@ -27,7 +27,7 @@ class Player:
 
     def buy_power_plants(self, power_plant, ammount, price_per_unit) -> bool:
         if not issubclass(power_plant, PowerPlant):
-            print("Invalid power plant instance!")
+            print('Invalid power plant instance!')
             return False
 
         if self.funds < ammount * price_per_unit:
@@ -52,4 +52,4 @@ class Player:
         return
 
     def __repr__(self):
-        return f"Player({self.__id}, {self.name}, {self.funds})"
+        return f'Player({self.__id}, {self.name}, {self.funds})'
