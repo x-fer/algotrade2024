@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4, UUID
 from powerplants import PowerPlant
 
 
@@ -12,7 +12,7 @@ class Player:
         self.energy_output = 0
 
         if power_plants is None:
-            self.power_plants: dict[uuid.UUID, PowerPlant] = {}
+            self.power_plants: dict[UUID, PowerPlant] = {}
         else:
             self.power_plants = power_plants
 
@@ -35,7 +35,7 @@ class Player:
 
         self.funds -= ammount * price_per_unit
         for i in range(ammount):
-            plant_id = uuid.uuid4()
+            plant_id = uuid4()
             self.power_plants[plant_id] = power_plant(plant_id)
 
         self.calculate_total_energy_output()
