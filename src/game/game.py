@@ -1,5 +1,7 @@
 import redis
 import time
+from uuid import uuid4
+from player import Player
 
 
 def run(*args, **kwargs):
@@ -7,7 +9,7 @@ def run(*args, **kwargs):
     game.run()
 
 
-class Game():
+class Game:
     def __init__(self, id, name, created_at, start_at, tick_interval=1):
         self.id = id
         self.name = name
@@ -16,11 +18,10 @@ class Game():
         self.players = []
         self.tick_interval = tick_interval
 
-        self.redis = redis.Redis(host='localhost', port=6379, db=0)
+        self.redis = redis.Redis(host="localhost", port=6379, db=0)
 
     def __repr__(self):
-        return "<Game(name='%s', created_at='%s')>" % (
-            self.name, self.created_at)
+        return "<Game(name='%s', created_at='%s')>" % (self.name, self.created_at)
 
     def do_action(self, action):
         # player logic
@@ -40,7 +41,6 @@ class Game():
         self.default_tick_action()
 
     def run(self):
-
         while True:
             start = time.time()
             self.tick()
