@@ -18,7 +18,7 @@ class Game:
         self.players = []
         self.tick_interval = tick_interval
 
-        self.redis = redis.Redis(host='localhost', port=6379, db=0)
+        self.redis = redis.Redis(host="localhost", port=6379, db=0)
 
     def __repr__(self):
         return "<Game(name='%s', created_at='%s')>" % (self.name, self.created_at)
@@ -29,13 +29,13 @@ class Game:
 
     def default_tick_action(self):
         # game logic
-        print('tick')
+        print("tick")
 
     def tick(self):
-        messages_len = self.redis.llen(f'game_{self.id}')
+        messages_len = self.redis.llen(f"game_{self.id}")
 
         for _ in range(messages_len):
-            message = self.redis.lpop(f'game_{self.id}')
+            message = self.redis.lpop(f"game_{self.id}")
             self.do_action(message)
 
         self.default_tick_action()
@@ -46,9 +46,9 @@ class Game:
             self.tick()
             end = time.time()
 
-            print(f'tick took {end - start} seconds')
+            print(f"tick took {end - start} seconds")
 
             if end - start >= self.tick_interval:
-                print('[W] tick took too long')
+                print("[W] tick took too long")
 
             time.sleep(max(0, self.tick_interval - (end - start)))
