@@ -1,5 +1,6 @@
 from uuid import uuid4, UUID
 from powerplants import PowerPlant
+from constants import SELLING_COEFFICIENT
 
 
 class Player:
@@ -27,7 +28,7 @@ class Player:
 
     def buy_power_plants(self, power_plant, ammount, price_per_unit) -> bool:
         if not issubclass(power_plant, PowerPlant):
-            print('Invalid power plant instance!')
+            print("Buying object is not a PowerPlant!")
             return False
 
         if self.funds < ammount * price_per_unit:
@@ -41,10 +42,22 @@ class Player:
         self.calculate_total_energy_output()
         return True
 
-    def sell_power_plant(self, power_plant):
+    def sell_power_plant(self, power_plant, buying_price_per_unit):
         # TODO - Add selling of power plant
         # - how should the selling price be calculated?
-        return
+        if not issubclass(power_plant, PowerPlant):
+            print("Selling object is not a PowerPlant")
+            return False
+
+        if self.power_plants.get(power_plant.id, None) is None:
+            print("Yout don't have a PowerPlant matching that ID!")
+            return False
+
+        self.power_plants.pop(power_plant.id)
+
+        self.funds += SELLING_COEFFICIENT * buying_price_per_unit
+
+        return True
 
     def upgrade_power_plant_tier(self, plant_id):
         # TODO - How should tier prices be calculated?
@@ -52,4 +65,4 @@ class Player:
         return
 
     def __repr__(self):
-        return f'Player({self.__id}, {self.name}, {self.funds})'
+        return f"Player({self.__id}, {self.name}, {self.funds})"
