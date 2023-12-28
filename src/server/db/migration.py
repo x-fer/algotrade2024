@@ -18,7 +18,7 @@ async def run_migrations(database: Database):
     await database.execute('''
               CREATE TABLE IF NOT EXISTS games (
               game_id INTEGER PRIMARY KEY AUTOINCREMENT,
-              game_name TEXT,
+              game_name TEXT UNIQUE,
               contest BOOL NOT NULL,
               queue_id TEXT NOT NULL,
               start_time DATETIME NOT NULL,
@@ -29,6 +29,7 @@ async def run_migrations(database: Database):
               CREATE TABLE IF NOT EXISTS players (
               player_id INTEGER PRIMARY KEY AUTOINCREMENT,
               player_name TEXT,
+              active BOOL DEFAULT 1,
               game_id INTEGER NOT NULL,
               team_id INTEGER NOT NULL,
               
