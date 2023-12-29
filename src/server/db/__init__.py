@@ -3,3 +3,4 @@ from db.table import Table
 from db.team import Team
 from db.game import Game
 from db.player import Player
+from db.power_plant import PowerPlant
