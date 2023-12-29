@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from table import Table
+from datetime import datetime
 
 @dataclass
 class Game(Table):
@@ -8,8 +9,5 @@ class Game(Table):
     game_name: str
     contest: bool
     queue_id: str
-    start_time: str
+    start_time: datetime
     tick_time: int
-    
-    def __repr__(self):
-        return f"Game({self.game_id} {self.game_name} {self.contest} {self.start_time} {self.tick_time})"

@@ -12,10 +12,12 @@ class Table:
     async def create(cls, *args, **kwargs):
         """Inserts element in table. Returns element id."""
         data = cls(0, *args, **kwargs)
-        cols = [field.name for field in fields(data)][1:]
-        # assert len(args) == len(cols), f"Expected {len(cols)} arguments, got {len(args)}"
-        query = f"""INSERT INTO {cls.table_name} ({', '.join(cols)}) VALUES ({', '.join(f':{col}' for col in cols)})"""
-        values = {col: data.__getattribute__(col) for col in cols}
+        cols = [field.name for field in fields(data)]
+        query = f"""INSERT INTO {cls.table_name}
+            ({', '.join(cols[1:])}) 
+            VALUES ({', '.join(f':{col}' for col in cols[1:])})
+            RETURNING {cols[0]}"""
+        values = {col: data.__getattribute__(col) for col in cols[1:]}
         return await cls.database.execute(query=query, values=values)
 
     @classmethod
@@ -34,7 +36,7 @@ class Table:
             assert cols[0] not in kwargs, "Id column in where statement is set twice"
             kwargs[cols[0]] = id
         assert len(kwargs) >= 1, "Where statement must contain at least one column, but contains zero"
-        assert set(kwargs.keys()).issubset(cols[1:]), f"Some columns in where statement don't exist in table {cls.table_name}"
+        assert set(kwargs.keys()).issubset(cols), f"Some columns in where statement don't exist in table {cls.table_name}"
 
         where = ' AND '.join(f'{col}=:{col}' for col in kwargs)
         query = f"SELECT * FROM {cls.table_name} WHERE {where}"

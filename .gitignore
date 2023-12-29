@@ -1,9 +1,11 @@
 data/*
 venv/
 .vscode/
+**/.ipynb_checkpoints/
 __pycache__/
 **/__pycache__/
 *.py[cod]
 *$py.class
 dump.rdb
 **/dump.rdb
+*.db*
