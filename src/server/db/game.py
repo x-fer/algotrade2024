@@ -1,4 +1,3 @@
-from databases import Database
 from dataclasses import dataclass
 from table import Table
 

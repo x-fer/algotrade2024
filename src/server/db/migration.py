@@ -37,6 +37,7 @@ async def run_migrations(database: Database):
               energy INTEGER NOT NULL DEFAULT 0,
               coal INTEGER NOT NULL DEFAULT 0,
               uranium INTEGER NOT NULL DEFAULT 0,
+              biomass INTEGER NOT NULL DEFAULT 0,
               gas INTEGER NOT NULL DEFAULT 0,
               oil INTEGER NOT NULL DEFAULT 0,
               

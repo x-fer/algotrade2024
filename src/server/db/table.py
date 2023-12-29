@@ -9,12 +9,13 @@ class Table:
         cls.database = database
 
     @classmethod
-    async def create(cls, *args):
+    async def create(cls, *args, **kwargs):
         """Inserts element in table. Returns element id."""
-        cols = [field.name for field in fields(cls)][1:]
-        assert len(args) == len(cols), f"Expected {len(cols)} arguments, got {len(args)}"
+        data = cls(0, *args, **kwargs)
+        cols = [field.name for field in fields(data)][1:]
+        # assert len(args) == len(cols), f"Expected {len(cols)} arguments, got {len(args)}"
         query = f"""INSERT INTO {cls.table_name} ({', '.join(cols)}) VALUES ({', '.join(f':{col}' for col in cols)})"""
-        values = {cols[i]: args[i] for i in range(len(args))}
+        values = {col: data.__getattribute__(col) for col in cols}
         return await cls.database.execute(query=query, values=values)
 
     @classmethod
