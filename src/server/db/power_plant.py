@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
-from table import Table
+from db.table import Table
+
 
 @dataclass
 class PowerPlant(Table):

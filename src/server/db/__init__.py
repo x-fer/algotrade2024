@@ -4,3 +4,4 @@ from db.team import Team
 from db.game import Game
 from db.player import Player
 from db.power_plant import PowerPlant
+from db.db import database
