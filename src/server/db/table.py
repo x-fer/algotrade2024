@@ -8,7 +8,6 @@ class Table:
     @classmethod
     def set_db(cls, database: Database):
         cls.database = database
-
         return cls
 
     @classmethod
@@ -26,14 +25,6 @@ class Table:
         return await cls.database.execute(query=query, values=values)
 
     @classmethod
-    async def list(cls):
-        """Returns list of all elements in table"""
-        query = f"SELECT * FROM {cls.table_name}"
-        # TODO: add try catch, mozda umjesto toga dodati error handler controller na razini fastapija
-        result = await cls.database.fetch_all(query)
-        return [cls(**team) for team in result]
-
-    @classmethod
     async def get(cls, id: int = None, **kwargs):
         """Finds element with WHERE statement. Throws exception if element doesn't exist"""
         cols = [field.name for field in fields(cls)]
@@ -46,7 +37,13 @@ class Table:
             cols), f"Some columns in where statement don't exist in table {cls.table_name}"
 
         where = ' AND '.join(f'{col}=:{col}' for col in kwargs)
-        query = f"SELECT * FROM {cls.table_name} WHERE {where}"
-        result = await cls.database.fetch_one(query, kwargs)
-        assert result, f"Requested row in table {cls.__name__} doesn't exist"
-        return cls(**result)
+        if where: where = f" WHERE {where}"
+        query = f"SELECT * FROM {cls.table_name}{where}"
+
+        if cols[0] in kwargs:
+            result = await cls.database.fetch(query, kwargs)
+            assert result, f"Requested row in table {cls.__name__} doesn't exist"
+            return cls(**result)
+        else: 
+            result = await cls.database.fetch_all(query, kwargs)
+            return [cls(**team) for team in result]
