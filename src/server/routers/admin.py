@@ -45,11 +45,19 @@ async def game_create(params: CreateGame):
 
 @router.get("/game/list")
 async def game_list():
-    return {"message": "Hello World"}
+    try:
+        games = await Game.list()
+    except Exception as e:
+        return {"message": str(e)}
+
+    return {"games": games}
 
 
 @router.get("/game/{game_id}/delete")
 async def game_delete(game_id: int):
+
+    # TODO: active polje u bazi
+
     return {"message": "Hello World"}
 
 
