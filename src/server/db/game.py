@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from table import Table
+from db.table import Table
 from datetime import datetime
+
 
 @dataclass
 class Game(Table):
