@@ -1,12 +1,18 @@
 from datetime import datetime
 from fastapi import APIRouter
-from db import database, Game
+from db import database, Game, Team, migration
 from pydantic import BaseModel
 from datetime import datetime
 
 
 router = APIRouter()
 
+
+@router.get("/migrate")
+async def migrate():
+    await migration.drop_tables(database)
+    await migration.run_migrations(database)
+    return {"message": "succesfully migrated database"}
 
 # GAME PATHS
 
@@ -16,20 +22,21 @@ router = APIRouter()
 # POST	/admin/game/[id]/edit	{}	{"success": [success]}
 
 class CreateGame(BaseModel):
+    game_id: int
     game_name: str
-    start_time: datetime
-    bots: list[int]
-    dataset: int
-    tick_time: int
-    length: int
     contest: bool
-
+    bots: str
+    dataset: str
+    start_time: datetime
+    total_ticks: int
+    tick_time: int
 
 @router.post("/game/create")
 async def game_create(params: CreateGame):
+    # TODO dodati validaciju za botove
+    print(params)
     try:
         # TODO: botovi, dataset, queue, length
-
         await Game.create(
             game_name=params.game_name,
             start_time=params.start_time,
@@ -49,6 +56,7 @@ async def game_list():
         games = await Game.list()
     except Exception as e:
         return {"message": str(e)}
+    print(games)
 
     return {"games": games}
 
@@ -113,17 +121,29 @@ async def bot_get(bot_id: int):
 # GET	/admin/team/list	-	[{}, {}, {}]
 # GET	/admin/team/[team_id]/delete	-	{"success": [success]}
 
+import random
+import string
+
+class CreateTeam(BaseModel):
+    team_name: str
+
+
+def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
+    # TODO: Nemoguce da se dvaput stvori tim s istim idjem...
+    return ''.join(random.choice(chars) for _ in range(size))
+
 
 @router.post("/team/create")
-async def team_create():
-    return {"message": "Hello World"}
+async def team_create(params: CreateTeam):
+    team_secret = id_generator()
+    return await Team.create(team_name=params.team_name, team_secret=team_secret)
 
 
 @router.get("/team/list")
 async def team_list():
-    return {"message": "Hello World"}
+    return await Team.list()
 
 
 @router.get("/team/{team_id}/delete")
 async def team_delete(team_id: int):
-    return {"message": "Hello World"}
+    return await Team.delete(team_id=team_id)

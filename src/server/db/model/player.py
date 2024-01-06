@@ -7,9 +7,11 @@ class Player(Table):
     table_name = "players"
     player_id: int
     player_name: str
-    active: bool
+    is_active: bool
+    is_bot: bool
     game_id: int
     team_id: int
+    
     money: int = field(default=0)
     energy: int = field(default=0)
     coal: int = field(default=0)

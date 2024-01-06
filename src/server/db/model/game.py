@@ -1,7 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from db.table import Table
 from datetime import datetime
-
 
 @dataclass
 class Game(Table):
@@ -9,6 +8,10 @@ class Game(Table):
     game_id: int
     game_name: str
     contest: bool
-    queue_id: str
+    bots: str
+    dataset: str
     start_time: datetime
+    total_ticks: int
     tick_time: int
+    current_tick: int = field(default=0)
+    is_finished: bool = field(default=False)
