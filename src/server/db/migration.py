@@ -1,8 +1,7 @@
 from databases import Database
 
+
 async def drop_tables(database: Database):
-    await database.connect()
-    
     await database.execute('DROP TABLE IF EXISTS power_plants')
     await database.execute('DROP TABLE IF EXISTS trades')
     await database.execute('DROP TABLE IF EXISTS pending_orders')
@@ -10,10 +9,9 @@ async def drop_tables(database: Database):
     await database.execute('DROP TABLE IF EXISTS players')
     await database.execute('DROP TABLE IF EXISTS games')
     await database.execute('DROP TABLE IF EXISTS teams')
-    
-async def run_migrations(database: Database):
-    await database.connect()
 
+
+async def run_migrations(database: Database):
     await database.execute('''
               CREATE TABLE IF NOT EXISTS teams (
               team_id SERIAL PRIMARY KEY,
@@ -25,10 +23,13 @@ async def run_migrations(database: Database):
               CREATE TABLE IF NOT EXISTS games (
               game_id SERIAL PRIMARY KEY,
               game_name TEXT,
-              contest BOOLEAN NOT NULL,
+              is_contest BOOLEAN NOT NULL,
+              bots TEXT,
+              dataset TEXT,
               start_time TIMESTAMP NOT NULL,
               total_ticks INT NOT NULL,
               tick_time INT NOT NULL,
+              is_finished BOOLEAN NOT NULL DEFAULT 0,
               current_tick INT NOT NULL DEFAULT 0
               )''')
 
@@ -134,7 +135,3 @@ async def run_migrations(database: Database):
               FOREIGN KEY (seller_id) REFERENCES players(player_id),
               FOREIGN KEY (game_id) REFERENCES games(game_id)
               )''')
-
-if __name__ == "main":
-    database = Database("sqlite:///test.db")
-    run_migrations(database)

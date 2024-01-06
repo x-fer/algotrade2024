@@ -10,12 +10,6 @@ class PowerPlant(Table):
     price: int
     is_active: bool
     temperature: int = field(default=0)
-
-    @classmethod
-    async def list(cls, player_id: int) -> list["PowerPlant"]:
-        """Returns all power plants owned by player"""
-        # TODO: mozda nema potrebe za ovom metodom, nego donju liniju samo staviti direktno u router
-        return await cls.get(player_id=player_id)
     
     @classmethod
     async def buy_plant(cls, type: int, price: int, player_id: int):
@@ -25,6 +19,12 @@ class PowerPlant(Table):
         # oduzimanje novca u bazi
         # dodavanje power_planta u bazi
         # kraj transakcije
+        # nesto ovako:
+        # async with database.transaction():
+        # goran_id = await Team.create(team_name="Goran 40", team_secret=id_generator())
+        # if goran_id == 43:
+        #     assert False
+        # return await Team.get(team_id=goran_id)
         pass
 
     @classmethod
@@ -41,10 +41,8 @@ class PowerPlant(Table):
         # TODO: 
         # placa li se paljenje? ako da, to treba u transaction
         # TODO: provjeriti sto vraca execute
-        query = f"UPDATE {cls.table_name} SET is_active=1 WHERE plant_id=:plant_id"
-        await cls.database.execute(query, {"plant_id": plant_id})
+        await cls.update(is_active=0, plant_id=plant_id)
 
     @classmethod
     async def turn_off(cls, type: int, plant_id: int):
-        query = f"UPDATE {cls.table_name} SET is_active=0 WHERE plant_id=:plant_id"
-        await cls.database.execute(query, {"plant_id": plant_id})
+        await cls.update(is_active=1, plant_id=plant_id)
