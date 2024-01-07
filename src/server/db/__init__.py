@@ -1,4 +1,4 @@
-from db.migration import run_migrations
+from db.migration import run_migrations, drop_tables, delete_tables
 from db.table import Table
 from db.model.team import Team
 from db.model.game import Game

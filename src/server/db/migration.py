@@ -1,6 +1,9 @@
 from databases import Database
 
 
+async def delete_tables(database: Database):
+    await database.execute('TRUNCATE power_plants, trades, pending_orders, orders, players, games, teams CASCADE')
+
 async def drop_tables(database: Database):
     await database.execute('DROP TABLE IF EXISTS power_plants')
     await database.execute('DROP TABLE IF EXISTS trades')

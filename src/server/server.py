@@ -13,7 +13,6 @@ from db import Table
 async def lifespan(app: FastAPI):
     await database.connect()
     await run_migrations(database)
-    Table.set_db(database)
 
     yield
 

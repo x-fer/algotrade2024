@@ -1,10 +1,12 @@
 from databases import Database
-from db.migration import run_migrations
+from db import Table
 from config import config
 
 if config['testing']:
-    database = Database(config['database']['url'], force_rollback=True)
+    database = Database(config['test_database']['url'])
     print("Testing database created")
 else:
     database = Database(config['database']['url'])
     print("Database object created")
+
+Table.set_db(database)

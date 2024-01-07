@@ -5,4 +5,5 @@ server:
 database:
   url: postgresql://postgres:postgres@localhost:5432/mydatabase
 
-testing: True
+test_database:
+  url: postgresql://postgres:postgres@localhost:5432/test_database

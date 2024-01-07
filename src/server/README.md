@@ -6,7 +6,7 @@
 
 ## Run tests
 
-    > pytest .
+    > TESTING=1 pytest -s .
 
     > pip install pytest-asyncio  
 
