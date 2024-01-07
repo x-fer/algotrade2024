@@ -1,6 +1,8 @@
+import string
+import random
 from datetime import datetime
 from fastapi import APIRouter
-from db import database, Game, Team, migration
+from db import database, Game, Team, migration, Bots, Datasets
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -21,8 +23,8 @@ async def migrate():
 # GET	/admin/game/[id]/delete	-	{"success": [success]}
 # POST	/admin/game/[id]/edit	{}	{"success": [success]}
 
-class CreateGame(BaseModel):
-    game_id: int
+
+class CreateGameParams(BaseModel):
     game_name: str
     contest: bool
     bots: str
@@ -31,19 +33,41 @@ class CreateGame(BaseModel):
     total_ticks: int
     tick_time: int
 
+
+class EditGameParams(BaseModel):
+    game_name: str | None
+    contest: bool | None
+    bots: str | None
+    dataset: str | None
+    start_time: datetime | None
+    total_ticks: int | None
+    tick_time: int | None
+
+
 @router.post("/game/create")
-async def game_create(params: CreateGame):
+async def game_create(params: CreateGameParams):
     # TODO dodati validaciju za botove
-    print(params)
+
     try:
-        # TODO: botovi, dataset, queue, length
+        Bots.validate_string(params.bots)  # a:10;b:10;c:10;d:10
+        Datasets.validate_string(params.dataset)
+        Datasets.ensure_ticks(params.dataset, params.total_ticks)
+
+        if params.start_time < datetime.now():
+            raise Exception("Start time must be in the future")
+
         await Game.create(
             game_name=params.game_name,
+            is_contest=params.contest,
+            bots=params.bots,
+            dataset=params.dataset,
             start_time=params.start_time,
-            queue_id="",
+            total_ticks=params.total_ticks,
             tick_time=params.tick_time,
-            contest=params.contest
+            is_finished=False,
+            current_tick=0
         )
+
     except Exception as e:
         return {"message": str(e)}
 
@@ -64,14 +88,45 @@ async def game_list():
 @router.get("/game/{game_id}/delete")
 async def game_delete(game_id: int):
 
-    # TODO: active polje u bazi
+    try:
+        # TODO ne baca exception ako je vec zavrsena
+        await Game.update(game_id=game_id, is_finished=True)
+    except Exception as e:
+        return {"message": str(e)}
 
-    return {"message": "Hello World"}
+    return {"message": "success"}
 
 
 @router.post("/game/{game_id}/edit")
-async def game_edit(game_id: int):
-    return {"message": "Hello World"}
+async def game_edit(game_id: int, params: EditGameParams):
+    try:
+
+        if params.bots is not None:
+            Bots.validate_string(params.bots)  # a:10;b:10;c:10;d:10
+
+        if params.dataset is not None:
+            Datasets.validate_string(params.dataset)
+
+        if params.total_ticks is not None:
+            dataset = await Game.get(game_id=game_id)
+            dataset = dataset.dataset
+
+            if params.dataset is not None:
+                dataset = params.dataset
+
+            Datasets.ensure_ticks(dataset, params.total_ticks)
+
+        if params.start_time is not None and params.start_time < datetime.now():
+            raise Exception("Start time must be in the future")
+
+        await Game.update(
+            game_id=game_id,
+            **params.dict(exclude_unset=True)
+        )
+    except Exception as e:
+        return {"message": str(e)}
+
+    return {"message": "success"}
 
 # DATASET PATHS
 
@@ -121,8 +176,6 @@ async def bot_get(bot_id: int):
 # GET	/admin/team/list	-	[{}, {}, {}]
 # GET	/admin/team/[team_id]/delete	-	{"success": [success]}
 
-import random
-import string
 
 class CreateTeam(BaseModel):
     team_name: str

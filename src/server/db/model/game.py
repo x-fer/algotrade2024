@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 from db.table import Table
 from datetime import datetime
 
+
 @dataclass
 class Game(Table):
     table_name = "games"
     game_id: int
     game_name: str
-    contest: bool
+    is_contest: bool
     bots: str
     dataset: str
     start_time: datetime
