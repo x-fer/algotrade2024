@@ -176,9 +176,6 @@ async def bot_get(bot_id: int):
 # GET	/admin/team/list	-	[{}, {}, {}]
 # GET	/admin/team/[team_id]/delete	-	{"success": [success]}
 
-import random
-import string
-
 
 class CreateTeam(BaseModel):
     team_name: str
