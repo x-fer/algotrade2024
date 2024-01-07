@@ -179,14 +179,6 @@ async def bot_get(bot_id: int):
 import random
 import string
 
-class CreateTeam(BaseModel):
-    team_name: str
-
-
-def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
-    # TODO: Nemoguce da se dvaput stvori tim s istim idjem...
-    return ''.join(random.choice(chars) for _ in range(size))
-
 
 class CreateTeam(BaseModel):
     team_name: str
