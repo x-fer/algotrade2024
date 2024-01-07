@@ -1,0 +1,9 @@
+server:
+  port: 8000
+  host: 0.0.0.0
+
+database:
+  url: postgresql://postgres:postgres@localhost:5432/mydatabase
+
+test_database:
+  url: postgresql://postgres:postgres@localhost:5432/test_database

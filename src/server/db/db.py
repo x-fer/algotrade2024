@@ -1,9 +1,12 @@
 from databases import Database
-from db.migration import run_migrations
+from db import Table
+from config import config
 
-DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/mydatabase"
+if config['testing']:
+    database = Database(config['test_database']['url'])
+    print("Testing database created")
+else:
+    database = Database(config['database']['url'])
+    print("Database object created")
 
-database = Database(DATABASE_URL)
-
-
-print("Database object created")
+Table.set_db(database)

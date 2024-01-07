@@ -4,6 +4,12 @@
 
     > uvicorn server:app --reload
 
+## Run tests
+
+    > TESTING=1 pytest -s .
+
+    > pip install pytest-asyncio  
+
 ## How to setup postgre
 
 Valjda ovo radi:

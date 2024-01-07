@@ -9,7 +9,7 @@ from game.game import run
 def main():
     # run redis server
 
-    config = json.load(open("../config/config.json"))
+    config = json.load(open("server/config.json"))
 
     redis_server = Popen(
         ["redis-server", "--port", str(config["redis"]["port"])], stdout=PIPE)
