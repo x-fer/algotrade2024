@@ -18,7 +18,6 @@ async def run_migrations(database: Database):
               team_name TEXT,
               team_secret TEXT UNIQUE
               )''')
-              
     await database.execute('''
               CREATE TABLE IF NOT EXISTS games (
               game_id SERIAL PRIMARY KEY,
@@ -29,7 +28,7 @@ async def run_migrations(database: Database):
               start_time TIMESTAMP NOT NULL,
               total_ticks INT NOT NULL,
               tick_time INT NOT NULL,
-              is_finished BOOLEAN NOT NULL DEFAULT 0,
+              is_finished BOOLEAN NOT NULL DEFAULT false,
               current_tick INT NOT NULL DEFAULT 0
               )''')
 
@@ -92,7 +91,7 @@ async def run_migrations(database: Database):
     # sto ako je market price i na BUY orderu i na SELL orderu?
 
     # pending_orders tablica
-    # ova tablica se koristi samo za evidenciju, inace je sve spremljeno u matching_engine 
+    # ova tablica se koristi samo za evidenciju, inace je sve spremljeno u matching_engine
     # objektu
     # Nakon obrade matcheva se svi pending orderi od matchera ubacuju ovdje, ali se brisu
     # svi prethodni (prethodni pending orderi su zapravo nebitni cak i u buducnosti, ako
@@ -116,7 +115,7 @@ async def run_migrations(database: Database):
               )''')
 
     # trades tablica
-    # ova tablica se koristi samo za evidenciju, inace je sve spremljeno u matching_engine 
+    # ova tablica se koristi samo za evidenciju, inace je sve spremljeno u matching_engine
     # objektu
     # tick je tick u kojem je trade napravljen
     # krsi normalnu formu jer dva playera mogu biti u razlicitim igrama, to mozemo zanemariti
