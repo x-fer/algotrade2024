@@ -5,7 +5,7 @@ from db import run_migrations
 from contextlib import asynccontextmanager
 from config import config
 
-from routers import admin_router
+from routers import admin_router, users_router
 from db import Table
 
 
@@ -27,6 +27,7 @@ async def root():
     return {"message": "Hello World"}
 
 app.include_router(admin_router, prefix="/admin")
+app.include_router(users_router)
 
 if __name__ == "__main__":
     import uvicorn
