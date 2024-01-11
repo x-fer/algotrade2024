@@ -2,7 +2,7 @@ import string
 import random
 from datetime import datetime
 from fastapi import APIRouter
-from db import database, Game, Team, migration, Bots, Datasets
+from db import database, Game, Bots, Datasets
 from pydantic import BaseModel
 from datetime import datetime
 

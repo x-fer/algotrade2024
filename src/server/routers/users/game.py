@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from db import Game
 
 # GAME PATHS
 
@@ -11,4 +12,5 @@ router = APIRouter()
 
 @router.get("/game/list")
 async def game_list():
-    return {"message": "Hello World"}
+    games = await Game.list()
+    return {"games": games}
