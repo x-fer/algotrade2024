@@ -1,7 +1,7 @@
 import time
 from fastapi import FastAPI
 from db.db import database
-from db import run_migrations
+from db import migration
 from contextlib import asynccontextmanager
 from config import config
 
@@ -12,7 +12,7 @@ from db import Table
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await database.connect()
-    await run_migrations(database)
+    await migration.run_migrations()
 
     yield
 
