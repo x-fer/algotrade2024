@@ -1,5 +1,28 @@
 from databases import Database
 from db.db import database
+from db.model import *
+from datetime import datetime
+
+async def fill_tables():
+    g_team_id = await Team.create(team_name="Goranov_tim", team_secret="gogi")
+    k_team_id = await Team.create(team_name="Krunov_tim", team_secret="kruno")
+    z_team_id = await Team.create(team_name="Zvonetov_tim", team_secret="zvone")
+    # Treba li ovo ovako?
+    b_team_id = await Team.create(team_name="Botovi", team_secret="bots")
+
+    not_nat_game_id = await Game.create(game_name="Stalna igra", is_contest=False, bots="lagani", dataset="prvi", start_time=datetime.now(), total_ticks=2400, tick_time=3000)
+    nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="teski, lagani", dataset="drugi", start_time=datetime.now(), total_ticks=100, tick_time=1000)
+    
+    for game_id in [not_nat_game_id, nat_game_id]:
+        await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id)
+        await Player.create(player_name="Kruno", is_active=True, is_bot=False, game_id=game_id, team_id=k_team_id)
+        await Player.create(player_name="Zvone", is_active=True, is_bot=False, game_id=game_id, team_id=z_team_id)
+    
+    await Player.create(player_name="lagani", is_active=True, is_bot=True, game_id=not_nat_game_id, team_id=b_team_id)
+    await Player.create(player_name="lagani", is_active=True, is_bot=True, game_id=nat_game_id, team_id=b_team_id)
+    await Player.create(player_name="teski", is_active=True, is_bot=True, game_id=nat_game_id, team_id=b_team_id)
+
+    print("Filled database with dummy data")
 
 
 async def delete_tables():
@@ -7,13 +30,8 @@ async def delete_tables():
 
 
 async def drop_tables():
-    await database.execute('DROP TABLE IF EXISTS power_plants')
-    await database.execute('DROP TABLE IF EXISTS trades')
-    await database.execute('DROP TABLE IF EXISTS pending_orders')
-    await database.execute('DROP TABLE IF EXISTS orders')
-    await database.execute('DROP TABLE IF EXISTS players')
-    await database.execute('DROP TABLE IF EXISTS games')
-    await database.execute('DROP TABLE IF EXISTS teams')
+    for table_name in ["power_plants", "trades", "pending_orders", "orders", "players", "games", "teams"]:
+        await database.execute(f'DROP TABLE IF EXISTS {table_name}')
 
 
 async def run_migrations():

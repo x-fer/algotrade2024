@@ -13,8 +13,8 @@ router = APIRouter()
 
 
 @router.get("/game/{game_id}/player/list")
-async def player_list(game_id: int):
-    players = await Player.list(game_id=game_id)
+async def player_list(game_id: int, team_id: int=Depends(team_id)):
+    players = await Player.list(game_id=game_id, team_id=team_id)
     return {"players": players}
 
 

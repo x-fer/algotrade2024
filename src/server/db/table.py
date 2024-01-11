@@ -1,14 +1,11 @@
 from databases import Database
 from dataclasses import fields
+from db.db import database
 
 
 class Table:
     table_name = None
 
-    @classmethod
-    def set_db(cls, database: Database):
-        cls.database = database
-        return cls
 
     @classmethod
     async def create(cls, *args, **kwargs):
@@ -23,7 +20,7 @@ class Table:
             VALUES ({', '.join(f':{col}' for col in cols[1:])})
             RETURNING {cols[0]}"""
         values = {col: data.__getattribute__(col) for col in cols[1:]}
-        return await cls.database.execute(query=query, values=values)
+        return await database.execute(query=query, values=values)
         
     
     @classmethod
@@ -37,7 +34,7 @@ class Table:
         assert cols[0] in kwargs, "Row id wasn't provided"
         set_query = ', '.join(f'{col}=:{col}' for col in kwargs if col != cols[0])
         query = f"UPDATE {cls.table_name} SET {set_query} WHERE {cols[0]}=:{cols[0]}"
-        return await cls.database.execute(query, kwargs)
+        return await database.execute(query, kwargs)
 
     @classmethod
     async def delete(cls, **kwargs):
@@ -50,7 +47,7 @@ class Table:
         where = ' AND '.join(f'{col}=:{col}' for col in kwargs)
         if where: where = f" WHERE {where}"
         query = f"DELETE FROM {cls.table_name}{where}"
-        return await cls.database.execute(query, kwargs)
+        return await database.execute(query, kwargs)
     
     @classmethod
     async def get(cls, **kwargs):
@@ -60,7 +57,7 @@ class Table:
         Throws exception if row doesn't exist
         """
         query, values = cls._select(**kwargs)
-        result = await cls.database.fetch_one(query, values)
+        result = await database.fetch_one(query, values)
         assert result, f"Requested row in table {cls.__name__} doesn't exist"
         return cls(**result)
     
@@ -71,7 +68,7 @@ class Table:
         Returns selected rows as a list
         """
         query, values = cls._select(**kwargs)
-        result = await cls.database.fetch_all(query, values)
+        result = await database.fetch_all(query, values)
         return [cls(**team) for team in result]
 
     @classmethod
