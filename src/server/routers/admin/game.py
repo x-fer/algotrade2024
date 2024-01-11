@@ -2,7 +2,7 @@ import string
 import random
 from datetime import datetime
 from fastapi import APIRouter
-from db import database, Game, Bots, Datasets
+from db import database, Game, Bots, Datasets, Player
 from pydantic import BaseModel
 from datetime import datetime
 
@@ -76,6 +76,12 @@ async def game_list():
     print(games)
 
     return {"games": games}
+
+
+@router.get("/game/{game_id}/player/list")
+async def player_list(game_id: int):
+    players = await Player.list(game_id=game_id)
+    return {"players": players}
 
 
 @router.get("/game/{game_id}/delete")

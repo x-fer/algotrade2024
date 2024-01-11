@@ -1,6 +1,6 @@
 from databases import Database
-from db.table import Table
 from config import config
+
 
 if config['testing']:
     database = Database(config['test_database']['url'])
@@ -8,5 +8,3 @@ if config['testing']:
 else:
     database = Database(config['database']['url'])
     print("Database object created")
-
-Table.set_db(database)
