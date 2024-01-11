@@ -9,3 +9,4 @@ __pycache__/
 dump.rdb
 **/dump.rdb
 *.db*
+*.code-workspace
