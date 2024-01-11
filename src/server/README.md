@@ -2,7 +2,7 @@
 
     > sudo service postgresql start
 
-    > uvicorn server:app --reload
+    > uvicorn main:app --reload
 
 ## Run tests
 

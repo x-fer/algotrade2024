@@ -1,5 +1,5 @@
 from databases import Database
-from db import Table
+from db.table import Table
 from config import config
 
 if config['testing']:

@@ -1,10 +1,12 @@
 from databases import Database
+from db.db import database
 
 
-async def delete_tables(database: Database):
+async def delete_tables():
     await database.execute('TRUNCATE power_plants, trades, pending_orders, orders, players, games, teams CASCADE')
 
-async def drop_tables(database: Database):
+
+async def drop_tables():
     await database.execute('DROP TABLE IF EXISTS power_plants')
     await database.execute('DROP TABLE IF EXISTS trades')
     await database.execute('DROP TABLE IF EXISTS pending_orders')
@@ -14,7 +16,7 @@ async def drop_tables(database: Database):
     await database.execute('DROP TABLE IF EXISTS teams')
 
 
-async def run_migrations(database: Database):
+async def run_migrations():
     await database.execute('''
               CREATE TABLE IF NOT EXISTS teams (
               team_id SERIAL PRIMARY KEY,
