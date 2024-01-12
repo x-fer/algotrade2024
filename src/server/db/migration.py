@@ -59,10 +59,10 @@ async def run_migrations():
               CREATE TABLE IF NOT EXISTS players (
               player_id SERIAL PRIMARY KEY,
               player_name TEXT,
-              is_active BOOLEAN NOT NULL,
-              is_bot BOOLEAN NOT NULL,
               game_id INT NOT NULL,
               team_id INT NOT NULL,
+              is_active BOOLEAN NOT NULL DEFAULT true,
+              is_bot BOOLEAN NOT NULL DEFAULT false,
               
               money INT NOT NULL DEFAULT 0,
               energy INT NOT NULL DEFAULT 0,
