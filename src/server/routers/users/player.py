@@ -20,6 +20,7 @@ async def player_list(game_id: int, team_id: int=Depends(team_id)):
 
 @router.get("/game/{game_id}/player/create")
 async def player_create(game_id: int, team_id: int=Depends(team_id), player_name=None):
+    # TODO: pretvoriti u post
     with database.transaction():
         if player_name is None: 
             team = await Team.get(team_id=team_id)
