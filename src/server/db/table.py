@@ -8,7 +8,7 @@ class Table:
 
 
     @classmethod
-    async def create(cls, *args, **kwargs):
+    async def create(cls, *args, **kwargs) -> int:
         """
         Input: Values for new row
         Returns id of created row
@@ -24,7 +24,7 @@ class Table:
         
     
     @classmethod
-    async def update(cls, **kwargs):
+    async def update(cls, **kwargs) -> int:
         """
         Input: Updated values, row id must be provided
         Returns: Updated rows including including rows whose values did not change
@@ -37,7 +37,7 @@ class Table:
         return await database.fetch_val(query, kwargs)
 
     @classmethod
-    async def delete(cls, **kwargs):
+    async def delete(cls, **kwargs) -> int:
         """
         Input: Where clause
         Returns number of deleted rows
@@ -72,7 +72,7 @@ class Table:
         return [cls(**team) for team in result]
     
     @classmethod
-    async def count(cls, **kwargs):
+    async def count(cls, **kwargs) -> int:
         query, values = cls._select(selected_cols="COUNT(*)", **kwargs)
         result = await database.execute(query, values)
         return result

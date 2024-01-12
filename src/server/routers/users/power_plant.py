@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from db import Player, database, Team, PowerPlant
 from routers.users.dependencies import team_id, player, power_plant
 
+# POWER_PLANT PATHS
+
 # /game/[id]/player/[player_id]/plant/prices?team_secret=
 # /game/[id]/player/[player_id]/plant/buy?team_secret=
 # /game/[id]/player/[player_id]/plant/[plant_id]/sell?team_secret=
