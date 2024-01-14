@@ -13,16 +13,16 @@ router = APIRouter()
 
 
 @router.get("/game/{game_id}/player/list")
-async def player_list(game_id: int, team_id: int=Depends(team_id)):
+async def player_list(game_id: int, team_id: int = Depends(team_id)):
     players = await Player.list(game_id=game_id, team_id=team_id)
     return {"players": players}
 
 
 @router.get("/game/{game_id}/player/create")
-async def player_create(game_id: int, team_id: int=Depends(team_id), player_name=None):
+async def player_create(game_id: int, team_id: int = Depends(team_id), player_name=None):
     # TODO: pretvoriti u post
     with database.transaction():
-        if player_name is None: 
+        if player_name is None:
             team = await Team.get(team_id=team_id)
             team_players_len = len(await Player.count(team_id=team_id, game_id=game_id))
             player_name = f"{team.team_name}_{team_players_len}"

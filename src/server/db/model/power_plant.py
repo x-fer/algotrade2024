@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from db.table import Table
 
+
 @dataclass
 class PowerPlant(Table):
     table_name = "power_plants"
@@ -10,10 +11,10 @@ class PowerPlant(Table):
     price: int
     is_active: bool
     temperature: int = field(default=0)
-    
+
     @classmethod
     async def buy_plant(cls, type: int, price: int, player_id: int):
-        # TODO: 
+        # TODO:
         # pocetak transakcije
         # provjera stanja novca za igraca u bazi
         # oduzimanje novca u bazi
@@ -29,7 +30,7 @@ class PowerPlant(Table):
 
     @classmethod
     async def sell_plant(cls, type: int, plant_id: int):
-        # TODO: 
+        # TODO:
         # pocetak transakcije
         # brisanje power planta ako postoji u bazi
         # dodavanje novca u bazi
@@ -38,7 +39,7 @@ class PowerPlant(Table):
 
     @classmethod
     async def turn_on(cls, type: int, plant_id: int):
-        # TODO: 
+        # TODO:
         # placa li se paljenje? ako da, to treba u transaction
         # TODO: provjeriti sto vraca execute
         await cls.update(is_active=0, plant_id=plant_id)
