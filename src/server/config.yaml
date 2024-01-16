@@ -7,3 +7,18 @@ database:
 
 test_database:
   url: postgresql://postgres:postgres@localhost:5432/test_database
+
+player_starting_money: 15000
+
+power_plant_base_prices:
+  coal: 3000
+  uranium: 250000
+  biomass: 5000
+  gas: 7000
+  oil: 10000
+  geothermal: 25000
+  wind: 10000
+  solar: 10000
+  hydro: 100000
+
+power_plant_sell_coef: 0.5
