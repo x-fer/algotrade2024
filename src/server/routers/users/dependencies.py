@@ -4,6 +4,7 @@ from db import Team, Player, PowerPlant, Game
 
 async def game_id(game_id: int) -> int:
     try:
+        # TODO: add check if game is started
         return (await Game.get(game_id=game_id)).game_id
     except:
         raise HTTPException(status_code=403, detail="Invalid game_id")

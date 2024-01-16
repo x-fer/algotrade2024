@@ -8,6 +8,8 @@ database:
 test_database:
   url: postgresql://postgres:postgres@localhost:5432/test_database
 
+tick_interval: 1
+
 player_starting_money: 15000
 
 power_plant_base_prices:
@@ -20,5 +22,38 @@ power_plant_base_prices:
   wind: 10000
   solar: 10000
   hydro: 100000
+
+power_plant_warmup_coeff:
+  coal: 1.06
+  uranium: 1.04
+  biomass: 1.12
+  gas: 1.07
+  oil: 1.47
+  geothermal: 1.07
+  wind: 3
+  solar: 3
+  hydro: 1.31
+
+power_plant_cooldown_coeff:
+  coal: 0.84
+  uranium: 0.66
+  biomass: 0.78
+  gas: 0.55
+  oil: 0.45
+  geothermal: 0.7
+  wind: 0.1
+  solar: 0.05
+  hydro: 0.3
+
+power_plant_dataset_rows:
+  coal: null
+  uranium: null
+  biomass: null
+  gas: null
+  oil: null
+  geothermal: geo
+  wind: wind
+  solar: solar
+  hydro: hydro
 
 power_plant_sell_coef: 0.5

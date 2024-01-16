@@ -23,6 +23,8 @@ async def fill_tables():
     await Player.create(player_name="lagani", is_active=True, is_bot=True, game_id=nat_game_id, team_id=b_team_id)
     await Player.create(player_name="teski", is_active=True, is_bot=True, game_id=nat_game_id, team_id=b_team_id)
 
+    await PowerPlant.create(type=PowerPlantType.COAL.value, player_id=1, price=1, powered_on=True)
+
     print("Filled database with dummy data")
 
 
@@ -84,7 +86,7 @@ async def run_migrations():
               player_id INT NOT NULL,
               price INT NOT NULL,
               powered_on BOOLEAN NOT NULL DEFAULT false,
-              temperature INT NOT NULL DEFAULT 0,
+              temperature REAL NOT NULL DEFAULT 0,
               FOREIGN KEY (player_id) REFERENCES players(player_id)
               )''')
 
