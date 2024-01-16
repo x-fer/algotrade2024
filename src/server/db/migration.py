@@ -3,6 +3,7 @@ from db.db import database
 from db.model import *
 from datetime import datetime
 
+
 async def fill_tables():
     g_team_id = await Team.create(team_name="Goranov_tim", team_secret="gogi")
     k_team_id = await Team.create(team_name="Krunov_tim", team_secret="kruno")
@@ -12,12 +13,12 @@ async def fill_tables():
 
     not_nat_game_id = await Game.create(game_name="Stalna igra", is_contest=False, bots="lagani", dataset="prvi", start_time=datetime.now(), total_ticks=2400, tick_time=3000)
     nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="teski, lagani", dataset="drugi", start_time=datetime.now(), total_ticks=100, tick_time=1000)
-    
+
     for game_id in [not_nat_game_id, nat_game_id]:
-        await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id)
+        await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id, money=15000)
         await Player.create(player_name="Kruno", is_active=True, is_bot=False, game_id=game_id, team_id=k_team_id)
         await Player.create(player_name="Zvone", is_active=True, is_bot=False, game_id=game_id, team_id=z_team_id)
-    
+
     await Player.create(player_name="lagani", is_active=True, is_bot=True, game_id=not_nat_game_id, team_id=b_team_id)
     await Player.create(player_name="lagani", is_active=True, is_bot=True, game_id=nat_game_id, team_id=b_team_id)
     await Player.create(player_name="teski", is_active=True, is_bot=True, game_id=nat_game_id, team_id=b_team_id)
@@ -82,9 +83,8 @@ async def run_migrations():
               type INT NOT NULL,
               player_id INT NOT NULL,
               price INT NOT NULL,
-              is_active BOOLEAN NOT NULL,
+              powered_on BOOLEAN NOT NULL DEFAULT false,
               temperature INT NOT NULL DEFAULT 0,
-              
               FOREIGN KEY (player_id) REFERENCES players(player_id)
               )''')
 

@@ -1,6 +1,6 @@
 import string
 import random
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from db import Team
 from pydantic import BaseModel
 
@@ -25,7 +25,9 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
 @router.post("/team/create")
 async def team_create(params: CreateTeam):
     team_secret = id_generator()
-    return await Team.create(team_name=params.team_name, team_secret=team_secret)
+    team_id = await Team.create(team_name=params.team_name, team_secret=team_secret)
+
+    return {"team_id": team_id, "team_secret": team_secret}
 
 
 @router.get("/team/list")
@@ -35,4 +37,9 @@ async def team_list():
 
 @router.get("/team/{team_id}/delete")
 async def team_delete(team_id: int):
-    return await Team.delete(team_id=team_id)
+    team_id = await Team.delete(team_id=team_id)
+
+    if team_id is None:
+        raise HTTPException(status_code=400, detail="Team not found")
+
+    return {"success": True}

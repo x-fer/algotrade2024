@@ -1,5 +1,35 @@
 from dataclasses import dataclass, field
+from enum import Enum
+
+from fastapi import HTTPException
+from db.db import database
 from db.table import Table
+from db.model.player import Player
+from config import config
+
+
+class PowerPlantType(Enum):
+    COAL = 1
+    URANIUM = 2
+    BIOMASS = 3
+    GAS = 4
+    OIL = 5
+    GEOTHERMAL = 6
+    WIND = 7
+    SOLAR = 8
+    HYDRO = 9
+
+    def get_base_price(self):
+        return config["power_plant_base_prices"][self.name.lower()]
+
+    async def get_plant_price(self, player_id: int):
+        return self.get_base_price() + (5000 * await PowerPlant.count(player_id=player_id, type=self.value))
+
+
+for power_plant_type in PowerPlantType:
+    assert power_plant_type.name.lower(
+    ) in config["power_plant_base_prices"], f"Missing price for {power_plant_type.name}"
+
 
 @dataclass
 class PowerPlant(Table):
@@ -8,41 +38,5 @@ class PowerPlant(Table):
     type: int
     player_id: int
     price: int
-    is_active: bool
+    powered_on: bool = field(default=False)
     temperature: int = field(default=0)
-    
-    @classmethod
-    async def buy_plant(cls, type: int, price: int, player_id: int):
-        # TODO: 
-        # pocetak transakcije
-        # provjera stanja novca za igraca u bazi
-        # oduzimanje novca u bazi
-        # dodavanje power_planta u bazi
-        # kraj transakcije
-        # nesto ovako:
-        # async with database.transaction():
-        # goran_id = await Team.create(team_name="Goran 40", team_secret=id_generator())
-        # if goran_id == 43:
-        #     assert False
-        # return await Team.get(team_id=goran_id)
-        pass
-
-    @classmethod
-    async def sell_plant(cls, type: int, plant_id: int):
-        # TODO: 
-        # pocetak transakcije
-        # brisanje power planta ako postoji u bazi
-        # dodavanje novca u bazi
-        # kraj transakcije
-        pass
-
-    @classmethod
-    async def turn_on(cls, type: int, plant_id: int):
-        # TODO: 
-        # placa li se paljenje? ako da, to treba u transaction
-        # TODO: provjeriti sto vraca execute
-        await cls.update(is_active=0, plant_id=plant_id)
-
-    @classmethod
-    async def turn_off(cls, type: int, plant_id: int):
-        await cls.update(is_active=1, plant_id=plant_id)

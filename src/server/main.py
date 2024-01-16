@@ -32,4 +32,6 @@ app.include_router(users_router)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host=config['host'], port=config['port'])
+    uvicorn.run(app,
+                host=config["server"]['host'],
+                port=config["server"]['port'])

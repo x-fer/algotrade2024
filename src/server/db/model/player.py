@@ -11,7 +11,7 @@ class Player(Table):
     team_id: int
     is_active: bool = field(default=True)
     is_bot: bool = field(default=False)
-    
+
     money: int = field(default=0)
     energy: int = field(default=0)
     coal: int = field(default=0)
