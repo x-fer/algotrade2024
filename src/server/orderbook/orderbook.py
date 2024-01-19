@@ -82,6 +82,19 @@ class OrderBook():
         self.map_to_heaps = {}
         self.queue = deque()
 
+        self.prev_market_price = None
+
+    def get_market_price(self):
+        no_side = len(self.buy_side) == 0 or len(self.sell_side) == 0
+
+        if no_side and self.prev_market_price is None:
+            return None
+
+        if no_side:
+            return self.prev_market_price
+
+        return (self.buy_side.peek().price + self.sell_side.peek().price) // 2
+
     def add_order(self, order: Order):
         self.on_insert(order)
 
@@ -171,11 +184,14 @@ class OrderBook():
             self._remove_order(order_id)
 
     def match(self, timestamp: pd.Timestamp):
+        cnt = 0
         while len(self.queue) > 0:
             self._add_order(self.queue.popleft())
-            self._match(timestamp)
+            cnt += self._match(timestamp)
+        return cnt
 
     def _match(self, timestamp: pd.Timestamp):
+        cnt = 0
         # kill expired orders
         while self._min_expire_time() is not None and self._min_expire_time().expiration < timestamp:
             order = self.expire_heap.peek()
@@ -190,6 +206,7 @@ class OrderBook():
                     Trade(None, order, timestamp, 0, 0))
 
             self._remove_order(order.order_id)
+            cnt += 1
 
         # match orders
         while self._max_buy() is not None and \
@@ -232,3 +249,7 @@ class OrderBook():
 
             self.remove_if_filled(buy_order.order_id)
             self.remove_if_filled(sell_order.order_id)
+
+            cnt += 1
+
+        return cnt

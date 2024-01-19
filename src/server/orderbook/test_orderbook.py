@@ -1,4 +1,5 @@
 import unittest
+from matplotlib import pyplot as plt
 import pandas as pd
 from orderbook import OrderBook, Order, OrderSide, OrderType, TradeStatus, Trade
 import random
@@ -115,10 +116,12 @@ class TestOrderBook(unittest.TestCase):
     #     self.assertIsInstance(trade.timestamp, pd.Timestamp)
 
     def test_zero_sum(self):
+        random.seed(123)
+
         traders = [
             {
                 'id': x,
-                'money': 1000,
+                'money': 100000,
                 'stocks': 1000
             }
             for x in range(100)
@@ -193,24 +196,29 @@ class TestOrderBook(unittest.TestCase):
 
             buy_sell = random.choice([OrderSide.BUY, OrderSide.SELL])
             type = random.choice([OrderType.LIMIT])
+            market_price = ob.get_market_price()
+            if market_price is None:
+                market_price = 100
 
             if buy_sell == OrderSide.BUY:
-                size = random.randint(0, 10)
+                price = market_price + \
+                    int(random.gauss(40 + 10 * (order_id % 1000) / 1000, 100))
+                price = max(price, 1)
+                size = random.randint(0, random_trader['money'] // price) // 2
                 if size == 0:
-                    return None
-                price = random.randint(0, random_trader['money'] // size)
+                    return get_random_order()
 
                 assert random_trader['money'] >= price * size
             else:
-                size = random.randint(0, random_trader['stocks'])
+                size = random.randint(0, random_trader['stocks'] // 2)
                 if size == 0:
-                    return None
+                    return get_random_order()
 
-                price = random.randint(1, 1000)
+                price = market_price + int(random.gauss(0, 100))
 
             tm = pd.Timestamp.now()
 
-            order = Order(tm, tm + pd.Timedelta(seconds=10),
+            order = Order(tm, tm + pd.Timedelta(seconds=1),
                           get_order_id(), random_trader['id'],
                           price, size, 0, 0,
                           buy_sell, type,
@@ -218,17 +226,29 @@ class TestOrderBook(unittest.TestCase):
 
             return order
 
-        for _ in range(100):
+        l = []
+        for _ in range(1000):
             # t1 = pd.Timestamp.now()
-            for _ in range(1000):
+            for _ in range(100):
                 order = get_random_order()
                 if order is None:
                     continue
                 ob.add_order(order)
-            ob.match(pd.Timestamp.now())
+            print(ob.match(pd.Timestamp.now()))
+
+            if len(ob.buy_side) == 0 or len(ob.sell_side) == 0:
+                continue
+            buy_side = ob.buy_side.peek().price
+            sell_side = ob.sell_side.peek().price
+
+            l.append((buy_side, sell_side))
             # t1 = (pd.Timestamp.now() - t1).total_seconds()
             # print(t1)
         ob.cancel_all(pd.Timestamp.now())
+
+        # plt.plot([x[0] for x in l])
+        # plt.plot([x[1] for x in l])
+        # plt.show()
 
         money_sum_after = sum([x['money'] for x in traders])
         stocks_sum_after = sum([x['stocks'] for x in traders])
