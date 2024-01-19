@@ -1,3 +1,4 @@
+from pprint import pprint
 import unittest
 from matplotlib import pyplot as plt
 import pandas as pd
@@ -116,7 +117,7 @@ class TestOrderBook(unittest.TestCase):
     #     self.assertIsInstance(trade.timestamp, pd.Timestamp)
 
     def test_zero_sum(self):
-        random.seed(123)
+        random.seed(42)
 
         traders = [
             {
@@ -132,55 +133,36 @@ class TestOrderBook(unittest.TestCase):
 
         def on_insert(order: Order):
             nonlocal traders
-            if order.side == OrderSide.BUY:
-                allocated = order.price * order.size  # SQL
 
-                traders[order.trader_id]['money'] -= allocated
-                assert traders[order.trader_id]['money'] >= 0
-            else:
-                allocated = order.size  # SQL
-
-                traders[order.trader_id]['stocks'] -= allocated
-                assert traders[order.trader_id]['stocks'] >= 0
+            return True
 
         def on_complete(trade: Trade):
             nonlocal traders
             buy_order = trade.buy_order
             sell_order = trade.sell_order
 
-            if buy_order is not None:
-                new_allocated = trade.buy_order.price * \
-                    (buy_order.size - buy_order.filled_size)  # SQL
+            if buy_order is None or sell_order is None:
+                assert trade.filled_money == 0
+                assert trade.filled_size == 0
+                assert trade.filled_price is None
+                return {"can_buy": False, "can_sell": False}
 
-                # repaying allocated
-                traders[buy_order.trader_id]['money'] += trade.filled_size * \
-                    trade.buy_order.price
-                # now spent
-                traders[buy_order.trader_id]['money'] -= trade.filled_money
-                # stock received
-                traders[buy_order.trader_id]['stocks'] += trade.filled_size
+            buyer_id = buy_order.trader_id
+            seller_id = sell_order.trader_id
 
-                if buy_order.status in [TradeStatus.EXPIRED_CANCELLED, TradeStatus.COMPLETED]:
-                    # repay all
-                    traders[buy_order.trader_id]['money'] += \
-                        (buy_order.size - buy_order.filled_size) * \
-                        buy_order.price
+            can_buy = traders[buyer_id]['money'] >= trade.filled_money
+            can_sell = traders[seller_id]['stocks'] >= trade.filled_size
 
-            if sell_order is not None:
-                new_allocated = (sell_order.size -
-                                 sell_order.filled_size)  # SQL
+            if not can_buy or not can_sell:
+                return {"can_buy": can_buy, "can_sell": can_sell}
 
-                # repaying allocated
-                traders[sell_order.trader_id]['stocks'] += trade.filled_size
-                # now spent
-                traders[sell_order.trader_id]['stocks'] -= trade.filled_size
-                # money received
-                traders[sell_order.trader_id]['money'] += trade.filled_money
+            traders[buyer_id]['money'] -= trade.filled_money
+            traders[buyer_id]['stocks'] += trade.filled_size
 
-                if sell_order.status in [TradeStatus.EXPIRED_CANCELLED, TradeStatus.COMPLETED]:
-                    # repay all
-                    traders[sell_order.trader_id]['stocks'] += \
-                        (sell_order.size - sell_order.filled_size)
+            traders[seller_id]['money'] += trade.filled_money
+            traders[seller_id]['stocks'] -= trade.filled_size
+
+            return {"can_buy": True, "can_sell": True}
 
         ob = OrderBook(on_insert=on_insert, on_complete=on_complete)
 
@@ -195,26 +177,13 @@ class TestOrderBook(unittest.TestCase):
             random_trader = random.choice(traders)
 
             buy_sell = random.choice([OrderSide.BUY, OrderSide.SELL])
-            type = random.choice([OrderType.LIMIT])
+            type = random.choice([OrderType.LIMIT, OrderType.MARKET])
             market_price = ob.get_market_price()
             if market_price is None:
                 market_price = 100
 
-            if buy_sell == OrderSide.BUY:
-                price = market_price + \
-                    int(random.gauss(40 + 10 * (order_id % 1000) / 1000, 100))
-                price = max(price, 1)
-                size = random.randint(0, random_trader['money'] // price) // 2
-                if size == 0:
-                    return get_random_order()
-
-                assert random_trader['money'] >= price * size
-            else:
-                size = random.randint(0, random_trader['stocks'] // 2)
-                if size == 0:
-                    return get_random_order()
-
-                price = market_price + int(random.gauss(0, 100))
+            price = random.randint(500, 1500)
+            size = random.randint(1, 1000)
 
             tm = pd.Timestamp.now()
 
@@ -229,7 +198,7 @@ class TestOrderBook(unittest.TestCase):
         l = []
         for _ in range(1000):
             # t1 = pd.Timestamp.now()
-            for _ in range(100):
+            for _ in range(1000):
                 order = get_random_order()
                 if order is None:
                     continue
@@ -246,9 +215,9 @@ class TestOrderBook(unittest.TestCase):
             # print(t1)
         ob.cancel_all(pd.Timestamp.now())
 
-        # plt.plot([x[0] for x in l])
-        # plt.plot([x[1] for x in l])
-        # plt.show()
+        plt.plot([x[0] for x in l])
+        plt.plot([x[1] for x in l])
+        plt.show()
 
         money_sum_after = sum([x['money'] for x in traders])
         stocks_sum_after = sum([x['stocks'] for x in traders])

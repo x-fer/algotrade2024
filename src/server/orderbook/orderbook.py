@@ -63,6 +63,7 @@ class Trade:
 
     filled_money: int
     filled_size: int
+    filled_price: int
 
 
 class OrderBook():
@@ -80,7 +81,6 @@ class OrderBook():
             x.expiration, x.timestamp, x.order_id))
 
         self.map_to_heaps = {}
-        self.queue = deque()
 
         self.prev_market_price = None
 
@@ -97,8 +97,7 @@ class OrderBook():
 
     def add_order(self, order: Order):
         self.on_insert(order)
-
-        self.queue.append(order)
+        self._add_order(order)
 
     def _add_order(self, order: Order):
         if order.order_id in self.map_to_heaps:
@@ -115,9 +114,6 @@ class OrderBook():
         order.filled_size = 0
 
         order.status = TradeStatus.ACTIVE
-
-        if order.type == OrderType.MARKET:
-            order.price = self._limit_inf if order.side == OrderSide.BUY else - self._limit_inf
 
         if order.side == OrderSide.BUY:
             self.buy_side.push(order)
@@ -144,10 +140,10 @@ class OrderBook():
 
         if order.side == OrderSide.BUY:
             self.on_complete(Trade(order, None, timestamp,
-                                   0, 0))
+                                   0, 0, None))
         else:
             self.on_complete(Trade(None, order, timestamp,
-                                   0, 0))
+                                   0, 0, None))
 
         self._remove_order(order_id)
 
@@ -185,13 +181,6 @@ class OrderBook():
 
     def match(self, timestamp: pd.Timestamp):
         cnt = 0
-        while len(self.queue) > 0:
-            self._add_order(self.queue.popleft())
-            cnt += self._match(timestamp)
-        return cnt
-
-    def _match(self, timestamp: pd.Timestamp):
-        cnt = 0
         # kill expired orders
         while self._min_expire_time() is not None and self._min_expire_time().expiration < timestamp:
             order = self.expire_heap.peek()
@@ -200,10 +189,10 @@ class OrderBook():
 
             if order.side == OrderSide.BUY:
                 self.on_complete(
-                    Trade(order, None, timestamp, 0, 0))
+                    Trade(order, None, timestamp, 0, 0, None))
             else:
                 self.on_complete(
-                    Trade(None, order, timestamp, 0, 0))
+                    Trade(None, order, timestamp, 0, 0, None))
 
             self._remove_order(order.order_id)
             cnt += 1
@@ -221,15 +210,15 @@ class OrderBook():
             buy_order.filled_size += to_fill_size
             sell_order.filled_size += to_fill_size
 
-            price = buy_order.price if buy_order.timestamp < sell_order.timestamp else sell_order.price
+            first_order = buy_order if buy_order.timestamp < sell_order.timestamp else sell_order
+            second_order = sell_order if buy_order.timestamp < sell_order.timestamp else buy_order
 
-            if buy_order.type == OrderType.MARKET:
-                assert sell_order.timestamp < buy_order.timestamp
-
-            if sell_order.type == OrderType.MARKET:
-                assert buy_order.timestamp < sell_order.timestamp
-
-            assert price not in [self._limit_inf, -self._limit_inf]
+            if first_order.type != OrderType.MARKET:
+                price = first_order.price
+            elif second_order.type != OrderType.MARKET:
+                price = second_order.price
+            else:
+                price = self.get_market_price()
 
             buy_order.filled_money += to_fill_size * price
             sell_order.filled_money += to_fill_size * price
@@ -244,11 +233,33 @@ class OrderBook():
             else:
                 sell_order.status = TradeStatus.PARTIALLY_COMPLETED
 
-            self.on_complete(Trade(buy_order, sell_order, timestamp,
-                                   to_fill_size * price, to_fill_size))
+            status = self.on_complete(Trade(buy_order, sell_order, timestamp,
+                                            to_fill_size * price, to_fill_size, price))
 
-            self.remove_if_filled(buy_order.order_id)
-            self.remove_if_filled(sell_order.order_id)
+            if status["can_buy"] and status["can_sell"]:
+                self.remove_if_filled(buy_order.order_id)
+                self.remove_if_filled(sell_order.order_id)
+                continue
+
+            # undo trade
+
+            buy_order.filled_size -= to_fill_size
+            sell_order.filled_size -= to_fill_size
+
+            buy_order.filled_money -= to_fill_size * price
+            sell_order.filled_money -= to_fill_size * price
+
+            if not status["can_buy"]:
+                buy_order.status = TradeStatus.EXPIRED_CANCELLED
+                self._remove_order(buy_order.order_id)
+            else:
+                self.remove_if_filled(buy_order.order_id)
+
+            if not status["can_sell"]:
+                sell_order.status = TradeStatus.EXPIRED_CANCELLED
+                self._remove_order(sell_order.order_id)
+            else:
+                self.remove_if_filled(sell_order.order_id)
 
             cnt += 1
 
