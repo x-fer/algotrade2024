@@ -1,76 +1,14 @@
-from datetime import datetime, timedelta
-from dataclasses import dataclass
-from enum import Enum
-from pprint import pprint
 from collections import deque
-import random
 import pandas as pd
 from xheap import XHeap
-
-
-class OrderType(Enum):
-    LIMIT = 0
-    MARKET = 1
-
-
-class TradeStatus(Enum):
-    PENDING = 0
-    ACTIVE = 1
-    COMPLETED = 2
-    PARTIALLY_COMPLETED = 3
-    EXPIRED_CANCELLED = 4
-
-
-class OrderSide(Enum):
-    BUY = 0
-    SELL = 1
-
-
-@dataclass
-class Order:
-    timestamp: pd.Timestamp
-    expiration: pd.Timestamp
-    order_id: int
-    trader_id: int
-
-    price: int
-    size: int
-
-    filled_money: int
-    filled_size: int
-
-    side: OrderSide
-    type: OrderType
-    status: TradeStatus = TradeStatus.PENDING
-
-    def __hash__(self) -> int:
-        return hash(self.order_id)
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, type(self)):
-            return NotImplemented
-        return self.order_id == other.order_id and self.timestamp == other.timestamp
-
-    def __lt__(self, other):
-        return self.timestamp < other.timestamp
-
-
-@dataclass
-class Trade:
-    buy_order: Order
-    sell_order: Order
-    timestamp: pd.Timestamp
-
-    filled_money: int
-    filled_size: int
-    filled_price: int
+from functools import reduce
+from .trade import Trade
+from .order import Order
+from .enums import *
 
 
 class OrderBook():
-    def __init__(self, on_insert: callable = None, on_complete: callable = None):
-        self.on_insert = on_insert if on_insert is not None else lambda x: None
-        self.on_complete = on_complete if on_complete is not None else lambda x: None
-
+    def __init__(self):
         self._limit_inf = int(1e18)
         self.buy_side = XHeap(
             key=lambda x: (-x.price, x.timestamp, x.order_id))
@@ -81,27 +19,88 @@ class OrderBook():
             x.expiration, x.timestamp, x.order_id))
 
         self.map_to_heaps = {}
-
-        self.prev_market_price = None
         self.queue = deque()
 
-    def get_market_price(self):
-        no_side = len(self.buy_side) == 0 or len(self.sell_side) == 0
+        self.callbacks = {
+            'check_add': [],
+            'on_cancel': [],
+            'on_expired': [],
+            'on_begin_match': [],
+            'check_trade': [],
+            'on_trade': [],
+            'on_end_match': [],
+            'on_complete': [],
+        }
+        self.prev_price = None
 
-        if no_side and self.prev_market_price is None:
-            return None
+    def register_callback(self, callback_type, callback):
+        """Register a callback function for a specific type."""
+        if not callback_type in self.callbacks:
+            raise ValueError("Invalid callback type")
+        if not callable(callback):
+            raise ValueError("Callback is not callable")
+        self.callbacks[callback_type].append(callback)
 
-        if no_side:
-            return self.prev_market_price
-
-        self.prev_market_price = (
-            self.buy_side.peek().price + self.sell_side.peek().price) // 2
-
-        return self.prev_market_price
+    def _invoke_callbacks(self, callback_type, *args, **kwargs):
+        """Invoke callbacks of a specific type and collect their return values."""
+        return_values = []
+        if callback_type in self.callbacks:
+            for callback in self.callbacks[callback_type]:
+                return_value = callback(*args, **kwargs)
+                return_values.append(return_value)
+        return return_values
 
     def add_order(self, order: Order):
-        self.on_insert(order)
-        self.queue.append(order)
+        if all(self._invoke_callbacks('check_add', order)):
+            order.status = TradeStatus.PENDING
+            self.queue.append(order)
+
+    def cancel_all(self):
+        for order_id in list(self.map_to_heaps.keys()):
+            self.cancel_order(order_id)
+
+    def cancel_order(self, order_id: int):
+        if order_id not in self.map_to_heaps:
+            raise ValueError(f"Order with id {order_id} not found")
+        order = self.map_to_heaps[order_id]
+        order.status = TradeStatus.CANCELLED
+        self._invoke_callbacks('on_cancel', order)
+        self._remove_order(order_id)
+
+    def _remove_order(self, order_id: int):
+        order = self.map_to_heaps[order_id]
+
+        self.expire_heap.remove(order)
+
+        if order.side == OrderSide.BUY:
+            self.buy_side.remove(order)
+        else:
+            self.sell_side.remove(order)
+        
+        del self.map_to_heaps[order_id]
+
+    def _min_expire_time(self):
+        if len(self.expire_heap) == 0:
+            return None
+        return self.expire_heap.peek()
+
+    def match(self, timestamp: pd.Timestamp):
+        self._invoke_callbacks('on_begin_match')
+        self._remove_expired()
+        self.match_trades = []
+        while len(self.queue.count()) > 0:
+            order = self.queue.popleft()
+            order.status = TradeStatus.ACTIVE
+            self._add_order(order)
+            self._match(timestamp)
+        self._invoke_callbacks('on_end_match')
+    
+    def _remove_expired(self, timestamp: pd.Timestamp):
+        while self._min_expire_time() is not None and self._min_expire_time().expiration < timestamp:
+            order = self.expire_heap.peek()
+            order.status = TradeStatus.EXPIRED
+            self._invoke_callbacks('on_expired', order)
+            self._remove_order(order.order_id)
 
     def _add_order(self, order: Order):
         if order.order_id in self.map_to_heaps:
@@ -127,153 +126,65 @@ class OrderBook():
         self.expire_heap.push(order)
         self.map_to_heaps[order.order_id] = order
 
-    def cancel_all(self, timestamp: pd.Timestamp):
-        for order_id in list(self.map_to_heaps.keys()):
-            self.cancel_order(order_id, timestamp)
-
-    def cancel_order(self, order_id: int, timestamp: pd.Timestamp):
-        if order_id not in self.map_to_heaps:
-            raise ValueError(f"Order with id {order_id} not found")
-
-        order = self.map_to_heaps[order_id]
-
-        if order.status in [TradeStatus.EXPIRED_CANCELLED, TradeStatus.COMPLETED]:
-            return
-
-        order.status = TradeStatus.EXPIRED_CANCELLED
-
-        if order.side == OrderSide.BUY:
-            self.on_complete(Trade(order, None, timestamp,
-                                   0, 0, None))
-        else:
-            self.on_complete(Trade(None, order, timestamp,
-                                   0, 0, None))
-
-        self._remove_order(order_id)
-
-    def _remove_order(self, order_id: int):
-        order = self.map_to_heaps[order_id]
-
-        self.expire_heap.remove(order)
-
-        if order.side == OrderSide.BUY:
-            self.buy_side.remove(order)
-        else:
-            self.sell_side.remove(order)
-
-        del self.map_to_heaps[order_id]
-
-    def _max_buy(self):
-        if len(self.buy_side) == 0:
-            return None
-        return self.buy_side.peek()
-
-    def _min_sell(self):
-        if len(self.sell_side) == 0:
-            return None
-        return self.sell_side.peek()
-
-    def _min_expire_time(self):
-        if len(self.expire_heap) == 0:
-            return None
-        return self.expire_heap.peek()
-
-    def remove_if_filled(self, order_id: int):
-        order = self.map_to_heaps[order_id]
-        if order.filled_size == order.size:
-            self._remove_order(order_id)
-
-    def match(self, timestamp: pd.Timestamp):
-        cnt = 0
-        while len(self.queue) > 0:
-            order = self.queue.popleft()
-            self._add_order(order)
-            cnt += self._match(timestamp)
-
-        return cnt
-
     def _match(self, timestamp: pd.Timestamp):
-        cnt = 0
-        # kill expired orders
-        while self._min_expire_time() is not None and self._min_expire_time().expiration < timestamp:
-            order = self.expire_heap.peek()
-
-            order.status = TradeStatus.EXPIRED_CANCELLED
-
-            if order.side == OrderSide.BUY:
-                self.on_complete(
-                    Trade(order, None, timestamp, 0, 0, None))
-            else:
-                self.on_complete(
-                    Trade(None, order, timestamp, 0, 0, None))
-
-            self._remove_order(order.order_id)
-            cnt += 1
-
-        # match orders
-        while self._max_buy() is not None and \
-                self._min_sell() is not None and \
-                self._max_buy().price >= self._min_sell().price:
+        while len(self.sell_side) >= 0 and len(self.buy_side) >= 0 and \
+                self.buy_side.peek().price >= self.sell_side.peek().price:
             buy_order = self.buy_side.peek()
             sell_order = self.sell_side.peek()
+            self._match_one(buy_order, sell_order, timestamp)
 
-            to_fill_size = min(buy_order.size - buy_order.filled_size,
-                               sell_order.size - sell_order.filled_size)
+    def _match_one(self, buy_order: Order, sell_order: Order, timestamp: pd.Timestamp):
+        trade_price = self._get_trade_price(buy_order, sell_order)
+        trade_size = self._get_trade_size(buy_order, sell_order)
+        filled_money = trade_price * trade_size
 
-            buy_order.filled_size += to_fill_size
-            sell_order.filled_size += to_fill_size
+        trade_before = Trade(buy_order, sell_order, timestamp,
+                             filled_money, trade_size, trade_price)
+        
+        status = self._invoke_callbacks('check_trade', trade_before)
 
-            first_order = buy_order if buy_order.timestamp < sell_order.timestamp else sell_order
-            second_order = sell_order if buy_order.timestamp < sell_order.timestamp else buy_order
+        status_reduced = reduce(
+            lambda x,y: {i: x[i] and y[i] for i in x},
+            status, {'can_buy': True, 'can_sell': True})
+        
+        if status_reduced['can_buy'] and status_reduced['can_sell']:
+            self.prev_price = trade_price
 
-            if first_order.type != OrderType.MARKET:
-                price = first_order.price
-            elif second_order.type != OrderType.MARKET:
-                price = second_order.price
-            else:
-                price = self.get_market_price()
+            buy_order.filled_size += trade_size
+            sell_order.filled_size += trade_size
 
-            buy_order.filled_money += to_fill_size * price
-            sell_order.filled_money += to_fill_size * price
+            buy_order.filled_money += filled_money
+            sell_order.filled_money += filled_money
 
-            if buy_order.filled_size == buy_order.size:
-                buy_order.status = TradeStatus.COMPLETED
-            else:
-                buy_order.status = TradeStatus.PARTIALLY_COMPLETED
+            self._remove_if_filled(buy_order.order_id)
+            self._remove_if_filled(sell_order.order_id)
+            
+            trade = Trade(buy_order, sell_order, timestamp,
+                          filled_money, trade_size, trade_price)
+            self._invoke_callbacks('on_trade', trade)
+            self.match_trades.append(trade)
+        if not status_reduced['can_buy']:
+            self.cancel_order(buy_order.order_id)
+        if not status_reduced['can_sell']:
+            self.cancel_order(sell_order.order_id)
+    
+    def _get_trade_price(self, buy_order: Order, sell_order: Order):
+        first_order = buy_order if buy_order.timestamp < sell_order.timestamp else sell_order
+        second_order = sell_order if buy_order.timestamp < sell_order.timestamp else buy_order
 
-            if sell_order.filled_size == sell_order.size:
-                sell_order.status = TradeStatus.COMPLETED
-            else:
-                sell_order.status = TradeStatus.PARTIALLY_COMPLETED
+        if first_order.type != OrderType.MARKET:
+            return first_order.price
+        elif second_order.type != OrderType.MARKET:
+            return second_order.price
+        return self.prev_price
 
-            status = self.on_complete(Trade(buy_order, sell_order, timestamp,
-                                            to_fill_size * price, to_fill_size, price))
-
-            if status["can_buy"] and status["can_sell"]:
-                self.remove_if_filled(buy_order.order_id)
-                self.remove_if_filled(sell_order.order_id)
-                continue
-
-            # undo trade
-
-            buy_order.filled_size -= to_fill_size
-            sell_order.filled_size -= to_fill_size
-
-            buy_order.filled_money -= to_fill_size * price
-            sell_order.filled_money -= to_fill_size * price
-
-            if not status["can_buy"]:
-                buy_order.status = TradeStatus.EXPIRED_CANCELLED
-                self._remove_order(buy_order.order_id)
-            else:
-                self.remove_if_filled(buy_order.order_id)
-
-            if not status["can_sell"]:
-                sell_order.status = TradeStatus.EXPIRED_CANCELLED
-                self._remove_order(sell_order.order_id)
-            else:
-                self.remove_if_filled(sell_order.order_id)
-
-            cnt += 1
-
-        return cnt
+    def _get_trade_size(self, buy_order: Order, sell_order: Order):
+        return min(buy_order.size - buy_order.filled_size,
+                   sell_order.size - sell_order.filled_size)
+    
+    def _remove_if_filled(self, order_id: int):
+        order = self.map_to_heaps[order_id]
+        if order.filled_size == order.size:
+            order.status = TradeStatus.COMPLETED
+            self._invoke_callbacks('on_complete', order)
+            self._remove_order(order_id)
