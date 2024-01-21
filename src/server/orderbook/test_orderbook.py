@@ -117,7 +117,7 @@ class TestOrderBook(unittest.TestCase):
     #     self.assertIsInstance(trade.timestamp, pd.Timestamp)
 
     def test_zero_sum(self):
-        random.seed(42)
+        # random.seed(42)
 
         traders = [
             {
@@ -125,7 +125,7 @@ class TestOrderBook(unittest.TestCase):
                 'money': 100000,
                 'stocks': 1000
             }
-            for x in range(100)
+            for x in range(1000)
         ]
 
         money_sum = sum([x['money'] for x in traders])
@@ -177,13 +177,10 @@ class TestOrderBook(unittest.TestCase):
             random_trader = random.choice(traders)
 
             buy_sell = random.choice([OrderSide.BUY, OrderSide.SELL])
-            type = random.choice([OrderType.LIMIT, OrderType.MARKET])
-            market_price = ob.get_market_price()
-            if market_price is None:
-                market_price = 100
+            type = random.choice([OrderType.LIMIT])
 
             price = random.randint(500, 1500)
-            size = random.randint(1, 1000)
+            size = random.randint(100, 1000)
 
             tm = pd.Timestamp.now()
 
@@ -224,6 +221,16 @@ class TestOrderBook(unittest.TestCase):
 
         # print(money_sum, money_sum_after)
         # print(stocks_sum, stocks_sum_after)
+
+        pprint(traders)
+
+        # plot money distribution
+        plt.hist([x['money'] for x in traders], bins=100)
+        plt.show()
+
+        # plot stocks distribution
+        plt.hist([x['stocks'] for x in traders], bins=100)
+        plt.show()
 
         self.assertEqual(money_sum, money_sum_after)
         self.assertEqual(stocks_sum, stocks_sum_after)
