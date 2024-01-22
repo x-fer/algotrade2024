@@ -9,3 +9,5 @@ PyYAML==6.0.1
 uvicorn==0.26.0
 xheap==0.17
 asyncpg==0.29.0
+uvicorn==0.26.0
+coverage==7.4.0
