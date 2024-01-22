@@ -13,3 +13,4 @@ dump.rdb
 .coverage
 htmlcov/
 .pytest_cache/
+.DS_Store
