@@ -10,3 +10,6 @@ dump.rdb
 **/dump.rdb
 *.db*
 *.code-workspace
+.coverage
+htmlcov/
+.pytest_cache/
