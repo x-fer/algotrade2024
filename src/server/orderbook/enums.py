@@ -11,7 +11,7 @@ class OrderSide(Enum):
     SELL = 1
 
 
-class TradeStatus(Enum):
+class OrderStatus(Enum):
     PENDING = 0
     ACTIVE = 1
     COMPLETED = 2

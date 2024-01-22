@@ -18,7 +18,7 @@ class Order:
 
     side: OrderSide
     type: OrderType
-    status: TradeStatus = TradeStatus.PENDING
+    status: OrderStatus = OrderStatus.PENDING
 
     def __hash__(self) -> int:
         return hash(self.order_id)

@@ -24,7 +24,6 @@ class OrderBook():
         self.callbacks = {
             'check_add': [],
             'on_cancel': [],
-            'on_expired': [],
             'on_begin_match': [],
             'check_trade': [],
             'on_trade': [],
@@ -52,7 +51,7 @@ class OrderBook():
 
     def add_order(self, order: Order):
         if all(self._invoke_callbacks('check_add', order)):
-            order.status = TradeStatus.PENDING
+            order.status = OrderStatus.PENDING
             self.queue.append(order)
 
     def cancel_all(self):
@@ -63,7 +62,7 @@ class OrderBook():
         if order_id not in self.map_to_heaps:
             raise ValueError(f"Order with id {order_id} not found")
         order = self.map_to_heaps[order_id]
-        order.status = TradeStatus.CANCELLED
+        order.status = OrderStatus.CANCELLED
         self._invoke_callbacks('on_cancel', order)
         self._remove_order(order_id)
 
@@ -86,20 +85,20 @@ class OrderBook():
 
     def match(self, timestamp: pd.Timestamp):
         self._invoke_callbacks('on_begin_match')
-        self._remove_expired()
+        self._remove_expired(timestamp)
         self.match_trades = []
-        while len(self.queue.count()) > 0:
+        while len(self.queue) > 0:
             order = self.queue.popleft()
-            order.status = TradeStatus.ACTIVE
+            order.status = OrderStatus.ACTIVE
             self._add_order(order)
             self._match(timestamp)
-        self._invoke_callbacks('on_end_match')
+        self._invoke_callbacks('on_end_match', self.match_trades)
     
     def _remove_expired(self, timestamp: pd.Timestamp):
         while self._min_expire_time() is not None and self._min_expire_time().expiration < timestamp:
             order = self.expire_heap.peek()
-            order.status = TradeStatus.EXPIRED
-            self._invoke_callbacks('on_expired', order)
+            order.status = OrderStatus.EXPIRED
+            self._invoke_callbacks('on_cancel', order)
             self._remove_order(order.order_id)
 
     def _add_order(self, order: Order):
@@ -116,7 +115,7 @@ class OrderBook():
         order.filled_money = 0
         order.filled_size = 0
 
-        order.status = TradeStatus.ACTIVE
+        order.status = OrderStatus.ACTIVE
 
         if order.side == OrderSide.BUY:
             self.buy_side.push(order)
@@ -127,11 +126,15 @@ class OrderBook():
         self.map_to_heaps[order.order_id] = order
 
     def _match(self, timestamp: pd.Timestamp):
-        while len(self.sell_side) >= 0 and len(self.buy_side) >= 0 and \
-                self.buy_side.peek().price >= self.sell_side.peek().price:
+        while self._match_condition():
             buy_order = self.buy_side.peek()
             sell_order = self.sell_side.peek()
             self._match_one(buy_order, sell_order, timestamp)
+
+    def _match_condition(self):
+        if len(self.sell_side) == 0 or len(self.buy_side) == 0:
+            return False
+        return self.buy_side.peek().price >= self.sell_side.peek().price
 
     def _match_one(self, buy_order: Order, sell_order: Order, timestamp: pd.Timestamp):
         trade_price = self._get_trade_price(buy_order, sell_order)
@@ -185,6 +188,6 @@ class OrderBook():
     def _remove_if_filled(self, order_id: int):
         order = self.map_to_heaps[order_id]
         if order.filled_size == order.size:
-            order.status = TradeStatus.COMPLETED
+            order.status = OrderStatus.COMPLETED
             self._invoke_callbacks('on_complete', order)
             self._remove_order(order_id)
