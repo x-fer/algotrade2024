@@ -37,7 +37,13 @@ class PriceTracker:
         if money_size > 0:
             self.market = money_sum / money_size
         
-        self.save_last()
+        self._save_last()
+    
+    def _save_last(self):
+        if self.market is not None:
+            self.last_market = self.market
+            self.last_high = self.high
+            self.last_low = self.low
     
     def get_low(self):
         return self.low if self.low is not None else self.last_low
@@ -47,9 +53,3 @@ class PriceTracker:
     
     def get_market(self):
         return self.market if self.market is not None else self.last_market
-
-    def save_last(self):
-        if self.market is not None:
-            self.last_market = self.market
-            self.last_high = self.high
-            self.last_low = self.low
