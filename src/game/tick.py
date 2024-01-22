@@ -1,6 +1,6 @@
 from datetime import datetime
-from .db import database
-from .model import Player, PowerPlant, Game, PowerPlantType
+from db import database
+from db import Player, PowerPlant, Game, PowerPlantType
 
 # provjeri jel igra runna
 

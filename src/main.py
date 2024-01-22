@@ -3,7 +3,8 @@ import time
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from config import config
-from db import database, migration, Table, run_all_game_ticks
+from db import database, migration, table
+from game import run_all_game_ticks
 from routers import admin_router, users_router
 import psutil
 import os
@@ -14,7 +15,7 @@ async def background_tasks():
     children = parent_process.children(
         recursive=True)
 
-    if children[1].pid == os.getpid():
+    if len(children) == 1 or children[1].pid == os.getpid():
         while True:
             t1 = time.time()
 

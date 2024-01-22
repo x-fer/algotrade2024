@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import random
-from . import Trade, Order, OrderType, OrderSide, OrderStatus
+from game.orderbook import Trade, Order, OrderType, OrderSide, OrderStatus
 
 
 @pytest.fixture(autouse=True)
@@ -20,6 +20,7 @@ def traders():
         for x in range(1000)
     ]
 
+
 @pytest.fixture
 def on_add_true(traders):
     def on_insert(order: Order):
@@ -30,6 +31,7 @@ def on_add_true(traders):
 @pytest.fixture(autouse=True)
 def get_order_id():
     order_id = 0
+
     def get_order_id():
         nonlocal order_id
         order_id += 1
@@ -40,6 +42,7 @@ def get_order_id():
 @pytest.fixture(autouse=True)
 def get_timestamp():
     tm = pd.Timestamp.now()
+
     def get_timestamp(time: int):
         nonlocal tm
         return tm + pd.Timedelta(seconds=time)
@@ -60,10 +63,10 @@ def get_random_order(get_order_id, traders):
         tm = pd.Timestamp.now()
 
         order = Order(tm, tm + pd.Timedelta(seconds=1),
-                        get_order_id(), random_trader['id'],
-                        price, size, 0, 0,
-                        buy_sell, type,
-                        OrderStatus.PENDING)
+                      get_order_id(), random_trader['id'],
+                      price, size, 0, 0,
+                      buy_sell, type,
+                      OrderStatus.PENDING)
 
         return order
     return get_random_order
@@ -103,6 +106,6 @@ def check_trade(traders):
 @pytest.fixture()
 def get_order(get_timestamp, get_order_id):
     def get_order(trader_id: int, price: int, size: int, order_side: OrderSide, time=0, expiration=2):
-        return Order(get_timestamp(time), get_timestamp(expiration), get_order_id(), trader_id, 
+        return Order(get_timestamp(time), get_timestamp(expiration), get_order_id(), trader_id,
                      price, size, 0, 0, order_side, OrderType.LIMIT, OrderStatus.PENDING)
     return get_order

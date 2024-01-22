@@ -1,4 +1,4 @@
-from .orderbook import OrderBook, Trade
+from game import OrderBook, Trade
 
 
 class PriceTracker:

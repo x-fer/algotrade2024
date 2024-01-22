@@ -1,0 +1,11 @@
+databases==0.8.0
+fastapi==0.109.0
+pandas==2.0.1
+psutil==5.9.6
+pydantic==1.10.7
+pytest==7.4.4
+pytest_asyncio==0.23.3
+PyYAML==6.0.1
+uvicorn==0.26.0
+xheap==0.17
+asyncpg==0.29.0
