@@ -55,8 +55,8 @@ class TestCheckTrade():
 
         assert len(orderbook.match_trades) == 1
         trade: Trade = orderbook.match_trades[0]
-        assert trade.buy_order == buy_order
-        assert trade.sell_order == sell_order
+        assert trade.buy_order is buy_order
+        assert trade.sell_order is sell_order
         assert trade.buy_order.status == OrderStatus.COMPLETED
         assert trade.sell_order.status == OrderStatus.COMPLETED
         assert trade.filled_money == price * size
