@@ -6,7 +6,7 @@ from .enums import *
 @dataclass
 class Order:
     timestamp: pd.Timestamp
-    expiration: pd.Timestamp
+    expiration: int
     order_id: int
     trader_id: int
 
