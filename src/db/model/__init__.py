@@ -5,4 +5,4 @@ from db.model.bots import Bots
 from db.model.datasets import Datasets
 from db.model.power_plant import PowerPlant
 from db.model.power_plant import PowerPlantType
-from db.model.order import Order
+from db.model.orders import Orders

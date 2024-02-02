@@ -1,6 +1,7 @@
 from enum import Enum
 from orderbook import *
-from price_tracker import *
+from game.price_tracker import *
+from db.model import *
 
 
 class Resource(Enum):
@@ -12,37 +13,48 @@ class Resource(Enum):
 
 
 class Market:
-    def __init__(self, resource: Resource):
+    def __init__(self, resource: Resource, game_id: int):
         self.orderbook = OrderBook()
         self.price_tracker = PriceTracker(self.orderbook)
         self.resource = resource
+        self.game_id = game_id
 
-    def check_add(self):
+        callbacks = {
+            'check_add': self._check_add,
+            'on_cancel': self._on_cancel,
+            'on_begin_match': self._on_begin_match,
+            'check_trade': self._check_trade,
+            'on_trade': self._on_trade,
+            'on_end_match': self._on_end_match,
+            'on_complete': self._on_complete,
+            'on_add_fail': self._on_add_fail
+        }
+
+        for callback_type, callback in callbacks.items():
+            self.orderbook.register_callback(callback_type, callback)
+
+    def _check_add(self, order: Order):
+        player = Player.get(order.player_id)
+
+        print(player)
+
+    def _on_cancel(self):
         pass
 
-    def on_cancel(self):
+    def _on_begin_match(self):
         pass
 
-    def on_begin_match(self):
+    def _check_trade(self):
         pass
 
-    def check_trade(self):
+    def _on_trade(self):
         pass
 
-    def on_trade(self):
+    def _on_end_match(self):
         pass
 
-    def on_end_match(self):
+    def _on_complete(self):
         pass
 
-    def on_complete(self):
+    def _on_add_fail(self):
         pass
-
-    def on_add_fail(self):
-        pass
-
-
-markets = {
-    x.value: Market()
-    for x in Resource
-}

@@ -1,16 +1,17 @@
 from dataclasses import dataclass, field
 from db.table import Table
 from datetime import datetime
-from orderbook.enums import *
+from orderbook import *
+import pandas as pd
 
 
 @dataclass
-class Order(Table):
+class Orders(Table):
     table_name = "orders"
 
     order_id: int
     game_id: int
-    trader_id: int
+    player_id: int
 
     order_type: OrderType
     order_side: OrderSide
@@ -20,9 +21,9 @@ class Order(Table):
     size: int
 
     expiration_tick: int
-    timestamp: datetime = datetime
+    timestamp: pd.Timestamp
 
-    resource: int = 0
+    resource: int
 
     filled_size: int = 0
     filled_money: int = 0

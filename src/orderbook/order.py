@@ -8,7 +8,7 @@ class Order:
     timestamp: pd.Timestamp
     expiration: int
     order_id: int
-    trader_id: int
+    player_id: int
 
     price: int
     size: int

@@ -1,6 +1,7 @@
 from datetime import datetime
 from db import database
 from db import Player, PowerPlant, Game, PowerPlantType
+from game.market import Market, Resource
 
 # provjeri jel igra runna
 
@@ -17,7 +18,7 @@ from db import Player, PowerPlant, Game, PowerPlantType
 # increment current tick
 
 
-async def tick_game(game: Game):
+async def tick_game(game: Game, markets: list[Market]):
     players = await Player.list(game_id=game.game_id)
 
     for player in players:
@@ -32,8 +33,14 @@ async def tick_game(game: Game):
             await PowerPlant.update(power_plant_id=power_plant.power_plant_id,
                                     temperature=new_t)
 
+    for market in markets:
+        # TODO: match!
+        pass
+
 
 async def run_all_game_ticks():
+    markets = {}
+
     async with database.transaction():
         games = await Game.list()
 
@@ -45,10 +52,16 @@ async def run_all_game_ticks():
                 continue
 
             if game.current_tick >= game.total_ticks:
-                await Game.update(game, is_finished=True)
+                await Game.update(game_id=game.game_id, is_finished=True)
                 continue
 
-            await tick_game(game)
+            if game.game_id not in markets:
+                markets[game.game_id] = [
+                    Market(resource.value, game.game_id) for resource in Resource]
+
+                # TODO: add active orders to market, regenerate state
+
+            await tick_game(game, markets[game.game_id])
             await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
 
         print("Running all game ticks")

@@ -84,8 +84,8 @@ def check_trade(traders):
             assert trade.filled_price is None
             return {"can_buy": False, "can_sell": False}
 
-        buyer_id = buy_order.trader_id
-        seller_id = sell_order.trader_id
+        buyer_id = buy_order.player_id
+        seller_id = sell_order.player_id
 
         can_buy = traders[buyer_id]['money'] >= trade.filled_money
         can_sell = traders[seller_id]['stocks'] >= trade.filled_size
@@ -105,7 +105,7 @@ def check_trade(traders):
 
 @pytest.fixture()
 def get_order(get_timestamp, get_order_id):
-    def get_order(trader_id: int, price: int, size: int, order_side: OrderSide, time=0, expiration=2):
-        return Order(get_timestamp(time), get_timestamp(expiration), get_order_id(), trader_id,
+    def get_order(player_id: int, price: int, size: int, order_side: OrderSide, time=0, expiration=2):
+        return Order(get_timestamp(time), get_timestamp(expiration), get_order_id(), player_id,
                      price, size, 0, 0, order_side, OrderType.LIMIT, OrderStatus.PENDING)
     return get_order
