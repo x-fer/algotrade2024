@@ -159,3 +159,31 @@ async def run_migrations():
               FOREIGN KEY (seller_id) REFERENCES players(player_id),
               FOREIGN KEY (game_id) REFERENCES games(game_id)
               )''')
+
+    # @dataclass
+    # class Order(Table):
+    #     table_name = "orders"
+    #     game_id: int
+    #     player_id: int
+    #     order_type: OrderType
+    #     order_side: OrderSide
+    #     order_status: OrderStatus
+    #     price: int
+
+    await database.execute('''
+                CREATE TABLE IF NOT EXISTS orders (
+                order_id SERIAL PRIMARY KEY,
+                game_id INT NOT NULL,
+                player_id INT NOT NULL,
+                order_type INT NOT NULL,
+                order_side INT NOT NULL,
+                order_status INT NOT NULL,
+                price INT NOT NULL,
+                size INT NOT NULL,
+                timestamp TIMESTAMP NOT NULL,
+                expiration_tick INT NOT NULL,
+                resource INT NOT NULL,
+                
+                FOREIGN KEY (player_id) REFERENCES players(player_id),
+                FOREIGN KEY (game_id) REFERENCES games(game_id)
+                )''')

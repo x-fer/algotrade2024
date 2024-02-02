@@ -1,5 +1,5 @@
 from game import OrderBook, OrderSide, PriceTracker
-from game.orderbook.fixtures import *
+from orderbook.fixtures import *
 
 
 def test_price_tracker(get_order, get_timestamp):

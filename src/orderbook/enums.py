@@ -17,3 +17,4 @@ class OrderStatus(Enum):
     COMPLETED = 2
     CANCELLED = 3
     EXPIRED = 4
+    REJECTED = 5

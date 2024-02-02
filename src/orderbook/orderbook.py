@@ -29,6 +29,7 @@ class OrderBook():
             'on_trade': [],
             'on_end_match': [],
             'on_complete': [],
+            'on_add_fail': [],
         }
         self.prev_price = None
 
@@ -53,6 +54,9 @@ class OrderBook():
         if all(self._invoke_callbacks('check_add', order)):
             order.status = OrderStatus.PENDING
             self.queue.append(order)
+        else:
+            order.status = OrderStatus.REJECTED
+            self._invoke_callbacks('on_add_fail', order)
 
     def cancel_all(self):
         for order_id in list(self.map_to_heaps.keys()):
@@ -75,7 +79,7 @@ class OrderBook():
             self.buy_side.remove(order)
         else:
             self.sell_side.remove(order)
-        
+
         del self.map_to_heaps[order_id]
 
     def _min_expire_time(self):
@@ -93,7 +97,7 @@ class OrderBook():
             self._add_order(order)
             self._match(timestamp)
         self._invoke_callbacks('on_end_match', self.match_trades)
-    
+
     def _remove_expired(self, timestamp: pd.Timestamp):
         while self._min_expire_time() is not None and self._min_expire_time().expiration < timestamp:
             order = self.expire_heap.peek()
@@ -143,13 +147,13 @@ class OrderBook():
 
         trade_before = Trade(buy_order, sell_order, timestamp,
                              filled_money, trade_size, trade_price)
-        
+
         status = self._invoke_callbacks('check_trade', trade_before)
 
         status_reduced = reduce(
-            lambda x,y: {i: x[i] and y[i] for i in x},
+            lambda x, y: {i: x[i] and y[i] for i in x},
             status, {'can_buy': True, 'can_sell': True})
-        
+
         if status_reduced['can_buy'] and status_reduced['can_sell']:
             self.prev_price = trade_price
 
@@ -161,7 +165,7 @@ class OrderBook():
 
             self._remove_if_filled(buy_order.order_id)
             self._remove_if_filled(sell_order.order_id)
-            
+
             trade = Trade(buy_order, sell_order, timestamp,
                           filled_money, trade_size, trade_price)
             self._invoke_callbacks('on_trade', trade)
@@ -170,7 +174,7 @@ class OrderBook():
             self.cancel_order(buy_order.order_id)
         if not status_reduced['can_sell']:
             self.cancel_order(sell_order.order_id)
-    
+
     def _get_trade_price(self, buy_order: Order, sell_order: Order):
         first_order = buy_order if buy_order.timestamp < sell_order.timestamp else sell_order
         second_order = sell_order if buy_order.timestamp < sell_order.timestamp else buy_order
@@ -184,7 +188,7 @@ class OrderBook():
     def _get_trade_size(self, buy_order: Order, sell_order: Order):
         return min(buy_order.size - buy_order.filled_size,
                    sell_order.size - sell_order.filled_size)
-    
+
     def _remove_if_filled(self, order_id: int):
         order = self.map_to_heaps[order_id]
         if order.filled_size == order.size:
