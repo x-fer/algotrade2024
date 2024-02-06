@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import pandas as pd
-from .db import Order
+from db import Order
 
 
 @dataclass

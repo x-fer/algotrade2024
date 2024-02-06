@@ -1,8 +1,8 @@
 import pytest
 import pandas as pd
 import random
-from db import Order, OrderSide, OrderType, OrderStatus
-from orderbook import Trade
+from db import Order, OrderSide
+from .trade import Trade
 
 
 @pytest.fixture(autouse=True)
@@ -30,17 +30,6 @@ def on_add_true(traders):
 
 
 @pytest.fixture(autouse=True)
-def get_order_id():
-    order_id = 0
-
-    def get_order_id():
-        nonlocal order_id
-        order_id += 1
-        return order_id
-    return get_order_id
-
-
-@pytest.fixture(autouse=True)
 def get_timestamp():
     tm = pd.Timestamp.now()
 
@@ -51,26 +40,38 @@ def get_timestamp():
 
 
 @pytest.fixture
-def get_random_order(get_order_id, traders):
+def get_random_order(get_order_id, get_order, traders):
     def get_random_order():
-        random_trader = random.choice(traders)
-
-        buy_sell = random.choice([OrderSide.BUY, OrderSide.SELL])
-        type = random.choice([OrderType.LIMIT])
-
+        player_id = random.choice(traders)['id']
+        order_side = random.choice([OrderSide.BUY, OrderSide.SELL])
         price = random.randint(500, 1500)
         size = random.randint(100, 1000)
-
-        tm = pd.Timestamp.now()
-
-        order = Order(tm, tm + pd.Timedelta(seconds=1),
-                      get_order_id(), random_trader['id'],
-                      price, size, 0, 0,
-                      buy_sell, type,
-                      OrderStatus.PENDING)
-
-        return order
+        return get_order(player_id, price, size, order_side)
     return get_random_order
+
+
+@pytest.fixture()
+def get_order(get_timestamp, get_order_id):
+    def get_order(player_id: int, price: int, size: int, order_side: OrderSide, time=0, expiration=2):
+        return Order(timestamp=get_timestamp(time),
+                     expiration_tick=get_timestamp(expiration),
+                     order_id=get_order_id(),
+                     player_id=player_id,
+                     game_id=1,
+                     price=price, 
+                     size=size,
+                     order_side=order_side)
+    return get_order
+
+@pytest.fixture(autouse=True)
+def get_order_id():
+    order_id = 0
+
+    def get_order_id():
+        nonlocal order_id
+        order_id += 1
+        return order_id
+    return get_order_id
 
 
 @pytest.fixture
@@ -103,10 +104,3 @@ def check_trade(traders):
         return {"can_buy": True, "can_sell": True}
     return check_trade
 
-
-@pytest.fixture()
-def get_order(get_timestamp, get_order_id):
-    def get_order(player_id: int, price: int, size: int, order_side: OrderSide, time=0, expiration=2):
-        return Order(get_timestamp(time), get_timestamp(expiration), get_order_id(), player_id,
-                     price, size, 0, 0, order_side, OrderType.LIMIT, OrderStatus.PENDING)
-    return get_order

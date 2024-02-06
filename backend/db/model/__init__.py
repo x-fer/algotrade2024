@@ -5,5 +5,5 @@ from .bots import Bots
 from .datasets import Datasets
 from .power_plant import PowerPlant
 from .power_plant import PowerPlantType
-from .orders import Orders
+from .orders import Order
 from .order_types import *

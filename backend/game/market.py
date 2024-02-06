@@ -1,5 +1,5 @@
 from enum import Enum
-from orderbook import *
+from .orderbook import *
 from game.price_tracker import *
 from db.model import *
 

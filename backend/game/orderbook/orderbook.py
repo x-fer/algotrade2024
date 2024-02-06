@@ -3,7 +3,7 @@ import pandas as pd
 from xheap import XHeap
 from functools import reduce
 from .trade import Trade
-from .db import Order, OrderSide
+from db import Order, OrderSide, OrderStatus, OrderType
 
 
 class OrderBook():
@@ -15,7 +15,7 @@ class OrderBook():
             x.price, x.timestamp, x.order_id))
 
         self.expire_heap = XHeap(key=lambda x: (
-            x.expiration, x.timestamp, x.order_id))
+            x.expiration_tick, x.timestamp, x.order_id))
 
         self.map_to_heaps = {}
         self.queue = deque()
@@ -51,7 +51,7 @@ class OrderBook():
 
     def add_order(self, order: Order):
         if all(self._invoke_callbacks('check_add', order)):
-            order.status = OrderStatus.PENDING
+            order.status = OrderStatus.IN_QUEUE
             self.queue.append(order)
         else:
             order.status = OrderStatus.REJECTED
@@ -98,7 +98,7 @@ class OrderBook():
         self._invoke_callbacks('on_end_match', self.match_trades)
 
     def _remove_expired(self, timestamp: pd.Timestamp):
-        while self._min_expire_time() is not None and self._min_expire_time().expiration < timestamp:
+        while self._min_expire_time() is not None and self._min_expire_time().expiration_tick < timestamp:
             order = self.expire_heap.peek()
             order.status = OrderStatus.EXPIRED
             self._invoke_callbacks('on_cancel', order)
@@ -108,7 +108,7 @@ class OrderBook():
         if order.order_id in self.map_to_heaps:
             raise ValueError(f"Order with id {order.order_id} already exists")
 
-        if order.expiration < order.timestamp:
+        if order.expiration_tick < order.timestamp:
             raise ValueError(
                 f"Order with id {order.order_id} has expiration earlier than timestamp")
 
@@ -120,7 +120,7 @@ class OrderBook():
 
         order.status = OrderStatus.ACTIVE
 
-        if order.side == OrderSide.BUY:
+        if order.order_side == OrderSide.BUY:
             self.buy_side.push(order)
         else:
             self.sell_side.push(order)
@@ -178,9 +178,9 @@ class OrderBook():
         first_order = buy_order if buy_order.timestamp < sell_order.timestamp else sell_order
         second_order = sell_order if buy_order.timestamp < sell_order.timestamp else buy_order
 
-        if first_order.type != OrderType.MARKET:
+        if first_order.order_type != OrderType.MARKET:
             return first_order.price
-        elif second_order.type != OrderType.MARKET:
+        elif second_order.order_type != OrderType.MARKET:
             return second_order.price
         return self.prev_price
 

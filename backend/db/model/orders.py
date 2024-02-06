@@ -13,21 +13,21 @@ class Order(Table):
     game_id: int
     player_id: int
 
-    order_type: OrderType
-    order_side: OrderSide
-    order_status: OrderStatus
-
     price: int
     size: int
 
-    expiration_tick: int
-    timestamp: pd.Timestamp
+    order_side: OrderSide
+    order_type: OrderType = field(default=OrderType.LIMIT)
+    order_status: OrderStatus = field(default=OrderStatus.PENDING)
 
-    resource: int
+    filled_size: int = field(default=0)
+    filled_money: int = field(default=0)
+    filled_price: int = field(default=0)
 
-    filled_size: int = 0
-    filled_money: int = 0
-    filled_price: int = 0
+    timestamp: pd.Timestamp = field(default=0)
+    expiration_tick: int = field(default=1)
+
+    resource: int = field(default=0)
 
     def __hash__(self) -> int:
         return hash(self.order_id)
