@@ -3,8 +3,7 @@ import pandas as pd
 from xheap import XHeap
 from functools import reduce
 from .trade import Trade
-from .order import Order
-from .enums import *
+from .db import Order, OrderSide
 
 
 class OrderBook():
@@ -75,7 +74,7 @@ class OrderBook():
 
         self.expire_heap.remove(order)
 
-        if order.side == OrderSide.BUY:
+        if order.order_side == OrderSide.BUY:
             self.buy_side.remove(order)
         else:
             self.sell_side.remove(order)

@@ -1,5 +1,6 @@
-from game import OrderBook, OrderSide, PriceTracker
-from orderbook.fixtures import *
+from .price_tracker import PriceTracker
+from .orderbook import OrderBook, OrderSide, PriceTracker
+from .orderbook.fixtures import *
 
 
 def test_price_tracker(get_order, get_timestamp):

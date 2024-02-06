@@ -1,7 +1,8 @@
 import pytest
 import pandas as pd
 import random
-from orderbook import Trade, Order, OrderType, OrderSide, OrderStatus
+from db import Order, OrderSide, OrderType, OrderStatus
+from orderbook import Trade
 
 
 @pytest.fixture(autouse=True)

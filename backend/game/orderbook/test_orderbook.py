@@ -1,6 +1,6 @@
 from config import config
 from unittest.mock import Mock
-from . import Trade, OrderBook, OrderSide, OrderStatus
+from .db import Trade, OrderBook, OrderSide, OrderStatus
 from .fixtures import *
 
 

@@ -1,4 +1,4 @@
-from db import migration
-from db.table import Table
-from db.model import *
-from db.db import database
+from .table import Table
+from .db import database
+import migration
+from .model import *
