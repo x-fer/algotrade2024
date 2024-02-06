@@ -6,6 +6,10 @@ from db.db import database
 class Table:
     table_name = None
 
+    def get_kwargs(self) -> dict:
+        cols = [field.name for field in fields(self)]
+        return {col: self.__getattribute__(col) for col in cols}
+
     @classmethod
     async def create(cls, *args, **kwargs) -> int:
         """

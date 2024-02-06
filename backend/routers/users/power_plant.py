@@ -25,7 +25,7 @@ async def list_plant_prices(player_id: int):
     return [
         {"type": type,
          "name": type.name,
-         "price": await type.get_plant_price(player_id=player_id)}
+         "price": type.get_plant_price(player_id=player_id)}
         for type in PowerPlantType
     ]
 
@@ -47,7 +47,7 @@ async def buy_plant(player_id: int, plant: PlantBuy):
 
     async with database.transaction():
         player_balance = (await Player.get(player_id=player_id)).money
-        price = await type.get_plant_price(player_id=player_id)
+        price = type.get_plant_price(player_id=player_id)
 
         if player_balance < price:
             raise HTTPException(status_code=400, detail="Not enough money")

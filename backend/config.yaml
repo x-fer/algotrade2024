@@ -8,52 +8,56 @@ database:
 test_database:
   url: postgresql://postgres:postgres@localhost:5432/test_database
 
-tick_interval: 1
+game:
+  tick_interval: 1
 
-player_starting_money: 15000
+player:
+  starting_money: 15000
 
-power_plant_base_prices:
-  coal: 3000
-  uranium: 250000
-  biomass: 5000
-  gas: 7000
-  oil: 10000
-  geothermal: 25000
-  wind: 10000
-  solar: 10000
-  hydro: 100000
+power_plant:
+  resources_per_tick: 1
+  sell_coeff: 0.5
 
-power_plant_warmup_coeff:
-  coal: 1.06
-  uranium: 1.04
-  biomass: 1.12
-  gas: 1.07
-  oil: 1.47
-  geothermal: 1.07
-  wind: 3
-  solar: 3
-  hydro: 1.31
+  base_prices:
+    coal: 3000
+    uranium: 250000
+    biomass: 5000
+    gas: 7000
+    oil: 10000
+    geothermal: 25000
+    wind: 10000
+    solar: 10000
+    hydro: 100000
 
-power_plant_cooldown_coeff:
-  coal: 0.84
-  uranium: 0.66
-  biomass: 0.78
-  gas: 0.55
-  oil: 0.45
-  geothermal: 0.7
-  wind: 0.1
-  solar: 0.05
-  hydro: 0.3
+  warmup_coeff:
+    coal: 1.06
+    uranium: 1.04
+    biomass: 1.12
+    gas: 1.07
+    oil: 1.47
+    geothermal: 1.07
+    wind: 3
+    solar: 3
+    hydro: 1.31
 
-power_plant_dataset_rows:
-  coal: null
-  uranium: null
-  biomass: null
-  gas: null
-  oil: null
-  geothermal: geo
-  wind: wind
-  solar: solar
-  hydro: hydro
+  cooldown_coeff:
+    coal: 0.84
+    uranium: 0.66
+    biomass: 0.78
+    gas: 0.55
+    oil: 0.45
+    geothermal: 0.7
+    wind: 0.1
+    solar: 0.05
+    hydro: 0.3
 
-power_plant_sell_coef: 0.5
+  dataset_rows:
+    coal: null
+    uranium: null
+    biomass: null
+    gas: null
+    oil: null
+    geothermal: geo
+    wind: wind
+    solar: solar
+    hydro: hydro

@@ -23,8 +23,8 @@ async def background_tasks():
 
             t2 = time.time()
 
-            to_wait = config["tick_interval"] - \
-                time.time() % config["tick_interval"]
+            tick_interval = config["game"]["tick_interval"]
+            to_wait = tick_interval - time.time() % tick_interval
 
             if to_wait > 0:
                 await asyncio.sleep(to_wait)

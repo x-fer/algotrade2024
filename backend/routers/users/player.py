@@ -32,7 +32,7 @@ async def player_create(game_id: int = Depends(game_id), team_id: int = Depends(
             team_players_len = await Player.count(team_id=team_id, game_id=game_id)
             player_name = f"{team.team_name}_{team_players_len}"
 
-        player_id = await Player.create(game_id=game_id, team_id=team_id, player_name=player_name, money=config["player_starting_money"])
+        player_id = await Player.create(game_id=game_id, team_id=team_id, player_name=player_name, money=config["player"]["starting_money"])
     return {"player_id": player_id}
 
 
