@@ -2,11 +2,9 @@ from dataclasses import dataclass
 from enum import Enum
 from fastapi import APIRouter, Depends
 import pandas as pd
-from db.model import Orders
+from db.model import Order, OrderSide, OrderType, OrderStatus
 from game.market import Resource
-from orderbook.enums import OrderSide, OrderType
 from routers.users.dependencies import game_id, player
-from orderbook import OrderStatus
 
 # GAME PATHS
 
@@ -16,7 +14,7 @@ router = APIRouter()
 
 @router.get("/game/{game_id}/market/offer/list")
 async def offer_list(game_id: int = Depends(game_id)):
-    return await Orders.list(
+    return await Order.list(
         game_id=game_id,
         order_status=OrderStatus.ACTIVE.value
     )
@@ -34,7 +32,7 @@ class UserOrder:
 
 @router.post("/game/{game_id}/player/{player_id}/market/offer/create")
 async def offer_create(order: UserOrder, game_id: int = Depends(game_id), player: int = Depends(player)):
-    await Orders.create(
+    await Order.create(
         game_id=game_id,
         player_id=player.player_id,
 
