@@ -1,7 +1,6 @@
 from .team import Team
 from .game import Game
 from .player import Player
-from .bots import Bots
 from .datasets import Datasets
 from .power_plant import PowerPlant
 from .power_plant_types import PowerPlantType
