@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from db import Game
+from model import Game
 
 # GAME PATHS
 

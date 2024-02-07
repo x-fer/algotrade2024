@@ -1,14 +1,12 @@
 ## How to run
 
-    > sudo service postgresql start
-
-    > (TESTING=1) uvicorn main:app --reload
+    sudo service postgresql start
+    (TESTING=1) uvicorn main:app --reload
 
 ## Run tests
 
-    > TESTING=1 pytest -s .
-
-    > pip install pytest-asyncio  
+    pytest -s .
+    pip install pytest-asyncio  
 
 ## How to setup postgre
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from db import migration
-from routers.admin import dataset, bot, team, game
+from . import dataset, bot, team, game
 
 
 router = APIRouter()

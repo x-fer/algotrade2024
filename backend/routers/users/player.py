@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from db import Player, database, Team, PowerPlant, Game
-from routers.users.dependencies import team_id, game_id, player
+from db import database
+from model import Player, Team
 from config import config
+from .dependencies import team_id, game_id, player
 
 # PLAYER PATHS
 

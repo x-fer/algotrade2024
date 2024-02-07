@@ -2,7 +2,7 @@ server:
   port: 8000
   host: 0.0.0.0
 
-datasets_path: /Users/nitkonitkic/Documents/algotrade2024/backend/data
+datasets_path: ./data
 
 database:
   url: postgresql://postgres:postgres@localhost:5432/mydatabase
