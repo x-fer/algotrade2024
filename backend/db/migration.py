@@ -2,7 +2,7 @@ import os
 from databases import Database
 import pandas as pd
 from db.db import database
-from db.model import *
+from model import Team, Player, PowerPlant, PowerPlantType, Game, Datasets, DatasetData
 from datetime import datetime
 from config import config
 
@@ -11,20 +11,14 @@ async def fill_tables():
     g_team_id = await Team.create(team_name="Goranov_tim", team_secret="gogi")
     k_team_id = await Team.create(team_name="Krunov_tim", team_secret="kruno")
     z_team_id = await Team.create(team_name="Zvonetov_tim", team_secret="zvone")
-    # Treba li ovo ovako?
-    b_team_id = await Team.create(team_name="Botovi", team_secret="bots")
 
-    not_nat_game_id = await Game.create(game_name="Stalna igra", is_contest=False, bots="lagani", dataset="prvi", start_time=datetime.now(), total_ticks=2400, tick_time=3000)
-    nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="teski, lagani", dataset="drugi", start_time=datetime.now(), total_ticks=10, tick_time=1000)
+    not_nat_game_id = await Game.create(game_name="Stalna igra", is_contest=False, bots="dummy:3", dataset="prvi", start_time=datetime.now(), total_ticks=2400, tick_time=3000)
+    nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="dummy:2", dataset="drugi", start_time=datetime.now(), total_ticks=10, tick_time=1000)
 
     for game_id in [not_nat_game_id, nat_game_id]:
         await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id, money=15000)
         await Player.create(player_name="Kruno", is_active=True, is_bot=False, game_id=game_id, team_id=k_team_id)
         await Player.create(player_name="Zvone", is_active=True, is_bot=False, game_id=game_id, team_id=z_team_id)
-
-    await Player.create(player_name="lagani", is_active=True, is_bot=True, game_id=not_nat_game_id, team_id=b_team_id)
-    await Player.create(player_name="lagani", is_active=True, is_bot=True, game_id=nat_game_id, team_id=b_team_id)
-    await Player.create(player_name="teski", is_active=True, is_bot=True, game_id=nat_game_id, team_id=b_team_id)
 
     await PowerPlant.create(type=PowerPlantType.COAL.value, player_id=1, price=1, powered_on=True)
 
@@ -155,26 +149,41 @@ async def run_migrations():
 
     datasets_path = config["datasets_path"]
 
+    try:
+        await Team.create(
+            team_name=config["bots"]["team_name"],
+            team_secret=config["bots"]["team_secret"]
+        )
+        print("Created bots team")
+    except:
+        print("Bots team already created")
+
     for x in os.listdir(datasets_path):
-        if not x.endswith(".csv"):
-            continue
+        try:
+            if not x.endswith(".csv"):
+                continue
+            
+            if config["testing"]:
+                continue
 
-        df = pd.read_csv(f"{datasets_path}/{x}")
+            df = pd.read_csv(f"{datasets_path}/{x}")
 
-        # TODO: asserts
+            # TODO: asserts
 
-        dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
+            dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
 
-        for index, row in df.iterrows():
-            await DatasetData.create(dataset_id=dataset_id,
-                                     date=datetime.strptime(
-                                         row["Date"], "%Y-%m-%d %H:%M:%S"),
-                                     temp=row["Temp"],
-                                     rain=row["Rain"],
-                                     wind=row["Wind"],
-                                     uv=row["UV"],
-                                     energy=row["Energy"],
-                                     river=row["River"])
-
-        print(f"Added dataset {x}")
+            for index, row in df.iterrows():
+                await DatasetData.create(dataset_id=dataset_id,
+                                        date=datetime.strptime(
+                                            row["Date"], "%Y-%m-%d %H:%M:%S"),
+                                        temp=row["Temp"],
+                                        rain=row["Rain"],
+                                        wind=row["Wind"],
+                                        uv=row["UV"],
+                                        energy=row["Energy"],
+                                        river=row["River"])
+            print(f"Added dataset {x}")
+        except:
+            print(f"Dataset {x} already created")
+        
     print("Migrated database")

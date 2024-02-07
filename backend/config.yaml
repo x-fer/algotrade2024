@@ -2,7 +2,7 @@ server:
   port: 8000
   host: 0.0.0.0
 
-datasets_path: /Users/nitkonitkic/Documents/algotrade2024/backend/data
+datasets_path: ./data
 
 database:
   url: postgresql://postgres:postgres@localhost:5432/mydatabase
@@ -15,6 +15,10 @@ game:
 
 player:
   starting_money: 15000
+
+bots:
+  team_name: bots
+  team_secret: oiajsdpifjapsndkcapis
 
 power_plant:
   resources_per_tick: 1

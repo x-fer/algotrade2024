@@ -1,7 +1,7 @@
 import string
 import random
 from fastapi import APIRouter, HTTPException
-from db import Team
+from model import Team
 from pydantic import BaseModel
 
 # TEAM PATHS

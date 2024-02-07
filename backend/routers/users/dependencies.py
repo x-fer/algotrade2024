@@ -1,5 +1,5 @@
 from fastapi import HTTPException, Query, Depends
-from db import Team, Player, PowerPlant, Game
+from model import Team, Player, PowerPlant, Game
 
 
 async def game_id(game_id: int) -> int:

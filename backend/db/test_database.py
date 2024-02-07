@@ -1,10 +1,7 @@
 import pytest
-from databases import Database
-from db import Table
-from db import Team
 from db import database, migration
+from model import Team
 from config import config
-import asyncio
 import pytest_asyncio
 
 

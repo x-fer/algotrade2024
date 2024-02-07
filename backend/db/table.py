@@ -1,7 +1,7 @@
 from typing import Any
 from databases import Database
 from dataclasses import fields
-from db.db import database
+from .db import database
 from enum import Enum
 
 
@@ -10,7 +10,7 @@ class Table:
 
     def get_kwargs(self) -> dict:
         cols = [field.name for field in fields(self)]
-        return {col: self._getattribute(col) for col in cols}
+        return {col: self.__getattribute__(col) for col in cols}
 
     @classmethod
     async def create(cls, *args, **kwargs) -> int:
@@ -24,15 +24,9 @@ class Table:
             ({', '.join(cols[1:])}) 
             VALUES ({', '.join(f':{col}' for col in cols[1:])})
             RETURNING {cols[0]}"""
-        values = {col: data._getattribute(col) for col in cols[1:]}
+        values = {col: data.__getattribute__(col) for col in cols[1:]}
         return await database.fetch_val(query=query, values=values)
     
-    def _getattribute(self, __name: str) -> Any:
-        value = self.__getattribute__(__name)
-        if isinstance(value, Enum):
-            return value.value
-        return value
-
     @classmethod
     async def update(cls, **kwargs) -> int:
         """
@@ -46,6 +40,7 @@ class Table:
         set_query = ', '.join(
             f'{col}=:{col}' for col in kwargs if col != cols[0])
         query = f"UPDATE {cls.table_name} SET {set_query} WHERE {cols[0]}=:{cols[0]} RETURNING *"
+        kwargs = _transform_kwargs(kwargs)
         return await database.fetch_val(query, kwargs)
 
     @classmethod
@@ -61,6 +56,7 @@ class Table:
         if where:
             where = f" WHERE {where}"
         query = f"DELETE FROM {cls.table_name}{where} RETURNING *"
+        kwargs = _transform_kwargs(kwargs)
         return await database.fetch_val(query, kwargs)
 
     @classmethod
@@ -70,6 +66,7 @@ class Table:
         Returns selected row
         Throws exception if row doesn't exist
         """
+        kwargs = _transform_kwargs(kwargs)
         query, values = cls._select(**kwargs)
         result = await database.fetch_one(query, values)
         assert result, f"Requested row in table {cls.__name__} doesn't exist"
@@ -100,4 +97,16 @@ class Table:
         if where:
             where = f" WHERE {where}"
         query = f"SELECT {selected_cols} FROM {cls.table_name}{where}"
+        
+        kwargs = _transform_kwargs(kwargs)
         return query, kwargs
+
+
+def _transform_kwargs(kwargs):
+    return {k: _transform_enum(v) for k, v in kwargs.items()}
+
+
+def _transform_enum(value) -> Any:
+    if isinstance(value, Enum):
+        return value.value
+    return value

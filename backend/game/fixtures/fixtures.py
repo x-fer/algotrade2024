@@ -1,9 +1,6 @@
 import pandas as pd
-from db.model.order_types import OrderSide, OrderStatus
-from db.model import Order, Player, Resource, Game
-from db.model.power_plant import PowerPlant
-from db.model.power_plant_types import PowerPlantType
-from ..market import Market
+from model import Order, Player, Resource, Game, PowerPlant, PowerPlantType, OrderSide
+from game.market import Market
 import pytest
 
 

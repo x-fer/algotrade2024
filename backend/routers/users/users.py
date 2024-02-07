@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
-from routers.users.dependencies import team_id
-from routers.users import player, game, power_plant, market
+from .dependencies import team_id
+from . import player, game, power_plant, market
 
 
 router = APIRouter(dependencies=[Depends(team_id)])

@@ -1,8 +1,9 @@
 import dataclasses
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from db import Player, database, Team, PowerPlant, PowerPlantType
-from routers.users.dependencies import team_id, player, power_plant
+from db import database
+from model import Player, PowerPlant, PowerPlantType
+from .dependencies import player, power_plant
 from config import config
 
 # POWER_PLANT PATHS

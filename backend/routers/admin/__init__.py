@@ -1,1 +1,1 @@
-from routers.admin.admin import router
+from .admin import router

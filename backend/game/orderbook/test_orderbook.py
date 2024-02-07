@@ -1,9 +1,8 @@
 from config import config
 from unittest.mock import Mock
-from .trade import Trade
 from .orderbook import OrderBook
-from db import OrderSide, OrderStatus
-from .fixtures import *
+from model import OrderSide, OrderStatus, Trade
+from game.fixtures.orderbook_fixtures import *
 
 
 class TestCancelTrade():
