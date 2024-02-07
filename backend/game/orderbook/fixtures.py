@@ -63,6 +63,7 @@ def get_order(get_timestamp, get_order_id):
                      order_side=order_side)
     return get_order
 
+
 @pytest.fixture(autouse=True)
 def get_order_id():
     order_id = 0

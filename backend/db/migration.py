@@ -44,6 +44,7 @@ async def run_migrations():
               team_name TEXT,
               team_secret TEXT UNIQUE
               )''')
+
     await database.execute('''
               CREATE TABLE IF NOT EXISTS games (
               game_id SERIAL PRIMARY KEY,
@@ -90,46 +91,6 @@ async def run_migrations():
               FOREIGN KEY (player_id) REFERENCES players(player_id)
               )''')
 
-    # orders tablica
-    # koristi se prilikom dodavanja novog ordera, a na kraju svakog ticka se dohvacaju
-    # svi novi orderi i obraduju se (ubacuju se u matching engine)
-    # TODO:
-    # price = -1 ako je market. expiration_tick = -1 ako ne postoji
-    # ova zapravo krsi neku normalnu formu, jer game_id moze biti drugaciji nego player.game_id
-    # mozda je glupo izbaciti game id, jer se onda mora dohvacati posebno, mozda i ne...
-    # sto ako je market price i na BUY orderu i na SELL orderu?
-
-    # trades tablica
-    # ova tablica se koristi samo za evidenciju, inace je sve spremljeno u matching_engine
-    # objektu
-    # tick je tick u kojem je trade napravljen
-    # krsi normalnu formu jer dva playera mogu biti u razlicitim igrama, to mozemo zanemariti
-    await database.execute('''
-              CREATE TABLE IF NOT EXISTS trades (
-              trade_id SERIAL PRIMARY KEY,
-              resource INT NOT NULL,
-              price INT NOT NULL,
-              size INT NOT NULL,
-              tick INT NOT NULL,
-              game_id INT NOT NULL,
-              buyer_id INT NOT NULL,
-              seller_id INT NOT NULL,
-
-              FOREIGN KEY (buyer_id) REFERENCES players(player_id),
-              FOREIGN KEY (seller_id) REFERENCES players(player_id),
-              FOREIGN KEY (game_id) REFERENCES games(game_id)
-              )''')
-
-    # @dataclass
-    # class Order(Table):
-    #     table_name = "orders"
-    #     game_id: int
-    #     player_id: int
-    #     order_type: OrderType
-    #     order_side: OrderSide
-    #     order_status: OrderStatus
-    #     price: int
-
     await database.execute('''
                 CREATE TABLE IF NOT EXISTS orders (
                 order_id SERIAL PRIMARY KEY,
@@ -151,3 +112,15 @@ async def run_migrations():
                 FOREIGN KEY (player_id) REFERENCES players(player_id),
                 FOREIGN KEY (game_id) REFERENCES games(game_id)
                 )''')
+
+    await database.execute('''
+              CREATE TABLE IF NOT EXISTS market (
+              game_id INT PRIMARY KEY,
+              tick INT PRIMARY KEY,
+              resource INT PRIMARY KEY,
+              low INT,
+              high INT,
+              open INT,
+              close INT,
+              market INT,
+              )''')

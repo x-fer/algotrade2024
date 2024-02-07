@@ -1,6 +1,6 @@
 from .price_tracker import PriceTracker
-from .orderbook import OrderBook
-from .orderbook.fixtures import *
+from ..orderbook import OrderBook
+from ..orderbook.fixtures import *
 from db import OrderSide
 
 

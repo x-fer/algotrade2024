@@ -3,7 +3,7 @@ from enum import Enum
 from fastapi import APIRouter, Depends
 import pandas as pd
 from db.model import Order, OrderSide, OrderType, OrderStatus
-from game.market import Resource
+from game.market.market import Resource
 from routers.users.dependencies import game_id, player
 
 # GAME PATHS
