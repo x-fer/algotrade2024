@@ -22,7 +22,7 @@ class Market(Table):
         Input: Values for new row
         Returns id of created row
         """
-        data = cls(0, *args, **kwargs)
+        data = cls(*args, **kwargs)
         cols = [field.name for field in fields(data)]
         query = f"""INSERT INTO {cls.table_name}
             ({', '.join(cols)}) 

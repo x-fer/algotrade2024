@@ -1,31 +1,27 @@
+from db.table import Table
+from dataclasses import dataclass
 
 
-class Datasets:
-    paths = {
-        "a": "a.csv",
-        "b": "b.csv",
-        "c": "c.csv",
-    }
+@dataclass
+class Datasets(Table):
+    table_name = "datasets"
 
-    ticks = {
-        "a": 100,
-        "b": 100,
-        "c": 100,
-    }
+    @classmethod
+    async def exists(cls, dataset_id):
+        return await Datasets.get(dataset_id) is not None
 
-    def exists(bot_id):
-        return bot_id in Datasets.paths
-
-    def validate_string(dataset_string):
+    @classmethod
+    async def validate_string(cls, dataset_string):
         if not Datasets.exists(dataset_string):
             raise Exception("Dataset does not exist")
 
         return dataset_string
 
-    def ensure_ticks(dataset_string, min_ticks):
+    @classmethod
+    async def ensure_ticks(cls, dataset_string, min_ticks):
         Datasets.validate_string(dataset_string)
 
-        if Datasets.ticks[dataset_string] < min_ticks:
+        if Datasets.count(dataset_string) < min_ticks:
             raise Exception("Dataset does not have enough ticks")
 
         return dataset_string
