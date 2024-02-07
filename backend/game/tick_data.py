@@ -1,7 +1,9 @@
+from dataclasses import dataclass
 from db import Game, Player, Order, PowerPlant
 from .market import Market
 
 
+@dataclass
 class TickData:
     game: Game
     players: list[Player]
