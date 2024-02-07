@@ -4,11 +4,11 @@ from .bots import Bots
 import pytest
 
 
-class TestBot(Bot):
+class DummyBot_1(Bot):
     pass
 
 
-class TestBot_2(Bot):
+class DummyBot_2(Bot):
     pass
 
 
@@ -16,8 +16,8 @@ class TestBot_2(Bot):
 def use_test_bots():
     old_bots = Bots.bots
     Bots.bots = {
-        "test": TestBot,
-        "test_2": TestBot_2
+        "test": DummyBot_1,
+        "test_2": DummyBot_2
     }
     yield
     Bots.bots = old_bots
@@ -64,5 +64,5 @@ def test_create_bots(use_test_bots):
 
     assert len(bots) == 5
     
-    assert sum([isinstance(bot, TestBot) for bot in bots]) == 4
-    assert sum([isinstance(bot, TestBot_2) for bot in bots]) == 1
+    assert sum([isinstance(bot, DummyBot_1) for bot in bots]) == 4
+    assert sum([isinstance(bot, DummyBot_2) for bot in bots]) == 1

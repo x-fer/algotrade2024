@@ -16,6 +16,10 @@ game:
 player:
   starting_money: 15000
 
+bots:
+  team_name: bots
+  team_secret: oiajsdpifjapsndkcapis
+
 power_plant:
   resources_per_tick: 1
   sell_coeff: 0.5

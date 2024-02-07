@@ -4,16 +4,13 @@ from model import Order, Player, Resource, Trade
 
 
 class Market():
-    orderbook: OrderBook
-    price_tracker = PriceTracker
-    updated_orders: dict[int, Order]
-    players: dict[int, Player]
-
     def __init__(self, resource: Resource, game_id: int):
         self.orderbook = OrderBook()
         self.price_tracker = PriceTracker(self.orderbook)
         self.resource = resource
         self.game_id = game_id
+        self.players = dict()
+        self.updated_orders = dict()
 
         callbacks = {
             'check_trade': self._check_trade,

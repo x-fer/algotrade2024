@@ -3,7 +3,7 @@ import time
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from config import config
-from db import database, migration, table
+from db import database, migration
 from game import run_all_game_ticks
 from routers import admin_router, users_router
 import psutil

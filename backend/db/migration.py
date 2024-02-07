@@ -149,6 +149,11 @@ async def run_migrations():
 
     datasets_path = config["datasets_path"]
 
+    await Team.create(
+        team_name=config["bots"]["team_name"],
+        team_secret=config["bots"]["team_secret"]
+    )
+
     for x in os.listdir(datasets_path):
         if not x.endswith(".csv"):
             continue
