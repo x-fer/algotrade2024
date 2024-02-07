@@ -1,6 +1,8 @@
+from typing import Any
 from databases import Database
 from dataclasses import fields
 from db.db import database
+from enum import Enum
 
 
 class Table:
@@ -8,7 +10,7 @@ class Table:
 
     def get_kwargs(self) -> dict:
         cols = [field.name for field in fields(self)]
-        return {col: self.__getattribute__(col) for col in cols}
+        return {col: self._getattribute(col) for col in cols}
 
     @classmethod
     async def create(cls, *args, **kwargs) -> int:
@@ -22,8 +24,14 @@ class Table:
             ({', '.join(cols[1:])}) 
             VALUES ({', '.join(f':{col}' for col in cols[1:])})
             RETURNING {cols[0]}"""
-        values = {col: data.__getattribute__(col) for col in cols[1:]}
+        values = {col: data._getattribute(col) for col in cols[1:]}
         return await database.fetch_val(query=query, values=values)
+    
+    def _getattribute(self, __name: str) -> Any:
+        value = self.__getattribute__(__name)
+        if isinstance(value, Enum):
+            return value.value
+        return value
 
     @classmethod
     async def update(cls, **kwargs) -> int:
