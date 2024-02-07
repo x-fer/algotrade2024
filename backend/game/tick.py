@@ -1,9 +1,9 @@
 from datetime import datetime
 from db import database
-from db import Player, PowerPlant, Game, PowerPlantType, Order
-from db.model.order_types import OrderStatus
+from db import Player, PowerPlant, Game, PowerPlantType, Order, OrderStatus, Resource
+from db import Market as MarketTable
 from . import energy_service
-from game.market import Market, Resource
+from .market import Market
 from config import config
 
 
@@ -48,9 +48,18 @@ async def tick_game_with_db(game: Game, markets: dict[int, Market]):
                        power_plants=power_plants,
                        markets=markets))
 
-    for market in markets:
+    for market in markets.values():
         for order in market.updated_orders.values():
             await Order.update(order.get_kwargs())
+        await MarketTable.create(game_id=game.game_id,
+                                 tick=game.current_tick,
+                                 resource=market.resource,
+                                 low=market.price_tracker.get_low(),
+                                 high=market.price_tracker.get_high(),
+                                 open=market.price_tracker.get_open(),
+                                 close=market.price_tracker.get_close(),
+                                 market=market.price_tracker.get_market(),
+                                 )
     for player in players:
         Player.update(player.get_kwargs())
         for power_plant in power_plants[player.player_id]:
@@ -64,7 +73,7 @@ class TickData:
     new_orders: list[Order]
     cancelled_orders: list[Order]
     power_plants: dict[int, PowerPlant]
-    markets: list[Market]
+    markets: dict[int, Market]
 
 
 def tick_game(tick_data: TickData):
@@ -75,8 +84,8 @@ def tick_game(tick_data: TickData):
 
     # Update markets
     player_dict = {player.player_id: player for player in players}
-    for market in markets:
-        market.begin_tick(player_dict)
+    for market in markets.values():
+        market.set_players(player_dict)
 
     # Power plants and energy
     for player in players:
@@ -90,10 +99,10 @@ def tick_game(tick_data: TickData):
     
     # Match orders
     for market in markets.values():
-        market.orderbook.match()
+        market.orderbook.match(game.current_tick)
 
 
-def update_energy_and_power_plants(game: Game, player: Player, power_plants: dict[int, PowerPlantType]):
+def update_energy_and_power_plants(game: Game, player: Player, power_plants: dict[int, PowerPlant]):
     player.energy = 0
     for power_plant in power_plants[player.player_id]:
         plant_type = PowerPlantType(power_plant.type)
