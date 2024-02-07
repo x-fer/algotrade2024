@@ -6,9 +6,17 @@ from dataclasses import dataclass
 class Datasets(Table):
     table_name = "datasets"
 
+    dataset_id: int
+    dataset_name: str
+    dataset_description: str
+
     @classmethod
     async def exists(cls, dataset_id):
-        return await Datasets.get(dataset_id) is not None
+        try:
+            Datasets.get(dataset_id)
+            return True
+        except Exception:
+            return False
 
     @classmethod
     async def validate_string(cls, dataset_string):

@@ -1,4 +1,6 @@
+import os
 from databases import Database
+import pandas as pd
 from db.db import database
 from db.model import *
 from datetime import datetime
@@ -139,6 +141,7 @@ async def run_migrations():
     # dataset_id Date,Temp,Rain,Wind,UV,Energy,River table
     await database.execute('''
                 CREATE TABLE IF NOT EXISTS dataset_data (
+                dataset_data_id SERIAL PRIMARY KEY,
                 dataset_id INT NOT NULL,
                 date TIMESTAMP NOT NULL,
                 temp REAL NOT NULL,
@@ -151,3 +154,27 @@ async def run_migrations():
                 )''')
 
     datasets_path = config["datasets_path"]
+
+    for x in os.listdir(datasets_path):
+        if not x.endswith(".csv"):
+            continue
+
+        df = pd.read_csv(f"{datasets_path}/{x}")
+
+        # TODO: asserts
+
+        dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
+
+        for index, row in df.iterrows():
+            await DatasetData.create(dataset_id=dataset_id,
+                                     date=datetime.strptime(
+                                         row["Date"], "%Y-%m-%d %H:%M:%S"),
+                                     temp=row["Temp"],
+                                     rain=row["Rain"],
+                                     wind=row["Wind"],
+                                     uv=row["UV"],
+                                     energy=row["Energy"],
+                                     river=row["River"])
+
+        print(f"Added dataset {x}")
+    print("Migrated database")
