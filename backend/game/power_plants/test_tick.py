@@ -1,9 +1,8 @@
-from . import produced_energy as energy_service
 from config import config
-from db import Player, PowerPlant, Game, PowerPlantType
+from model import Player, Game, PowerPlantType
 from config import config
 from . import update_energy_and_power_plants
-from ..common.fixtures import *
+from game.fixtures.fixtures import *
 
 
 def test_update_energy_and_power_plants(game: Game, get_player, get_power_plant):

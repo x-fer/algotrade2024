@@ -2,8 +2,7 @@ from collections import deque
 import pandas as pd
 from xheap import XHeap
 from functools import reduce
-from .trade import Trade
-from db import Order, OrderSide, OrderStatus, OrderType
+from model import Order, OrderSide, OrderStatus, OrderType, Trade
 
 
 class OrderBook():

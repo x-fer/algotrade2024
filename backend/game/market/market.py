@@ -1,6 +1,6 @@
-from ..orderbook import OrderBook, Trade
-from ..price_tracker import PriceTracker
-from db.model import Order, Player, Resource
+from game.orderbook import OrderBook
+from game.price_tracker import PriceTracker
+from model import Order, Player, Resource, Trade
 
 
 class Market():

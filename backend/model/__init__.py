@@ -10,3 +10,4 @@ from .market import Market
 from .resource import Resource
 from .datasets import Datasets
 from .dataset_data import DatasetData
+from .trade import Trade

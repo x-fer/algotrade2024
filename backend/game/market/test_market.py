@@ -1,7 +1,6 @@
-from db.model.order_types import OrderSide, OrderStatus
-from db.model import Order, Player
+from model import Order, Player, OrderSide, OrderStatus
 from . import Market
-from ..common.fixtures import *
+from game.fixtures.fixtures import *
 
 
 class TestMoneyUpdate():

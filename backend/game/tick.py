@@ -1,11 +1,10 @@
+from dataclasses import dataclass
 from datetime import datetime
 from db import database
-from db import Player, PowerPlant, Game, Order, OrderStatus, Resource
-from db import Market as MarketTable
-from .tick_data import TickData
-from .power_plants import update_energy_and_power_plants
-from .market import Market
-from config import config
+from model import Player, PowerPlant, Game, Order, OrderStatus, Resource
+from model import Market as MarketTable
+from game.power_plants import update_energy_and_power_plants
+from game.market import Market
 
 
 async def run_all_game_ticks():
@@ -66,6 +65,16 @@ async def tick_game_with_db(game: Game, markets: dict[int, Market]):
         for power_plant in power_plants[player.player_id]:
             await PowerPlant.update(**power_plant.get_kwargs())
     await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
+
+
+@dataclass
+class TickData:
+    game: Game
+    players: list[Player]
+    new_orders: list[Order]
+    cancelled_orders: list[Order]
+    power_plants: dict[int, PowerPlant]
+    markets: dict[int, Market]
 
 
 def tick_game(tick_data: TickData):

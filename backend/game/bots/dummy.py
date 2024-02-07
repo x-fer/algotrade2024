@@ -1,9 +1,8 @@
 from .bot import Bot
 from typing import List
-from db import Order
-from ..tick_data import TickData
+from model import Order
 
 
 class DummyBot(Bot):
-    def create_orders(self, tick_data: TickData) -> List[Order]:
+    def create_orders(self, *args, **kwargs) -> List[Order]:
         return []

@@ -3,6 +3,7 @@ from typing import List, Tuple
 from .bot import Bot
 from .dummy import DummyBot
 
+
 class Bots:
     bots = {
         "dummy": DummyBot

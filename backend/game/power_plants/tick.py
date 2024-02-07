@@ -1,6 +1,5 @@
 from . import produced_energy as energy_service
-from config import config
-from db import Player, PowerPlant, Game, PowerPlantType
+from model import Player, PowerPlant, Game, PowerPlantType
 from config import config
 
 

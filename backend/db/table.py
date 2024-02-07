@@ -1,7 +1,7 @@
 from typing import Any
 from databases import Database
 from dataclasses import fields
-from db.db import database
+from .db import database
 from enum import Enum
 
 

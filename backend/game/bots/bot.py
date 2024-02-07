@@ -1,7 +1,6 @@
 from typing import List
 import abc
-from db import Order
-from ..tick_data import TickData
+from model import Order
 
 
 class Bot():
@@ -9,5 +8,5 @@ class Bot():
         pass
 
     @abc.abstractmethod
-    def create_orders(self, tick_data: TickData) -> List[Order]:
+    def create_orders(self, *args, **kwargs) -> List[Order]:
         pass
