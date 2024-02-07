@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from db import database
 from db import Player, PowerPlant, Game, Order, OrderStatus, Resource
@@ -41,7 +42,7 @@ async def tick_game_with_db(game: Game, markets: dict[int, Market]):
     power_plants = dict()
     for player in players:
         power_plants[player.player_id] = await PowerPlant.list(player_id=player.player_id)
-    
+
     tick_game(TickData(game=game,
                        players=players,
                        new_orders=new_orders,
@@ -59,13 +60,23 @@ async def tick_game_with_db(game: Game, markets: dict[int, Market]):
                                  high=market.price_tracker.get_high(),
                                  open=market.price_tracker.get_open(),
                                  close=market.price_tracker.get_close(),
-                                 market=market.price_tracker.get_market(),
+                                 market=market.price_tracker.get_market()
                                  )
     for player in players:
-        Player.update(player.get_kwargs())
+        await Player.update(**player.get_kwargs())
         for power_plant in power_plants[player.player_id]:
-            PowerPlant.update(power_plant.get_kwargs())
+            await PowerPlant.update(**power_plant.get_kwargs())
     await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
+
+
+@dataclass
+class TickData:
+    game: Game
+    players: list[Player]
+    new_orders: list[Order]
+    cancelled_orders: list[Order]
+    power_plants: dict[int, PowerPlant]
+    markets: dict[int, Market]
 
 
 def tick_game(tick_data: TickData):
@@ -82,15 +93,13 @@ def tick_game(tick_data: TickData):
     # Power plants and energy
     for player in players:
         update_energy_and_power_plants(game, player, power_plants)
-    
+
     # Add new orders
     for order in tick_data.new_orders:
         markets[order.resource].orderbook.add_order(order)
     for order in tick_data.cancelled_orders:
         markets[order.resource].orderbook.cancel_order(order)
-    
+
     # Match orders
     for market in markets.values():
         market.orderbook.match(game.current_tick)
-
-

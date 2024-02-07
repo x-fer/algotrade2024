@@ -1,7 +1,10 @@
+import os
 from databases import Database
+import pandas as pd
 from db.db import database
 from db.model import *
 from datetime import datetime
+from config import config
 
 
 async def fill_tables():
@@ -29,12 +32,12 @@ async def fill_tables():
 
 
 async def delete_tables():
-    await database.execute('TRUNCATE power_plants, trades, orders, players, games, teams CASCADE')
+    await database.execute('TRUNCATE power_plants, trades, orders, players, games, teams, market, datasets, dataset_data CASCADE')
 
 
 async def drop_tables():
-    for table_name in ["power_plants", "trades", "orders", "players", "games", "teams"]:
-        await database.execute(f'DROP TABLE IF EXISTS {table_name}')
+    for table_name in ["power_plants", "trades", "orders", "players", "games", "teams", "market", "datasets", "dataset_data"]:
+        await database.execute(f'DROP TABLE IF EXISTS {table_name} CASCADE')
 
 
 async def run_migrations():
@@ -113,14 +116,65 @@ async def run_migrations():
                 FOREIGN KEY (game_id) REFERENCES games(game_id)
                 )''')
 
+    # Remove duplicate primary key declarations
     await database.execute('''
               CREATE TABLE IF NOT EXISTS market (
-              game_id INT PRIMARY KEY,
-              tick INT PRIMARY KEY,
-              resource INT PRIMARY KEY,
+              game_id INT,
+              tick INT,
+              resource INT,
               low INT,
               high INT,
               open INT,
               close INT,
               market INT,
+              PRIMARY KEY (game_id, tick, resource)
               )''')
+
+    # dataset_id, dataset_name, dataset_path, dataset_description
+    await database.execute('''
+                CREATE TABLE IF NOT EXISTS datasets (
+                dataset_id SERIAL PRIMARY KEY,
+                dataset_name TEXT,
+                dataset_description TEXT
+                )''')
+
+    # dataset_id Date,Temp,Rain,Wind,UV,Energy,River table
+    await database.execute('''
+                CREATE TABLE IF NOT EXISTS dataset_data (
+                dataset_data_id SERIAL PRIMARY KEY,
+                dataset_id INT NOT NULL,
+                date TIMESTAMP NOT NULL,
+                temp REAL NOT NULL,
+                rain REAL NOT NULL,
+                wind REAL NOT NULL,
+                uv REAL NOT NULL,
+                energy REAL NOT NULL,
+                river REAL NOT NULL,
+                FOREIGN KEY (dataset_id) REFERENCES datasets(dataset_id)
+                )''')
+
+    datasets_path = config["datasets_path"]
+
+    for x in os.listdir(datasets_path):
+        if not x.endswith(".csv"):
+            continue
+
+        df = pd.read_csv(f"{datasets_path}/{x}")
+
+        # TODO: asserts
+
+        dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
+
+        for index, row in df.iterrows():
+            await DatasetData.create(dataset_id=dataset_id,
+                                     date=datetime.strptime(
+                                         row["Date"], "%Y-%m-%d %H:%M:%S"),
+                                     temp=row["Temp"],
+                                     rain=row["Rain"],
+                                     wind=row["Wind"],
+                                     uv=row["UV"],
+                                     energy=row["Energy"],
+                                     river=row["River"])
+
+        print(f"Added dataset {x}")
+    print("Migrated database")
