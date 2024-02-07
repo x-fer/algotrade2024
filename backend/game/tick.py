@@ -19,9 +19,11 @@ class GameData:
 
 async def run_all_game_ticks():
     games = dict()
-    bot_team_id = await Team.get(team_name=config["bots"]["team_name"]).team_id
+    bot_team = await Team.get(team_name=config["bots"]["team_name"])
+    bot_team_id = bot_team.team_id
 
     for game in await Game.list():
+        print(f"{game.current_tick} tick {game.game_name}")
         if game.is_finished:
             continue
 
@@ -43,12 +45,20 @@ async def run_all_game_ticks():
 
 async def create_game(game: Game, bot_team_id: int):
     game_data = GameData(game)
-    for bot, i in enumerate(game_data.bots):
-        bot.player_id = await Player.create(
-            player_name=f"{type(bot).__name__}_{i}",
-            game_id=game.game_id,
-            team_id=bot_team_id
-        )
+    for i, bot in enumerate(game_data.bots):
+        bot_name = f"{type(bot).__name__}_{i}"
+        try:
+            bot.player_id = await Player.create(
+                player_name=bot_name,
+                game_id=game.game_id,
+                team_id=bot_team_id
+            )
+        except:
+            bot.player_id = (await Player.get(
+                player_name=bot_name,
+                game_id=game.game_id,
+                team_id=bot_team_id
+            )).player_id
     return game_data
 
 

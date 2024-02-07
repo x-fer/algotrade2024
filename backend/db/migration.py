@@ -12,8 +12,8 @@ async def fill_tables():
     k_team_id = await Team.create(team_name="Krunov_tim", team_secret="kruno")
     z_team_id = await Team.create(team_name="Zvonetov_tim", team_secret="zvone")
 
-    not_nat_game_id = await Game.create(game_name="Stalna igra", is_contest=False, bots="lagani", dataset="prvi", start_time=datetime.now(), total_ticks=2400, tick_time=3000)
-    nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="teski, lagani", dataset="drugi", start_time=datetime.now(), total_ticks=10, tick_time=1000)
+    not_nat_game_id = await Game.create(game_name="Stalna igra", is_contest=False, bots="dummy:3", dataset="prvi", start_time=datetime.now(), total_ticks=2400, tick_time=3000)
+    nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="dummy:2", dataset="drugi", start_time=datetime.now(), total_ticks=10, tick_time=1000)
 
     for game_id in [not_nat_game_id, nat_game_id]:
         await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id, money=15000)
@@ -149,31 +149,41 @@ async def run_migrations():
 
     datasets_path = config["datasets_path"]
 
-    await Team.create(
-        team_name=config["bots"]["team_name"],
-        team_secret=config["bots"]["team_secret"]
-    )
+    try:
+        await Team.create(
+            team_name=config["bots"]["team_name"],
+            team_secret=config["bots"]["team_secret"]
+        )
+        print("Created bots team")
+    except:
+        print("Bots team already created")
 
     for x in os.listdir(datasets_path):
-        if not x.endswith(".csv"):
-            continue
+        try:
+            if not x.endswith(".csv"):
+                continue
+            
+            if config["testing"]:
+                continue
 
-        df = pd.read_csv(f"{datasets_path}/{x}")
+            df = pd.read_csv(f"{datasets_path}/{x}")
 
-        # TODO: asserts
+            # TODO: asserts
 
-        dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
+            dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
 
-        for index, row in df.iterrows():
-            await DatasetData.create(dataset_id=dataset_id,
-                                     date=datetime.strptime(
-                                         row["Date"], "%Y-%m-%d %H:%M:%S"),
-                                     temp=row["Temp"],
-                                     rain=row["Rain"],
-                                     wind=row["Wind"],
-                                     uv=row["UV"],
-                                     energy=row["Energy"],
-                                     river=row["River"])
-
-        print(f"Added dataset {x}")
+            for index, row in df.iterrows():
+                await DatasetData.create(dataset_id=dataset_id,
+                                        date=datetime.strptime(
+                                            row["Date"], "%Y-%m-%d %H:%M:%S"),
+                                        temp=row["Temp"],
+                                        rain=row["Rain"],
+                                        wind=row["Wind"],
+                                        uv=row["UV"],
+                                        energy=row["Energy"],
+                                        river=row["River"])
+            print(f"Added dataset {x}")
+        except:
+            print(f"Dataset {x} already created")
+        
     print("Migrated database")

@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI):
     if config['testing']:
         await migration.drop_tables()
         await migration.run_migrations()
+        await migration.fill_tables()
     else:
         await migration.run_migrations()
     # await print_hello()
