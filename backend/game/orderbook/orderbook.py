@@ -52,11 +52,11 @@ class OrderBook():
 
     def add_order(self, order: Order):
         if all(self._invoke_callbacks('check_add', order)):
-            order.status = OrderStatus.IN_QUEUE
+            order.order_status = OrderStatus.IN_QUEUE
             self.queue.append(order)
             self._invoke_callbacks('on_order_update', order)
         else:
-            order.status = OrderStatus.REJECTED
+            order.order_status = OrderStatus.REJECTED
             self._invoke_callbacks('on_order_update', order)
             self._invoke_callbacks('on_add_fail', order)
 
@@ -67,14 +67,14 @@ class OrderBook():
     def cancel_order(self, order_id: int):
         if order_id not in self.map_to_heaps:
             raise ValueError(f"Order with id {order_id} not found")
-        order = self.map_to_heaps[order_id]
-        order.status = OrderStatus.CANCELLED
+        order: Order = self.map_to_heaps[order_id]
+        order.order_status = OrderStatus.CANCELLED
         self._invoke_callbacks('on_cancel', order)
         self._invoke_callbacks('on_order_update', order)
         self._remove_order(order_id)
 
     def _remove_order(self, order_id: int):
-        order = self.map_to_heaps[order_id]
+        order: Order = self.map_to_heaps[order_id]
 
         self.expire_heap.remove(order)
 
@@ -95,8 +95,8 @@ class OrderBook():
         self._remove_expired(timestamp)
         self.match_trades = []
         while len(self.queue) > 0:
-            order = self.queue.popleft()
-            order.status = OrderStatus.ACTIVE
+            order: Order = self.queue.popleft()
+            order.order_status = OrderStatus.ACTIVE
             self._invoke_callbacks('on_order_update', order)
             self._add_order(order)
             self._match(timestamp)
@@ -104,8 +104,8 @@ class OrderBook():
 
     def _remove_expired(self, timestamp: pd.Timestamp):
         while self._min_expire_time() is not None and self._min_expire_time().expiration_tick < timestamp:
-            order = self.expire_heap.peek()
-            order.status = OrderStatus.EXPIRED
+            order: Order = self.expire_heap.peek()
+            order.order_status = OrderStatus.EXPIRED
             self._invoke_callbacks('on_order_update', order)
             self._invoke_callbacks('on_cancel', order)
             self._remove_order(order.order_id)
@@ -124,7 +124,7 @@ class OrderBook():
         order.filled_money = 0
         order.filled_size = 0
 
-        order.status = OrderStatus.ACTIVE
+        order.order_status = OrderStatus.ACTIVE
 
         if order.order_side == OrderSide.BUY:
             self.buy_side.push(order)
@@ -199,9 +199,9 @@ class OrderBook():
                    sell_order.size - sell_order.filled_size)
 
     def _remove_if_filled(self, order_id: int):
-        order = self.map_to_heaps[order_id]
+        order: Order = self.map_to_heaps[order_id]
         if order.filled_size == order.size:
-            order.status = OrderStatus.COMPLETED
+            order.order_status = OrderStatus.COMPLETED
             self._invoke_callbacks('on_order_update', order)
             self._invoke_callbacks('on_complete', order)
             self._remove_order(order_id)

@@ -1,8 +1,15 @@
 from dataclasses import dataclass, field
+from typing import Any
 from db.table import Table
 from datetime import datetime
 import pandas as pd
 from .order_types import *
+from .enum_type import enum_type
+
+
+OrderSideField = enum_type(OrderSide)
+OrderTypeField = enum_type(OrderType)
+OrderStatusField = enum_type(OrderStatus)
 
 
 @dataclass
@@ -16,9 +23,9 @@ class Order(Table):
     price: int
     size: int
 
-    order_side: OrderSide
-    order_type: OrderType = field(default=OrderType.LIMIT.value)
-    order_status: OrderStatus = field(default=OrderStatus.PENDING.value)
+    order_side: OrderSideField
+    order_type: OrderTypeField = OrderTypeField(default=OrderType.LIMIT)
+    order_status: OrderStatusField = OrderStatusField(default=OrderStatus.PENDING)
 
     filled_size: int = field(default=0)
     filled_money: int = field(default=0)
