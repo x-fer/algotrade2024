@@ -31,7 +31,8 @@ class Bots:
 
         return bots
     
-    def create_bots(bots: List[Tuple[str, int]], *args, **kwargs) -> List[Bot]:
+    def create_bots(bot_string: str, *args, **kwargs) -> List[Bot]:
+        bots = Bots.parse_string(bot_string)
         return [
             Bots.bots[bot_name](*args, **kwargs) 
             for bot_name, ammount in bots 

@@ -12,7 +12,7 @@ class TestBot_2(Bot):
     pass
 
 
-@pytest.fixture(autouse=True, scope="module")
+@pytest.fixture()
 def use_test_bots():
     old_bots = Bots.bots
     Bots.bots = {
@@ -23,13 +23,14 @@ def use_test_bots():
     Bots.bots = old_bots
 
 
-def test_parse_string_valid():
+def test_parse_string_valid(use_test_bots):
     bots = Bots.parse_string("test: 5")
     assert len(bots) == 1
     assert bots[0][0] == "test"
     assert bots[0][1] == 5
 
-def test_parse_string_valid_2():
+
+def test_parse_string_valid_2(use_test_bots):
     bots = Bots.parse_string("test: 5; test_2: 1")
     assert len(bots) == 2
     assert bots[0][0] == "test"
@@ -38,7 +39,7 @@ def test_parse_string_valid_2():
     assert bots[1][1] == 1
 
 
-def test_parse_string_invalid():
+def test_parse_string_invalid(use_test_bots):
     with pytest.raises(HTTPException):
         Bots.parse_string("drummy: 5")
 
@@ -58,9 +59,8 @@ def test_parse_string_invalid():
         Bots.parse_string("test: 1;;")
 
 
-def test_create_bots():
-    bots = Bots.parse_string("test: 4; test_2: 1")
-    bots = Bots.create_bots(bots)
+def test_create_bots(use_test_bots):
+    bots = Bots.create_bots("test: 4; test_2: 1")
 
     assert len(bots) == 5
     
