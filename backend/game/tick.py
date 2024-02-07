@@ -1,8 +1,8 @@
 from datetime import datetime
 from db import database
-from db import Player, PowerPlant, Game, PowerPlantType, Order, OrderStatus, Resource
+from db import Player, PowerPlant, Game, Order, OrderStatus, Resource
 from db import Market as MarketTable
-from . import energy_service
+from .power_plants import update_energy_and_power_plants
 from .market import Market
 from config import config
 
@@ -102,19 +102,3 @@ def tick_game(tick_data: TickData):
         market.orderbook.match(game.current_tick)
 
 
-def update_energy_and_power_plants(game: Game, player: Player, power_plants: dict[int, PowerPlant]):
-    player.energy = 0
-    for power_plant in power_plants[player.player_id]:
-        plant_type = PowerPlantType(power_plant.type)
-        resources = player[plant_type.get_name()]
-        if power_plant.temperature==1 and power_plant.powered_on:
-            resources_per_tick = config["power_plant"]["resources_per_tick"]
-            if plant_type.is_renewable():
-                player.energy += energy_service.get_produced_renewable_energy(game.dataset, game.current_tick, plant_type)
-            elif resources > resources_per_tick:
-                player.energy += energy_service.get_produced_energy(game.dataset, game.current_tick, plant_type)
-                resources -= resources_per_tick
-            else:
-                power_plant.powered_on = False
-        power_plant.temperature = plant_type.get_new_temp(power_plant.temperature,
-                                                        power_plant.powered_on)
