@@ -1,6 +1,6 @@
 import pandas as pd
 from model import Order, Player, Resource, Game, PowerPlant, PowerPlantType, OrderSide
-from game.market import Market
+from game.market import ResourceMarket, EnergyMarket
 import pytest
 
 
@@ -69,7 +69,12 @@ def get_player_dict(players: list[Player]) -> dict[int, Player]:
 
 @pytest.fixture
 def coal_market():
-    return Market(Resource.coal, 1)
+    return ResourceMarket(Resource.coal)
+
+
+@pytest.fixture
+def energy_market():
+    return EnergyMarket()
 
 
 @pytest.fixture

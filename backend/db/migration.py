@@ -87,6 +87,25 @@ async def run_migrations():
               temperature REAL NOT NULL DEFAULT 0,
               FOREIGN KEY (player_id) REFERENCES players(player_id)
               )''')
+    
+    await database.execute('''
+              CREATE TABLE IF NOT EXISTS contracts (
+              contract_id SERIAL PRIMARY KEY,
+              game_id INT NOT NULL,
+              player_id INT NOT NULL,
+              bot_id INT NOT NULL,
+              size INT NOT NULL,
+              price INT NOT NULL,
+              down_payment INT NOT NULL,
+              start_tick INT NOT NULL,
+              end_tick INT NOT NULL,
+              filled_size INT NOT NULL DEFAULT 0,
+              contract_status INT NOT NULL DEFAULT 0,
+            
+              FOREIGN KEY (player_id) REFERENCES players(player_id),
+              FOREIGN KEY (bot_id) REFERENCES players(player_id),
+              FOREIGN KEY (game_id) REFERENCES games(game_id)
+              )''')
 
     await database.execute('''
                 CREATE TABLE IF NOT EXISTS orders (

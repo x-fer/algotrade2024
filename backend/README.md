@@ -1,7 +1,7 @@
 ## How to run
 
     sudo service postgresql start
-    (TESTING=1) uvicorn main:app --reload
+    TESTING=1 uvicorn main:app --reload
 
 ## Run tests
 

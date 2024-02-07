@@ -2,6 +2,10 @@ from dataclasses import dataclass, fields
 from db.table import Table
 from db.db import database
 from .resource import Resource
+from .enum_type import enum_type
+
+
+ResourceField = enum_type(Resource)
 
 
 @dataclass
@@ -9,7 +13,7 @@ class Market(Table):
     table_name = "market"
     game_id: int
     tick: int
-    resource: Resource
+    resource: ResourceField
     low: int
     high: int
     open: int
@@ -22,11 +26,4 @@ class Market(Table):
         Input: Values for new row
         Returns id of created row
         """
-        data = cls(*args, **kwargs)
-        cols = [field.name for field in fields(data)]
-        query = f"""INSERT INTO {cls.table_name}
-            ({', '.join(cols)}) 
-            VALUES ({', '.join(f':{col}' for col in cols)})
-            """
-        values = {col: data.__getattribute__(col) for col in cols}
-        return await database.fetch_val(query=query, values=values)
+        return await super().create(*args, col_nums=0, **kwargs)
