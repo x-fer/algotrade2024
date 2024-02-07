@@ -18,11 +18,11 @@ class TestCancelTrade():
         orderbook.match(timestamp=get_timestamp(1))
 
         assert len(orderbook.buy_side) == 1
-        assert buy_order.status == OrderStatus.ACTIVE
+        assert buy_order.order_status == OrderStatus.ACTIVE
         orderbook.cancel_order(buy_order.order_id)
         assert len(orderbook.buy_side) == 0
         sample_mock.some_method.assert_called_with(buy_order)
-        assert buy_order.status == OrderStatus.CANCELLED
+        assert buy_order.order_status == OrderStatus.CANCELLED
 
     def test_expire(self, get_order, get_timestamp):
         sample_mock = Mock()
@@ -36,11 +36,11 @@ class TestCancelTrade():
 
         sample_mock.some_method.assert_not_called()
         assert len(orderbook.buy_side) == 1
-        assert buy_order.status == OrderStatus.ACTIVE
+        assert buy_order.order_status == OrderStatus.ACTIVE
         orderbook.match(timestamp=get_timestamp(5))
         assert len(orderbook.buy_side) == 0
         sample_mock.some_method.assert_called_with(buy_order)
-        assert buy_order.status == OrderStatus.EXPIRED
+        assert buy_order.order_status == OrderStatus.EXPIRED
 
 
 class TestCheckTrade():
@@ -65,8 +65,8 @@ class TestCheckTrade():
         trade: Trade = orderbook.match_trades[0]
         assert trade.buy_order is buy_order
         assert trade.sell_order is sell_order
-        assert trade.buy_order.status == OrderStatus.COMPLETED
-        assert trade.sell_order.status == OrderStatus.COMPLETED
+        assert trade.buy_order.order_status == OrderStatus.COMPLETED
+        assert trade.sell_order.order_status == OrderStatus.COMPLETED
         assert trade.filled_money == price * size
         assert trade.filled_size == size
         assert trade.timestamp == get_timestamp(1)
@@ -89,8 +89,8 @@ class TestCheckTrade():
         assert len(orderbook.match_trades) == 0
         assert len(orderbook.buy_side) == 0
         assert len(orderbook.sell_side) == 0
-        assert buy_order.status == OrderStatus.CANCELLED
-        assert sell_order.status == OrderStatus.CANCELLED
+        assert buy_order.order_status == OrderStatus.CANCELLED
+        assert sell_order.order_status == OrderStatus.CANCELLED
         assert buy_order.filled_money == 0
         assert buy_order.filled_size == 0
         assert sell_order.filled_money == 0
@@ -114,8 +114,8 @@ class TestCheckTrade():
         assert len(orderbook.match_trades) == 0
         assert len(orderbook.buy_side) == 1
         assert len(orderbook.sell_side) == 0
-        assert buy_order.status == OrderStatus.ACTIVE
-        assert sell_order.status == OrderStatus.CANCELLED
+        assert buy_order.order_status == OrderStatus.ACTIVE
+        assert sell_order.order_status == OrderStatus.CANCELLED
         assert buy_order.filled_money == 0
         assert buy_order.filled_size == 0
         assert sell_order.filled_money == 0

@@ -1,6 +1,7 @@
 from enum import Enum
 from config import config
 
+
 class PowerPlantType(Enum):
     COAL = 1
     URANIUM = 2
