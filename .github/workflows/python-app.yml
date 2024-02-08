@@ -13,10 +13,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
-
+  pytest:
     runs-on: ubuntu-latest
-    
     defaults:
       run:
         working-directory: ./backend
