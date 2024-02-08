@@ -1,16 +1,23 @@
+from dataclasses import dataclass, field
 from game.orderbook import OrderBook
 from game.price_tracker import PriceTracker
-from model import Order, Player, Resource, Trade
+from model import Order, Player, Trade, Game, Contract, Resource
+import abc
+
+
+@dataclass
+class TickData:
+    game: Game
+    players: dict[int, Player]
+    updated_orders: dict[int, Order] = field(default_factory=dict)
+    new_contracts: list[Contract] = field(default_factory=list)
 
 
 class Market():
-    def __init__(self, resource: Resource, game_id: int):
+    def __init__(self, resource: Resource):
+        self.resource = resource
         self.orderbook = OrderBook()
         self.price_tracker = PriceTracker(self.orderbook)
-        self.resource = resource
-        self.game_id = game_id
-        self.players = dict()
-        self.updated_orders = dict()
 
         callbacks = {
             'check_trade': self._check_trade,
@@ -22,33 +29,21 @@ class Market():
             self.orderbook.register_callback(callback_type, callback)
 
 
-    def set_players(self, players: dict[int, Player]):
-        self.updated_orders = dict()
-        self.players = players
+    def init_tick_data(self, tick_data: TickData):
+        self._players = tick_data.players
+        self._updated_orders = tick_data.updated_orders
+        self._tick_data = tick_data
 
 
     def _update_order(self, order: Order):
-        self.updated_orders[order.order_id] = order
+        self._updated_orders[order.order_id] = order
 
 
+    @abc.abstractmethod
     def _check_trade(self, trade: Trade):
-        buyer_id = trade.buy_order.player_id
-        seller_id = trade.sell_order.player_id
-
-        can_buy = self.players[buyer_id].money >= trade.filled_money
-        can_sell = self.players[seller_id][self.resource.name] >= trade.filled_size
-
-        if not can_buy or not can_sell:
-            return {"can_buy": can_buy, "can_sell": can_sell}
-        return {"can_buy": True, "can_sell": True}
+        pass
 
 
+    @abc.abstractmethod
     def _on_trade(self, trade: Trade):
-        buyer_id = trade.buy_order.player_id
-        seller_id = trade.sell_order.player_id
-
-        self.players[buyer_id].money -= trade.filled_money
-        self.players[buyer_id][self.resource.name] += trade.filled_size
-
-        self.players[seller_id].money += trade.filled_money
-        self.players[seller_id][self.resource.name] -= trade.filled_size
+        pass

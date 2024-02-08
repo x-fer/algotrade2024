@@ -11,20 +11,17 @@ class Table:
     def get_kwargs(self) -> dict:
         cols = [field.name for field in fields(self)]
         return {col: self.__getattribute__(col) for col in cols}
-
+    
     @classmethod
-    async def create(cls, *args, **kwargs) -> int:
-        """
-        Input: Values for new row
-        Returns id of created row
-        """
-        data = cls(0, *args, **kwargs)
+    async def create(cls, col_nums: int = 1, *args, **kwargs) -> int:
+        data = cls(*[0 for _ in range(col_nums)], *args, **kwargs)
         cols = [field.name for field in fields(data)]
         query = f"""INSERT INTO {cls.table_name}
-            ({', '.join(cols[1:])}) 
-            VALUES ({', '.join(f':{col}' for col in cols[1:])})
+            ({', '.join(cols[col_nums:])}) 
+            VALUES ({', '.join(f':{col}' for col in cols[col_nums:])})
             RETURNING {cols[0]}"""
-        values = {col: data.__getattribute__(col) for col in cols[1:]}
+        values = {col: data.__getattribute__(col) for col in cols[col_nums:]}
+        values = _transform_kwargs(values)
         return await database.fetch_val(query=query, values=values)
     
     @classmethod

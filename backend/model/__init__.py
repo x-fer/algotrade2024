@@ -11,3 +11,4 @@ from .resource import Resource
 from .datasets import Datasets
 from .dataset_data import DatasetData
 from .trade import Trade
+from .contract import Contract, ContractStatus

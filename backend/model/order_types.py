@@ -19,3 +19,4 @@ class OrderStatus(Enum):
     CANCELLED = 4
     EXPIRED = 5
     REJECTED = 6
+    USER_CANCELLED = 7
