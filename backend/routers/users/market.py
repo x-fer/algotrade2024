@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from typing import List
 from fastapi import APIRouter, Depends
 import pandas as pd
+from pydantic import BaseModel
 from model import Order, OrderSide, OrderType, OrderStatus, Resource
 from .dependencies import game_id, player
 
@@ -18,8 +20,7 @@ async def offer_list(game_id: int = Depends(game_id)):
     )
 
 
-@dataclass
-class UserOrder:
+class UserOrder(BaseModel):
     resource: Resource
     price: int
     size: int
@@ -29,7 +30,7 @@ class UserOrder:
 
 
 @router.post("/game/{game_id}/player/{player_id}/market/offer/create")
-async def offer_create(order: UserOrder, game_id: int = Depends(game_id), player: int = Depends(player)):
+async def offer_create_player(order: UserOrder, game_id: int = Depends(game_id), player: int = Depends(player)):
     await Order.create(
         game_id=game_id,
         player_id=player.player_id,
@@ -46,5 +47,29 @@ async def offer_create(order: UserOrder, game_id: int = Depends(game_id), player
 
         resource=order.resource.value
     )
+
+    return {"success": True}
+
+
+@router.post("/game/{game_id}/player/{player_id}/market/offer/list")
+async def offer_list_player(game_id: int = Depends(game_id), player: int = Depends(player)):
+    return await Order.list(
+        game_id=game_id,
+        player_id=player.player_id,
+        order_status=OrderStatus.ACTIVE.value
+    )
+
+
+class OfferCancel(BaseModel):
+    ids: List[int]
+
+
+@router.post("/game/{game_id}/player/{player_id}/market/offer/cancel")
+async def offer_cancel_player(body: OfferCancel, game_id: int = Depends(game_id), player: int = Depends(player)):
+    for order_id in body.ids:
+        await Order.update(
+            order_id=order_id,
+            order_status=OrderStatus.CANCELED.value
+        )
 
     return {"success": True}
