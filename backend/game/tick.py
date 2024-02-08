@@ -4,7 +4,7 @@ from db import database
 from game.market.market import TickData
 from model import Player, PowerPlant, Game, Order, OrderStatus, Resource, Team, Contract, ContractStatus
 from model import Market as MarketTable
-from game.power_plants import update_energy_and_power_plants
+from game.power_plants import update_energy_and_power_plants, update_energy_and_contracts
 from game.market import ResourceMarket, EnergyMarket, Market
 from game.bots import Bots, Bot
 from config import config
@@ -158,6 +158,11 @@ def tick_game(tick_data: TickData):
     # Power plants and energy
     for player in players.values():
         update_energy_and_power_plants(game, player, power_plants)
+    
+    # Fill contracts
+    for player in players.values():
+        update_energy_and_contracts(game, player, players, tick_data.old_contracts)
+    
 
     # Add new orders
     for order in tick_data.bot_orders:

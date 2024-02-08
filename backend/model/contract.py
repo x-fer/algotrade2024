@@ -21,9 +21,11 @@ class Contract(Table):
     game_id: int
     player_id: int
     bot_id: int
+
     size: int
     price: int
     down_payment: int
+    
     start_tick: int
     end_tick: int
     filled_size: int = field(default=0)
