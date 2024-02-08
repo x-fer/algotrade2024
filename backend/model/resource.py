@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Resource(Enum):
     energy = 0
     coal = 1

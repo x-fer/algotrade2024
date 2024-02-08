@@ -25,11 +25,12 @@ class Contract(Table):
     size: int
     price: int
     down_payment: int
-    
+
     start_tick: int
     end_tick: int
     filled_size: int = field(default=0)
-    contract_status: ContractStatusField = ContractStatusField(default=ContractStatus.ACTIVE)
+    contract_status: ContractStatusField = ContractStatusField(
+        default=ContractStatus.ACTIVE)
 
     @staticmethod
     def get_down_payment(size: int, price: int) -> int:

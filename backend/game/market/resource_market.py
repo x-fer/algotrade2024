@@ -14,7 +14,6 @@ class ResourceMarket(Market):
             return {"can_buy": can_buy, "can_sell": can_sell}
         return {"can_buy": True, "can_sell": True}
 
-
     def _on_trade(self, trade: Trade):
         buyer_id = trade.buy_order.player_id
         seller_id = trade.sell_order.player_id

@@ -45,13 +45,13 @@ def test_parse_string_invalid(use_test_bots):
 
     with pytest.raises(HTTPException):
         Bots.parse_string("tes5")
-    
+
     with pytest.raises(HTTPException):
         Bots.parse_string("test 5")
-        
+
     with pytest.raises(HTTPException):
         Bots.parse_string("test: 5000")
-        
+
     with pytest.raises(HTTPException):
         Bots.parse_string("test: -1")
 
@@ -63,6 +63,6 @@ def test_create_bots(use_test_bots):
     bots = Bots.create_bots("test: 4; test_2: 1")
 
     assert len(bots) == 5
-    
+
     assert sum([isinstance(bot, DummyBot_1) for bot in bots]) == 4
     assert sum([isinstance(bot, DummyBot_2) for bot in bots]) == 1

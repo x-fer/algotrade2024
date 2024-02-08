@@ -13,7 +13,7 @@ from config import config
 class GameData:
     def __init__(self, game: Game):
         self.markets: dict[int, Market] = {
-            resource.value: ResourceMarket(resource.value) 
+            resource.value: ResourceMarket(resource.value)
             for resource in Resource
             if resource != Resource.energy
         }
@@ -76,8 +76,9 @@ async def tick_game_with_db(game: Game, game_data: GameData):
         power_plants[player.player_id] = await PowerPlant.list(player_id=player.player_id)
     player_dict = {player.player_id: player for player in players}
     old_contracts = await Contract.list(game_id=game.game_id, contract_status=ContractStatus.ACTIVE)
-    old_contracts = {contract.player_id: contract for contract in old_contracts}
-    
+    old_contracts = {
+        contract.player_id: contract for contract in old_contracts}
+
     # Dohvacanje in ram podataka
     markets = game_data.markets
     bots = game_data.bots
@@ -92,7 +93,7 @@ async def tick_game_with_db(game: Game, game_data: GameData):
         power_plants=power_plants,
         markets=markets,
         bots=bots
-        )
+    )
     tick_game(tick_data)
 
     # Spremanje stanje u bazu
@@ -100,7 +101,7 @@ async def tick_game_with_db(game: Game, game_data: GameData):
         await Contract.update(contract.get_kwargs())
     for contract in tick_data.new_contracts:
         await Contract.create(contract.get_kwargs())
-    
+
     for order in tick_data.updated_orders.values():
         await Order.update(order.get_kwargs())
     for order in tick_data.bot_orders:
@@ -108,7 +109,7 @@ async def tick_game_with_db(game: Game, game_data: GameData):
 
     for player in players:
         await Player.update(**player.get_kwargs())
-    
+
     for player in players:
         for power_plant in power_plants[player.player_id]:
             await PowerPlant.update(**power_plant.get_kwargs())
@@ -123,7 +124,7 @@ async def tick_game_with_db(game: Game, game_data: GameData):
             open=market.price_tracker.get_open(),
             close=market.price_tracker.get_close(),
             market=market.price_tracker.get_market()
-            )
+        )
 
     await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
 
@@ -158,18 +159,18 @@ def tick_game(tick_data: TickData):
     # Power plants and energy
     for player in players.values():
         update_energy_and_power_plants(game, player, power_plants)
-    
+
     # Fill contracts
     for player in players.values():
-        update_energy_and_contracts(game, player, players, tick_data.old_contracts)
-    
+        update_energy_and_contracts(
+            game, player, players, tick_data.old_contracts)
 
     # Add new orders
     for order in tick_data.bot_orders:
         markets[order.resource].orderbook.add_order(order)
     for order in tick_data.cancelled_orders:
         markets[order.resource].orderbook.cancel_order(order)
-    
+
     # Match orders
     for market in markets.values():
         market.orderbook.match(game.current_tick)

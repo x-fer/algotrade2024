@@ -57,7 +57,7 @@ def get_order(get_timestamp, get_order_id):
                      order_id=get_order_id(),
                      player_id=player_id,
                      game_id=1,
-                     price=price, 
+                     price=price,
                      size=size,
                      order_side=order_side)
     return get_order
@@ -103,4 +103,3 @@ def check_trade(traders):
 
         return {"can_buy": True, "can_sell": True}
     return check_trade
-

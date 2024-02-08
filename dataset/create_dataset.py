@@ -86,7 +86,7 @@ df = df.iloc[1:]
 df["delta"] = time_delta
 
 # split where delta is not 60 minutes
-df["split"] = df["delta"] > pd.Timedelta("60 minutes")
+df["split"] = df["delta"] != pd.Timedelta("60 minutes")
 
 # cumsum split
 df["split"] = df["split"].cumsum()
@@ -99,6 +99,11 @@ for name, group in groups:
 
     # drop split and delta
     group = group.drop(columns=["split", "delta"])
+
+    # assert that time delta is 60 minutes
+    time_delta = group.index[1:] - group.index[:-1]
+
+    assert all(time_delta == pd.Timedelta("60 minutes"))
 
     group.to_csv(
         f"chunks/df_{len(group)}_{group.index[0]}_{group.index[-1]}.csv")

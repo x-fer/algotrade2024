@@ -167,7 +167,7 @@ class OrderBook():
 
             buy_order.filled_money += filled_money
             sell_order.filled_money += filled_money
-            
+
             self._invoke_callbacks('on_order_update', buy_order)
             self._invoke_callbacks('on_order_update', sell_order)
 

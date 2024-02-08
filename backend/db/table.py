@@ -11,7 +11,7 @@ class Table:
     def get_kwargs(self) -> dict:
         cols = [field.name for field in fields(self)]
         return {col: self.__getattribute__(col) for col in cols}
-    
+
     @classmethod
     async def create(cls, col_nums: int = 1, *args, **kwargs) -> int:
         data = cls(*[0 for _ in range(col_nums)], *args, **kwargs)
@@ -23,7 +23,7 @@ class Table:
         values = {col: data.__getattribute__(col) for col in cols[col_nums:]}
         values = _transform_kwargs(values)
         return await database.fetch_val(query=query, values=values)
-    
+
     @classmethod
     async def update(cls, **kwargs) -> int:
         """
@@ -94,7 +94,7 @@ class Table:
         if where:
             where = f" WHERE {where}"
         query = f"SELECT {selected_cols} FROM {cls.table_name}{where}"
-        
+
         kwargs = _transform_kwargs(kwargs)
         return query, kwargs
 

@@ -87,7 +87,7 @@ async def run_migrations():
               temperature REAL NOT NULL DEFAULT 0,
               FOREIGN KEY (player_id) REFERENCES players(player_id)
               )''')
-    
+
     await database.execute('''
               CREATE TABLE IF NOT EXISTS contracts (
               contract_id SERIAL PRIMARY KEY,
@@ -181,7 +181,7 @@ async def run_migrations():
         try:
             if not x.endswith(".csv"):
                 continue
-            
+
             if config["testing"]:
                 continue
 
@@ -193,16 +193,16 @@ async def run_migrations():
 
             for index, row in df.iterrows():
                 await DatasetData.create(dataset_id=dataset_id,
-                                        date=datetime.strptime(
-                                            row["Date"], "%Y-%m-%d %H:%M:%S"),
-                                        temp=row["Temp"],
-                                        rain=row["Rain"],
-                                        wind=row["Wind"],
-                                        uv=row["UV"],
-                                        energy=row["Energy"],
-                                        river=row["River"])
+                                         date=datetime.strptime(
+                                             row["Date"], "%Y-%m-%d %H:%M:%S"),
+                                         temp=row["Temp"],
+                                         rain=row["Rain"],
+                                         wind=row["Wind"],
+                                         uv=row["UV"],
+                                         energy=row["Energy"],
+                                         river=row["River"])
             print(f"Added dataset {x}")
         except:
             print(f"Dataset {x} already created")
-        
+
     print("Migrated database")

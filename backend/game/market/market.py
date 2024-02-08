@@ -28,21 +28,17 @@ class Market():
         for callback_type, callback in callbacks.items():
             self.orderbook.register_callback(callback_type, callback)
 
-
     def init_tick_data(self, tick_data: TickData):
         self._players = tick_data.players
         self._updated_orders = tick_data.updated_orders
         self._tick_data = tick_data
 
-
     def _update_order(self, order: Order):
         self._updated_orders[order.order_id] = order
-
 
     @abc.abstractmethod
     def _check_trade(self, trade: Trade):
         pass
-
 
     @abc.abstractmethod
     def _on_trade(self, trade: Trade):

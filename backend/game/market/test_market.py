@@ -7,9 +7,12 @@ class TestResourceMarket():
     def test_when_transaction_successful(self, game, get_player, get_order, coal_market: ResourceMarket):
         player_1: Player = get_player(money=100, coal=0)
         player_2: Player = get_player(money=0, coal=100)
-        order_1: Order = get_order(player_id=player_1.player_id, price=1, size=100, order_side=OrderSide.BUY)
-        order_2: Order = get_order(player_id=player_2.player_id, price=1, size=100, order_side=OrderSide.SELL)
-        order_3: Order = get_order(player_id=player_2.player_id, price=5, size=100, order_side=OrderSide.SELL)
+        order_1: Order = get_order(
+            player_id=player_1.player_id, price=1, size=100, order_side=OrderSide.BUY)
+        order_2: Order = get_order(
+            player_id=player_2.player_id, price=1, size=100, order_side=OrderSide.SELL)
+        order_3: Order = get_order(
+            player_id=player_2.player_id, price=5, size=100, order_side=OrderSide.SELL)
         players = get_player_dict([player_1, player_2])
 
         tick_data = TickMarketData(game=game, players=players)
@@ -40,8 +43,10 @@ class TestEnergMarket():
     def test_when_player_has_no_money(self, game, get_player, get_order, energy_market: EnergyMarket):
         player: Player = get_player(money=0)
         bot: Player = get_player(money=100)
-        order_1: Order = get_order(player_id=bot.player_id, price=1, size=100, order_side=OrderSide.BUY)
-        order_2: Order = get_order(player_id=player.player_id, price=1, size=100, order_side=OrderSide.SELL)
+        order_1: Order = get_order(
+            player_id=bot.player_id, price=1, size=100, order_side=OrderSide.BUY)
+        order_2: Order = get_order(
+            player_id=player.player_id, price=1, size=100, order_side=OrderSide.SELL)
         players = get_player_dict([player, bot])
 
         tick_data = TickMarketData(game=game, players=players)
@@ -59,8 +64,10 @@ class TestEnergMarket():
     def test_when_player_has_money(self, game, get_player, get_order, energy_market: EnergyMarket):
         player: Player = get_player(money=100)
         bot: Player = get_player(money=100)
-        order_1: Order = get_order(player_id=bot.player_id, price=1, size=100, order_side=OrderSide.BUY)
-        order_2: Order = get_order(player_id=player.player_id, price=1, size=100, order_side=OrderSide.SELL)
+        order_1: Order = get_order(
+            player_id=bot.player_id, price=1, size=100, order_side=OrderSide.BUY)
+        order_2: Order = get_order(
+            player_id=player.player_id, price=1, size=100, order_side=OrderSide.SELL)
         players = get_player_dict([player, bot])
 
         tick_data = TickMarketData(game=game, players=players)
@@ -79,4 +86,3 @@ class TestEnergMarket():
         assert tick_data.new_contracts[0].contract_status == ContractStatus.ACTIVE
         assert tick_data.new_contracts[0].size == 100
         assert tick_data.new_contracts[0].price == 100
-    

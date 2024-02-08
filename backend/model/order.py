@@ -25,7 +25,8 @@ class Order(Table):
 
     order_side: OrderSideField
     order_type: OrderTypeField = OrderTypeField(default=OrderType.LIMIT)
-    order_status: OrderStatusField = OrderStatusField(default=OrderStatus.PENDING)
+    order_status: OrderStatusField = OrderStatusField(
+        default=OrderStatus.PENDING)
 
     filled_size: int = field(default=0)
     filled_money: int = field(default=0)

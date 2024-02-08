@@ -11,7 +11,7 @@ def game_id():
 
 @pytest.fixture
 def game(game_id):
-    return Game(game_id=game_id, 
+    return Game(game_id=game_id,
                 game_name=f"game_{game_id}",
                 is_contest=False,
                 bots="",
@@ -30,6 +30,7 @@ def team_id():
 @pytest.fixture
 def get_player(game_id, team_id):
     player_id = 0
+
     def get_player(**kwargs) -> Player:
         nonlocal player_id
         player = Player(
@@ -46,7 +47,8 @@ def get_player(game_id, team_id):
 
 @pytest.fixture
 def get_order(game_id):
-    order_id=0
+    order_id = 0
+
     def get_order(player_id: int, price: int, size: int, order_side: OrderSide) -> Order:
         nonlocal order_id
         order = Order(
@@ -80,7 +82,8 @@ def energy_market():
 @pytest.fixture
 def get_power_plant():
     plant_id = 0
-    def get_power_plant(player_id: int, type: PowerPlantType, powered_on: int=True, **kwargs):
+
+    def get_power_plant(player_id: int, type: PowerPlantType, powered_on: int = True, **kwargs):
         nonlocal plant_id
         power_plant = PowerPlant(
             power_plant_id=plant_id,
@@ -98,6 +101,7 @@ def get_power_plant():
 @pytest.fixture
 def get_contract(game_id):
     contract_id = 0
+
     def get_contract(**kwargs):
         nonlocal contract_id
         contract = Contract(
