@@ -22,6 +22,7 @@ class Order(Table):
 
     price: int
     size: int
+    tick: int
 
     order_side: OrderSideField
     order_type: OrderTypeField = OrderTypeField(default=OrderType.LIMIT)

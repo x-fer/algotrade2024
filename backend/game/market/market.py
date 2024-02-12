@@ -5,13 +5,6 @@ from model import Order, Player, Trade, Game, Resource
 import abc
 
 
-@dataclass
-class TickData:
-    game: Game
-    players: dict[int, Player]
-    updated_orders: dict[int, Order] = field(default_factory=dict)
-
-
 class Market():
     def __init__(self, resource: Resource):
         self.resource = resource
@@ -27,13 +20,17 @@ class Market():
         for callback_type, callback in callbacks.items():
             self.orderbook.register_callback(callback_type, callback)
 
-    def init_tick_data(self, tick_data: TickData):
-        self._players = tick_data.players
-        self._updated_orders = tick_data.updated_orders
-        self._tick_data = tick_data
+    @abc.abstractmethod
+    def cancel(self, order: Order):
+        pass
 
+    @abc.abstractmethod
+    def match(self, order: Order, tick: int):
+        pass
+
+    @abc.abstractmethod
     def _update_order(self, order: Order):
-        self._updated_orders[order.order_id] = order
+        pass
 
     @abc.abstractmethod
     def _check_trade(self, trade: Trade):

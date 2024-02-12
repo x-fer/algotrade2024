@@ -16,7 +16,7 @@ async def fill_tables():
     nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="dummy:2", dataset="drugi", start_time=datetime.now(), total_ticks=10, tick_time=1000)
 
     for game_id in [not_nat_game_id, nat_game_id]:
-        await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id, money=15000)
+        await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id, money=15000, coal=1000)
         await Player.create(player_name="Kruno", is_active=True, is_bot=False, game_id=game_id, team_id=k_team_id)
         await Player.create(player_name="Zvone", is_active=True, is_bot=False, game_id=game_id, team_id=z_team_id)
 
@@ -98,6 +98,7 @@ async def run_migrations():
                 order_status INT NOT NULL,
                 price INT NOT NULL,
                 size INT NOT NULL,
+                tick INT NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
                 expiration_tick INT NOT NULL,
                 resource INT NOT NULL,

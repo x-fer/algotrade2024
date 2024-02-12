@@ -1,8 +1,23 @@
-from model import Resource, Trade
+from model import Resource, Trade, Order
 from .market import Market
 
 
 class ResourceMarket(Market):
+
+    def cancel(self, order: Order):
+        self._updated = []
+        self.orderbook.cancel_order(order)
+        return self._updated
+
+    def match(self, order: Order, tick: int):
+        self._updated = []
+        self.orderbook.add_order(order)
+        self.orderbook.match(tick)
+        return self._updated
+
+    def _update_order(self, order: Order):
+        self._updated.append(order)
+
     def _check_trade(self, trade: Trade):
         buyer_id = trade.buy_order.player_id
         seller_id = trade.sell_order.player_id

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 import pandas as pd
 from pydantic import BaseModel
 from model import Order, OrderSide, OrderType, OrderStatus, Resource
+from model.game import Game
 from .dependencies import game_id, player
 
 # GAME PATHS
@@ -41,6 +42,7 @@ async def offer_create_player(order: UserOrder, game_id: int = Depends(game_id),
 
         price=order.price,
         size=order.size,
+        tick=(await Game.get(game_id=game_id)).current_tick,
 
         expiration_tick=order.expiration_tick,
         timestamp=pd.Timestamp.now(),

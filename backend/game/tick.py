@@ -1,12 +1,14 @@
 from dataclasses import dataclass, field
+import dataclasses
 from datetime import datetime
+from pprint import pprint
 from db import database
-from game.market.market import TickData
 from model import Player, PowerPlant, Game, Order, OrderStatus, Resource, Team
 from model import Market as MarketTable
 from game.market import ResourceMarket, EnergyMarket, Market
 from game.bots import Bots, Bot
 from config import config
+from model.power_plant_types import PowerPlantType
 
 
 class GameData:
@@ -20,106 +22,6 @@ class GameData:
         self.bots = Bots.create_bots(game.bots)
 
 
-async def run_all_game_ticks():
-    games = dict()
-    bot_team = await Team.get(team_name=config["bots"]["team_name"])
-    bot_team_id = bot_team.team_id
-
-    for game in await Game.list():
-        print(f"{game.current_tick} tick {game.game_name}")
-        if game.is_finished:
-            continue
-
-        if datetime.now() < game.start_time:
-            continue
-
-        if game.current_tick >= game.total_ticks:
-            await Game.update(game_id=game.game_id, is_finished=True)
-            continue
-
-        if game.game_id not in games:
-            game_data = await create_game(game, bot_team_id)
-            if game_data is not None:
-                games[game.game_id] = game_data
-
-        async with database.transaction():
-            await tick_game_with_db(game, games[game.game_id])
-
-
-async def create_game(game: Game, bot_team_id: int):
-    game_data = GameData(game)
-    for i, bot in enumerate(game_data.bots):
-        bot_name = f"{type(bot).__name__}_{i}"
-        try:
-            bot.player_id = await Player.create(
-                player_name=bot_name,
-                game_id=game.game_id,
-                team_id=bot_team_id
-            )
-        except:
-            bot.player_id = (await Player.get(
-                player_name=bot_name,
-                game_id=game.game_id,
-                team_id=bot_team_id
-            )).player_id
-    return game_data
-
-
-async def tick_game_with_db(game: Game, game_data: GameData):
-    # Dohvacanje stanja iz baze
-    players = await Player.list(game_id=game.game_id)
-    new_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.PENDING)
-    cancelled_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.USER_CANCELLED)
-    power_plants = dict()
-    for player in players:
-        power_plants[player.player_id] = await PowerPlant.list(player_id=player.player_id)
-    player_dict = {player.player_id: player for player in players}
-
-    # Dohvacanje in ram podataka
-    markets = game_data.markets
-    bots = game_data.bots
-
-    # Tick
-    tick_data = TickData(
-        game=game,
-        players=player_dict,
-        new_orders=new_orders,
-        cancelled_orders=cancelled_orders,
-        power_plants=power_plants,
-        markets=markets,
-        bots=bots
-    )
-    tick_game(tick_data)
-
-    # Spremanje stanje u bazu
-
-    for order in tick_data.updated_orders.values():
-        await Order.update(order.get_kwargs())
-    for order in tick_data.bot_orders:
-        await Order.create(**order.get_kwargs())
-
-    for player in players:
-        await Player.update(**player.get_kwargs())
-
-    for player in players:
-        for power_plant in power_plants[player.player_id]:
-            await PowerPlant.update(**power_plant.get_kwargs())
-
-    for market in markets.values():
-        await MarketTable.create(
-            game_id=game.game_id,
-            tick=game.current_tick,
-            resource=market.resource,
-            low=market.price_tracker.get_low(),
-            high=market.price_tracker.get_high(),
-            open=market.price_tracker.get_open(),
-            close=market.price_tracker.get_close(),
-            market=market.price_tracker.get_market()
-        )
-
-    await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
-
-
 @dataclass
 class TickData:
     game: Game
@@ -128,28 +30,151 @@ class TickData:
     markets: dict[int, Market]
     bots: list[Bot]
 
-    new_orders: list[Order] = field(default_factory=list)
-    cancelled_orders: list[Order] = field(default_factory=list)
-    bot_orders: list[Order] = field(default_factory=list)
-    updated_orders: dict[int, Order] = field(default_factory=dict)
+    dataset_row: dict = field(default_factory=dict)
+
+    pending_orders: list[Order] = field(default_factory=list)
+    user_cancelled_orders: list[Order] = field(default_factory=list)
+    updated_orders: list[Order] = field(default_factory=list)
 
 
-def tick_game(tick_data: TickData):
-    game = tick_data.game
-    players = tick_data.players
-    power_plants = tick_data.power_plants
-    markets = tick_data.markets
+class Ticker:
 
-    # Update markets
-    for market in markets.values():
-        market.init_tick_data(tick_data)
+    # in ram data
+    def __init__(self):
+        self.game_data: dict[int, GameData] = {}
 
-    # Add new orders
-    for order in tick_data.bot_orders:
-        markets[order.resource].orderbook.add_order(order)
-    for order in tick_data.cancelled_orders:
-        markets[order.resource].orderbook.cancel_order(order)
+    async def run_all_game_ticks(self):
+        games = await Game.list()
 
-    # Match orders
-    for market in markets.values():
-        market.orderbook.match(game.current_tick)
+        print("Running game ticks:")
+
+        for game in games:
+            if game.is_finished:
+                print(f" {game.game_name} is finished")
+                continue
+
+            if datetime.now() < game.start_time:
+                print(f" {game.game_name} has not started")
+                continue
+
+            if game.current_tick >= game.total_ticks:
+                await Game.update(game_id=game.game_id, is_finished=True)
+                print(f" {game.game_name} has just finished")
+
+                if self.game_data.get(game.game_id) is not None:
+                    del self.game_data[game.game_id]
+                continue
+
+            if self.game_data.get(game.game_id) is None:
+                self.game_data[game.game_id] = GameData(game)
+
+            await self.run_game_tick(game)
+
+    async def run_game_tick(self, game: Game):
+
+        await self.run_bots(game)
+
+        tick_data = await self.get_tick_data(game)
+        tick_data = self.run_markets(tick_data, game.current_tick)
+        tick_data = self.run_power_plants(tick_data)
+
+        await self.save_tick_data(game, tick_data)
+
+        await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
+
+    async def run_bots(self, game: Game):
+        bots = self.game_data[game.game_id].bots
+
+        for bot in bots:
+            await bot.run()
+
+    def run_markets(self, tick_data: TickData, tick: int):
+        updated_orders = []
+
+        for order in tick_data.user_cancelled_orders:
+            game_data = self.game_data[tick_data.game.game_id]
+            market = game_data.markets[order.resource.value]
+
+            updated = market.cancel(order)
+            updated_orders.extend(updated)
+
+        for order in tick_data.pending_orders:
+            game_data = self.game_data[tick_data.game.game_id]
+            market = game_data.markets[order.resource.value]
+
+            updated = market.match(order, tick)
+            updated_orders.extend(updated)
+
+        tick_data.updated_orders.extend(updated_orders)
+
+        return tick_data
+
+    def run_power_plants(self, tick_data: TickData):
+        for player_id in tick_data.players.keys():
+            power_plants = tick_data.power_plants[player_id]
+            player = tick_data.players[player_id]
+
+            for power_plant in power_plants:
+                # update temperature
+
+                type = PowerPlantType(power_plant.type)
+
+                if not power_plant.has_resources(player):
+                    power_plant.powered_on = False
+
+                power_plant.temperature = type.get_new_temp(
+                    power_plant.temperature, power_plant.powered_on)
+
+                if power_plant.temperature > 0.99:
+                    player.energy += power_plant.get_produced_energy(
+                        tick_data.dataset_row)
+
+        return tick_data
+
+    async def get_tick_data(self, game: Game) -> TickData:
+        players = {
+            player.player_id: player
+            for player in await Player.list(game_id=game.game_id)
+        }
+
+        power_plants = {
+            player_id: await PowerPlant.list(player_id=player_id)
+            for player_id in players.keys()
+        }
+
+        pending_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.PENDING)
+        user_cancelled_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.USER_CANCELLED)
+
+        markets = self.game_data[game.game_id].markets
+
+        tick_data = TickData(
+            game=game,
+            players=players,
+            power_plants=power_plants,
+            markets=markets,
+            bots=self.game_data[game.game_id].bots,
+            pending_orders=pending_orders,
+            user_cancelled_orders=user_cancelled_orders,
+            dataset_row={"COAL": 1,
+                         "URANIUM": 2,
+                         "BIOMASS": 3,
+                         "GAS": 4,
+                         "OIL": 5,
+                         "GEOTHERMAL": 6,
+                         "WIND": 7,
+                         "SOLAR": 8,
+                         "HYDRO": 9, }
+        )
+
+        return tick_data
+
+    async def save_tick_data(self, game: Game, tick_data: TickData):
+        for player in tick_data.players.values():
+            await Player.update(**dataclasses.asdict(player))
+
+        for power_plants in tick_data.power_plants.values():
+            for power_plant in power_plants:
+                await PowerPlant.update(**dataclasses.asdict(power_plant))
+
+        for order in tick_data.updated_orders:
+            await Order.update(**dataclasses.asdict(order))

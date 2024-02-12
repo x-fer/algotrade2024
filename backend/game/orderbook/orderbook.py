@@ -113,7 +113,7 @@ class OrderBook():
         if order.order_id in self.map_to_heaps:
             raise ValueError(f"Order with id {order.order_id} already exists")
 
-        if order.expiration_tick < order.timestamp:
+        if order.expiration_tick < order.tick:
             raise ValueError(
                 f"Order with id {order.order_id} has expiration earlier than timestamp")
 

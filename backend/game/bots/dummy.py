@@ -4,5 +4,9 @@ from model import Order
 
 
 class DummyBot(Bot):
-    def create_orders(self, *args, **kwargs) -> List[Order]:
-        return []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "dummy"
+
+    async def run(self, *args, **kwargs) -> None:
+        return

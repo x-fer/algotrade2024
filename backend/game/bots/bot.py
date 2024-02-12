@@ -8,5 +8,5 @@ class Bot():
         self.player_id = 0
 
     @abc.abstractmethod
-    def create_orders(self, *args, **kwargs) -> List[Order]:
+    async def run(self, *args, **kwargs) -> None:
         pass
