@@ -64,6 +64,8 @@ async def run_migrations():
               team_id INT NOT NULL,
               is_active BOOLEAN NOT NULL DEFAULT true,
               is_bot BOOLEAN NOT NULL DEFAULT false,
+                           
+              energy_price INT NOT NULL DEFAULT 1e9,
               
               money INT NOT NULL DEFAULT 0,
               energy INT NOT NULL DEFAULT 0,

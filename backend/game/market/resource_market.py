@@ -1,8 +1,22 @@
+from game.orderbook.orderbook import OrderBook
+from game.price_tracker.price_tracker import PriceTracker
 from model import Resource, Trade, Order
-from .market import Market
 
 
-class ResourceMarket(Market):
+class ResourceMarket:
+    def __init__(self, resource: Resource):
+        self.resource = resource
+        self.orderbook = OrderBook()
+        self.price_tracker = PriceTracker(self.orderbook)
+
+        callbacks = {
+            'check_trade': self._check_trade,
+            'on_trade': self._on_trade,
+            'on_order_update': self._update_order,
+        }
+
+        for callback_type, callback in callbacks.items():
+            self.orderbook.register_callback(callback_type, callback)
 
     def cancel(self, order: Order):
         self._updated = []
