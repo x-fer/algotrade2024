@@ -20,10 +20,6 @@ bots:
   team_name: bots
   team_secret: oiajsdpifjapsndkcapis
 
-contracts:
-  fee_coeff: 1
-  length: 10
-
 power_plant:
   resources_per_tick: 1
   sell_coeff: 0.5

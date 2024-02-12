@@ -2,9 +2,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from db import database
 from game.market.market import TickData
-from model import Player, PowerPlant, Game, Order, OrderStatus, Resource, Team, Contract, ContractStatus
+from model import Player, PowerPlant, Game, Order, OrderStatus, Resource, Team
 from model import Market as MarketTable
-from game.power_plants import update_energy_and_power_plants, update_energy_and_contracts
 from game.market import ResourceMarket, EnergyMarket, Market
 from game.bots import Bots, Bot
 from config import config
@@ -75,9 +74,6 @@ async def tick_game_with_db(game: Game, game_data: GameData):
     for player in players:
         power_plants[player.player_id] = await PowerPlant.list(player_id=player.player_id)
     player_dict = {player.player_id: player for player in players}
-    old_contracts = await Contract.list(game_id=game.game_id, contract_status=ContractStatus.ACTIVE)
-    old_contracts = {
-        contract.player_id: contract for contract in old_contracts}
 
     # Dohvacanje in ram podataka
     markets = game_data.markets
@@ -89,7 +85,6 @@ async def tick_game_with_db(game: Game, game_data: GameData):
         players=player_dict,
         new_orders=new_orders,
         cancelled_orders=cancelled_orders,
-        old_contracts=old_contracts,
         power_plants=power_plants,
         markets=markets,
         bots=bots
@@ -97,10 +92,6 @@ async def tick_game_with_db(game: Game, game_data: GameData):
     tick_game(tick_data)
 
     # Spremanje stanje u bazu
-    for contract in tick_data.old_contracts.values():
-        await Contract.update(contract.get_kwargs())
-    for contract in tick_data.new_contracts:
-        await Contract.create(contract.get_kwargs())
 
     for order in tick_data.updated_orders.values():
         await Order.update(order.get_kwargs())
@@ -137,9 +128,6 @@ class TickData:
     markets: dict[int, Market]
     bots: list[Bot]
 
-    old_contracts: dict[int, Contract] = field(default_factory=dict)
-    new_contracts: list[Contract] = field(default_factory=list)
-
     new_orders: list[Order] = field(default_factory=list)
     cancelled_orders: list[Order] = field(default_factory=list)
     bot_orders: list[Order] = field(default_factory=list)
@@ -155,15 +143,6 @@ def tick_game(tick_data: TickData):
     # Update markets
     for market in markets.values():
         market.init_tick_data(tick_data)
-
-    # Power plants and energy
-    for player in players.values():
-        update_energy_and_power_plants(game, player, power_plants)
-
-    # Fill contracts
-    for player in players.values():
-        update_energy_and_contracts(
-            game, player, players, tick_data.old_contracts)
 
     # Add new orders
     for order in tick_data.bot_orders:

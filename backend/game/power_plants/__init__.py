@@ -1,2 +1,1 @@
-from .update_energy import update_energy_and_power_plants
-from .update_energy import update_energy_and_contracts
+

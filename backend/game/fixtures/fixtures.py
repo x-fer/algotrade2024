@@ -1,5 +1,5 @@
 import pandas as pd
-from model import Order, Player, Resource, Game, PowerPlant, PowerPlantType, OrderSide, Contract, ContractStatus
+from model import Order, Player, Resource, Game, PowerPlant, PowerPlantType, OrderSide
 from game.market import ResourceMarket, EnergyMarket
 import pytest
 
@@ -96,23 +96,3 @@ def get_power_plant():
         plant_id += 1
         return power_plant
     return get_power_plant
-
-
-@pytest.fixture
-def get_contract(game_id):
-    contract_id = 0
-
-    def get_contract(**kwargs):
-        nonlocal contract_id
-        contract = Contract(
-            contract_id=contract_id,
-            game_id=game_id,
-
-            start_tick=0,
-            end_tick=10,
-
-            **kwargs
-        )
-        contract_id += 1
-        return contract
-    return get_contract

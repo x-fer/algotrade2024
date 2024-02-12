@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from game.orderbook import OrderBook
 from game.price_tracker import PriceTracker
-from model import Order, Player, Trade, Game, Contract, Resource
+from model import Order, Player, Trade, Game, Resource
 import abc
 
 
@@ -10,7 +10,6 @@ class TickData:
     game: Game
     players: dict[int, Player]
     updated_orders: dict[int, Order] = field(default_factory=dict)
-    new_contracts: list[Contract] = field(default_factory=list)
 
 
 class Market():
