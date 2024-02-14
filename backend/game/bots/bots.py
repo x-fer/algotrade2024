@@ -33,6 +33,10 @@ class Bots:
         return bots
 
     def create_bots(bot_string: str, *args, **kwargs) -> List[Bot]:
+
+        if bot_string == "":
+            return []
+
         bots = Bots.parse_string(bot_string)
         return [
             Bots.bots[bot_name](*args, **kwargs)

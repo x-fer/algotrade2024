@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 import pandas as pd
 from pydantic import BaseModel
 from model import Order, OrderSide, OrderType, OrderStatus, Resource
@@ -28,6 +28,10 @@ class EnergyPrice(BaseModel):
 
 @router.post("/game/{game_id}/player/{player_id}/market/energy/set_price")
 async def energy_set_price_player(price: EnergyPrice, game_id: int = Depends(game_id), player: int = Depends(player)):
+    if price <= 0:
+        raise HTTPException(
+            status_code=400, detail="Price must be greater than 0")
+
     await Player.update(
         player_id=player.player_id,
         energy_price=price.price

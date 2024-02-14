@@ -14,9 +14,10 @@ from model.trade import Trade
 
 
 class GameData:
-    def __init__(self, game: Game):
+    def __init__(self, game: Game, players: dict[int, Player]):
+        self.players: dict[int, Player] = players
         self.markets: dict[int, ResourceMarket] = {
-            resource.value: ResourceMarket(resource.value)
+            resource.value: ResourceMarket(resource, players)
             for resource in Resource
         }
 
@@ -135,7 +136,7 @@ class Ticker:
             updated = market.match(order, tick)
             updated_orders.update(updated)
 
-        tick_data.updated_orders.extend(updated_orders)
+        tick_data.updated_orders.update(updated_orders)
 
         return tick_data
 
@@ -152,7 +153,9 @@ class Ticker:
 
                 type = PowerPlantType(power_plant.type)
 
-                if not power_plant.has_resources(player):
+                if power_plant.has_resources(player):
+                    player[power_plant.type.name.lower()] -= 1
+                else:
                     power_plant.powered_on = False
 
                 power_plant.temperature = type.get_new_temp(

@@ -11,12 +11,12 @@ class EnergyMarket:
         players_sorted = [
             player for player in players_sorted if player.energy_price <= max_price]
 
-        max_per_player = config["max_energy_per_player"]
+        max_per_player = int(demand * config["max_energy_per_player"])
 
         orders = {}
 
         for player in players_sorted:
-            to_sell = min(player.energy, demand, int(demand * max_per_player))
+            to_sell = min(player.energy, demand, max_per_player)
 
             if to_sell == 0:
                 continue

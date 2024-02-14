@@ -1,5 +1,7 @@
+from pprint import pprint
 import pandas as pd
 from game.tick import TickData, Ticker
+from game.tick.ticker import GameData
 from model import Order, Player, Resource, Game, PowerPlant, PowerPlantType, OrderSide
 from game.market import ResourceMarket, EnergyMarket
 import pytest
@@ -31,38 +33,29 @@ def team_id():
 
 
 @pytest.fixture
-def get_ticker():
-    def get_ticker():
-        return Ticker()
-    return get_ticker
-
-
-@pytest.fixture
-def get_game_data():
-    game_id = 0
+def get_game_data(game):
+    game_id = 1
 
     def get_game_data(**kwargs) -> Game:
         nonlocal game_id
-        game = Game(
-            game_id=game_id,
-            game_name=f"game_{game_id}",
-            is_contest=False,
-            bots="",
-            dataset="",
-            start_time=pd.Timestamp.now(),
-            total_ticks=1000,
-            tick_time=1000,
-            **kwargs
-        )
-        game_id += 1
-        return game
+        game_data = GameData(game, **kwargs)
+        return game_data
     return get_game_data
 
 
 @pytest.fixture
-def get_tick_data():
+def get_ticker(game, get_game_data):
+    def get_ticker(players) -> Ticker:
+        ticker = Ticker()
+        ticker.game_data = {1: get_game_data(players=players)}
+        return ticker
+    return get_ticker
+
+
+@pytest.fixture
+def get_tick_data(game_id):
     def get_tick_data(**kwargs) -> TickData:
-        return TickData(
+        tick_data = TickData(
             game=Game(
                 game_id=game_id,
                 game_name=f"game_{game_id}",
@@ -76,12 +69,13 @@ def get_tick_data():
             bots=[],
             **kwargs
         )
+        return tick_data
     return get_tick_data
 
 
 @pytest.fixture
 def get_player(game_id, team_id):
-    player_id = 0
+    player_id = 1
 
     def get_player(**kwargs) -> Player:
         nonlocal player_id
@@ -151,3 +145,10 @@ def get_power_plant():
         plant_id += 1
         return power_plant
     return get_power_plant
+
+
+@pytest.fixture
+def get_energy_market():
+    def get_energy_market() -> EnergyMarket:
+        return EnergyMarket()
+    return get_energy_market
