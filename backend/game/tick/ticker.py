@@ -3,11 +3,14 @@ import dataclasses
 from datetime import datetime
 from pprint import pprint
 from typing import Tuple
+
+import pandas as pd
 from db import database
 from model import Player, PowerPlant, Game, Order, OrderStatus, Resource, Team
 from game.market import ResourceMarket, EnergyMarket
 from game.bots import Bots, Bot
 from config import config
+from model.dataset_data import DatasetData
 from model.order_types import OrderSide, OrderType
 from model.power_plant_types import PowerPlantType
 from model.trade import Trade
@@ -69,7 +72,7 @@ class Ticker:
                 continue
 
             if self.game_data.get(game.game_id) is None:
-                self.game_data[game.game_id] = GameData(game)
+                self.game_data[game.game_id] = GameData(game, {})
 
             await self.run_game_tick(game)
 
@@ -90,7 +93,7 @@ class Ticker:
 
     def run_electricity_market(self, tick_data: TickData, energy_market: EnergyMarket) -> Tuple[TickData, dict[int, int]]:
         energy_sold = energy_market.match(
-            tick_data.players, tick_data.dataset_row["ENERGY_DEMAND"], tick_data.dataset_row["MAX_ENERGY_PRICE"])
+            tick_data.players, tick_data.dataset_row.energy_demand, tick_data.dataset_row.max_energy_price)
 
         return tick_data, energy_sold
 
@@ -99,8 +102,9 @@ class Ticker:
             await Order.create(
                 game_id=game.game_id,
                 player_id=player_id,
-                order_type=OrderType.ENERGY.value,
+                order_type=OrderType.LIMIT.value,
                 order_side=OrderSide.SELL.value,
+                timestamp=pd.Timestamp.now(),
                 order_status=OrderStatus.COMPLETED.value,
                 price=players[player_id].energy_price,
                 size=energy,
@@ -109,8 +113,7 @@ class Ticker:
                 filled_money=players[player_id].energy_price * energy,
                 filled_price=players[player_id].energy_price,
                 expiration_tick=tick,
-                timestamp=datetime.now(),
-                resource=Resource.ENERGY.value
+                resource=Resource.energy.value
             )
 
     async def run_bots(self, game: Game):
@@ -154,7 +157,8 @@ class Ticker:
                 type = PowerPlantType(power_plant.type)
 
                 if power_plant.has_resources(player):
-                    player[power_plant.type.name.lower()] -= 1
+                    if not type.is_renewable():
+                        player[type.name.lower()] -= 1
                 else:
                     power_plant.powered_on = False
 
@@ -191,18 +195,7 @@ class Ticker:
             bots=self.game_data[game.game_id].bots,
             pending_orders=pending_orders,
             user_cancelled_orders=user_cancelled_orders,
-            dataset_row={"COAL": 1,
-                         "URANIUM": 2,
-                         "BIOMASS": 3,
-                         "GAS": 4,
-                         "OIL": 5,
-                         "GEOTHERMAL": 6,
-                         "WIND": 7,
-                         "SOLAR": 8,
-                         "HYDRO": 9,
-                         "ENERGY_DEMAND": 100,
-                         "MAX_ENERGY_PRICE": 1000
-                         }
+            dataset_row=await DatasetData.get(dataset_id=game.dataset_id, tick=game.current_tick)
         )
 
         return tick_data

@@ -27,13 +27,13 @@ class CreateGameParams(BaseModel):
 
 
 class EditGameParams(BaseModel):
-    game_name: str | None
-    contest: bool | None
-    bots: str | None
-    dataset: str | None
-    start_time: datetime | None
-    total_ticks: int | None
-    tick_time: int | None
+    game_name: str
+    contest: bool
+    bots: str
+    dataset_id: int
+    start_time: datetime
+    total_ticks: int
+    tick_time: int
 
 
 @router.post("/game/create")
@@ -52,7 +52,7 @@ async def game_create(params: CreateGameParams):
             game_name=params.game_name,
             is_contest=params.contest,
             bots=params.bots,
-            dataset=params.dataset,
+            dataset_id=params.dataset_id,
             start_time=params.start_time,
             total_ticks=params.total_ticks,
             tick_time=params.tick_time,

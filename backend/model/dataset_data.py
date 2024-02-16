@@ -9,9 +9,19 @@ class DatasetData(Table):
     dataset_data_id: int
     dataset_id: int
     date: str
-    temp: float
-    rain: float
-    wind: float
-    uv: float
-    energy: float
-    river: float
+    tick: int
+
+    coal: int
+    uranium: int
+    biomass: int
+    gas: int
+    oil: int
+    geothermal: int
+    wind: int
+    solar: int
+    hydro: int
+    energy_demand: int
+    max_energy_price: int
+
+    def __getitem__(self, item):
+        return self.__getattribute__(item.lower())

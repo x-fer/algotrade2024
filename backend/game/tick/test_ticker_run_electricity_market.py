@@ -7,40 +7,6 @@ from model.order_types import OrderSide, OrderStatus
 from model.player import Player
 from config import config
 
-# def run_electricity_market(self, tick_data: TickData, energy_market: EnergyMarket) -> Tuple[TickData, dict[int, int]]:
-#         energy_sold = energy_market.match(
-#             tick_data.players, tick_data.dataset_row["ENERGY_DEMAND"], tick_data.dataset_row["MAX_ENERGY_PRICE"])
-
-#         return tick_data, energy_sold
-
-# class EnergyMarket:
-#     def match(self, players: dict[int, Player], demand: int, max_price: int) -> dict[int, int]:
-#         players_sorted = sorted(players.values(), key=lambda x: x.energy_price)
-#         players_sorted = [
-#             player for player in players_sorted if player.energy_price <= max_price]
-
-#         max_per_player = config["max_energy_per_player"]
-
-#         orders = {}
-
-#         for player in players_sorted:
-#             to_sell = min(player.energy, demand, int(demand * max_per_player))
-
-#             if to_sell == 0:
-#                 continue
-
-#             # player.energy -= to_sell # ne trebamo, zelimo da im se prikaze koliko proizvode
-#             demand -= to_sell
-
-#             player.money += to_sell * player.energy_price
-
-#             orders[player.player_id] = to_sell
-
-#             if demand == 0:
-#                 break
-
-#         return orders
-
 
 def test_successful(get_tick_data, get_ticker, get_player, get_power_plant):
 
@@ -50,7 +16,9 @@ def test_successful(get_tick_data, get_ticker, get_player, get_power_plant):
     tick_data = get_tick_data(power_plants={},
                               markets=[],
                               players=player_dict,
-                              dataset_row={"ENERGY_DEMAND": 100, "MAX_ENERGY_PRICE": 100})
+                              energy_demand=100,
+                              max_energy_price=100
+                              )
 
     ticker = get_ticker(player_dict)
 
@@ -68,7 +36,9 @@ def test_player_price_too_high(get_tick_data, get_ticker, get_player, get_power_
     tick_data = get_tick_data(power_plants={},
                               markets=[],
                               players=player_dict,
-                              dataset_row={"ENERGY_DEMAND": 100, "MAX_ENERGY_PRICE": 100})
+                              energy_demand=100,
+                              max_energy_price=100
+                              )
 
     ticker = get_ticker(player_dict)
 
@@ -90,7 +60,9 @@ def test_player_over_max_demand(get_tick_data, get_ticker, get_player, get_power
     tick_data = get_tick_data(power_plants={},
                               markets=[],
                               players=player_dict,
-                              dataset_row={"ENERGY_DEMAND": demand, "MAX_ENERGY_PRICE": 100})
+                              energy_demand=demand,
+                              max_energy_price=100
+                              )
 
     ticker = get_ticker(player_dict)
 
@@ -108,7 +80,9 @@ def test_player_no_energy(get_tick_data, get_ticker, get_player, get_power_plant
     tick_data = get_tick_data(power_plants={},
                               markets=[],
                               players=player_dict,
-                              dataset_row={"ENERGY_DEMAND": 100, "MAX_ENERGY_PRICE": 100})
+                              energy_demand=100,
+                              max_energy_price=100
+                              )
 
     ticker = get_ticker(player_dict)
 
@@ -122,6 +96,7 @@ def test_demand_filled(get_tick_data, get_ticker, get_player, get_power_plant):
     demand = 101
 
     players = [get_player(money=0, coal=0, energy=50,  energy_price=90),
+               get_player(money=0, coal=0, energy=0,  energy_price=91),
                get_player(money=0, coal=0, energy=50,  energy_price=91),
                get_player(money=0, coal=0, energy=50,  energy_price=92),
                get_player(money=0, coal=0, energy=50,  energy_price=93),
@@ -137,7 +112,9 @@ def test_demand_filled(get_tick_data, get_ticker, get_player, get_power_plant):
     tick_data = get_tick_data(power_plants={},
                               markets=[],
                               players=player_dict,
-                              dataset_row={"ENERGY_DEMAND": demand, "MAX_ENERGY_PRICE": 100})
+                              energy_demand=demand,
+                              max_energy_price=100
+                              )
 
     ticker = get_ticker(player_dict)
 
@@ -160,6 +137,6 @@ def test_demand_filled(get_tick_data, get_ticker, get_player, get_power_plant):
         if demand == 0:
             break
     else:
-        assert False, "Demand not filled"
+        assert False, "Demand not filled"  # pragma: no cover
 
     assert energy_sold == sold

@@ -18,5 +18,6 @@ def enum_type(cls):
             if isinstance(value, Enum):
                 setattr(obj, self._name, value.value)
             else:
-                setattr(obj, self._name, value)
+                setattr(obj, self._name, value)  # pragma: no cover
+
     return ClsField

@@ -24,7 +24,10 @@ async def connect_db():
 
 @pytest.mark.asyncio
 async def test_create_and_get_team():
-    assert len(await Team.list()) == 0
+
+    assert len(await Team.list()) == 1
+    # team name is bots
+    assert (await Team.get(team_id=1)).team_name == "bots"
     team_data = {
         "team_name": "Sample Team",
         "team_secret": "secretpassword"

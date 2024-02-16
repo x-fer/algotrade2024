@@ -1,3 +1,4 @@
+from matplotlib import pyplot as plt
 import pandas as pd
 import os
 
@@ -94,8 +95,90 @@ df["split"] = df["split"].cumsum()
 # group by split
 groups = df.groupby("split")
 
+# await database.execute('''
+#                 CREATE TABLE IF NOT EXISTS dataset_data (
+#                 dataset_data_id SERIAL PRIMARY KEY,
+#                 dataset_id INT NOT NULL,
+#                 date TIMESTAMP NOT NULL,
+#                 COAL INT NOT NULL,
+#                 URANIUM INT NOT NULL,
+#                 BIOMASS INT NOT NULL,
+#                 GAS INT NOT NULL,
+#                 OIL INT NOT NULL,
+#                 GEOTHERMAL INT NOT NULL,
+#                 WIND INT NOT NULL,
+#                 SOLAR INT NOT NULL,
+#                 HYDRO INT NOT NULL,
+#                 ENERGY_DEMAND INT NOT NULL,
+#                 MAX_ENERGY_PRICE INT NOT NULL,
+#                 FOREIGN KEY (dataset_id) REFERENCES datasets(dataset_id)
+#                 )''')
+
+
+def prepare_chunk(df):
+
+    # scale to 0 1
+    df = (df - df.min()) / (df.max() - df.min())
+
+    new_df = pd.DataFrame(columns=["date", "COAL", "URANIUM", "BIOMASS", "GAS", "OIL",
+                                   "GEOTHERMAL", "WIND", "SOLAR", "HYDRO", "ENERGY_DEMAND", "MAX_ENERGY_PRICE"])
+
+    new_df["date"] = df.index.to_series()
+
+    # all in kW
+    # COAL:
+
+    new_df["COAL"] = 300 * 1000 + 100 * df["Temp"]
+    new_df["URANIUM"] = 500 * 1000 + 100 * df["Temp"]
+    new_df["BIOMASS"] = 100 * 1000 + 100 * df["Temp"]
+    new_df["GAS"] = 200 * 1000 + 100 * df["Temp"]
+    new_df["OIL"] = 50 * 1000 + 100 * df["Temp"]
+
+    new_df["GEOTHERMAL"] = 300 * 1000 * df["Rain"]
+    new_df["WIND"] = 50 * 1000 * df["Wind"]
+    new_df["SOLAR"] = 100 * 1000 * df["UV"]
+    new_df["HYDRO"] = 300 * 1000 * df["River"]
+
+    new_df["ENERGY_DEMAND"] = 3000 * 1000 + 5000 * 1000 * df["Energy"]
+    new_df["MAX_ENERGY_PRICE"] = 1000 - 500 * df["Energy"]
+
+    for col in new_df.columns:
+        # make int
+        if col == "date":
+            continue
+        new_df[col] = new_df[col].apply(lambda x: int(x))
+        new_df[col] = new_df[col].astype(int)
+
+    l = []
+    for col in new_df.columns:
+        if col == "date":
+            continue
+
+        plt.plot(new_df[col], label=col)
+        l.append(new_df[col].sum())
+
+    # plt.title("Dataset outputs")
+    # plt.legend()
+    # plt.show()
+
+    # plt.bar(new_df.columns[1:], l)
+    # plt.title("Dataset outputs sum")
+    # plt.legend()
+    # plt.show()
+
+    # plt.plot(new_df["MAX_ENERGY_PRICE"])
+    # plt.plot(new_df["ENERGY_DEMAND"].apply(lambda x: x / 10000))
+    # plt.title("MAX_ENERGY_PRICE vs DEMAND")
+    # plt.show()
+
+    return new_df
+
+
 for name, group in groups:
     # save to chunks
+
+    if len(group) < 2000:
+        continue
 
     # drop split and delta
     group = group.drop(columns=["split", "delta"])
@@ -105,12 +188,7 @@ for name, group in groups:
 
     assert all(time_delta == pd.Timedelta("60 minutes"))
 
+    group = prepare_chunk(group)
+
     group.to_csv(
-        f"chunks/df_{len(group)}_{group.index[0]}_{group.index[-1]}.csv")
-
-# print(df)
-
-# Save
-# df.to_csv("data/out.csv")
-
-# print(df)
+        f"chunks/df_{len(group)}_{group.index[0]}_{group.index[-1]}.csv", index=False)
