@@ -15,8 +15,8 @@ async def fill_tables():
     # dataset_id = await Datasets.create(dataset_name="Dummy dataset", dataset_description="Opis")
     datasets = await Datasets.list()
 
-    not_nat_game_id = await Game.create(game_name="Stalna igra", is_contest=False, bots="dummy:3", dataset_id=1, start_time=datetime.now(), total_ticks=2400, tick_time=3000)
-    nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="dummy:2", dataset_id=1, start_time=datetime.now(), total_ticks=10, tick_time=1000)
+    not_nat_game_id = await Game.create(game_name="Stalna igra", is_contest=False, bots="dummy:3;resource_bot:1", dataset_id=1, start_time=datetime.now(), total_ticks=2400, tick_time=3000)
+    nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="dummy:2;resource_bot:1", dataset_id=1, start_time=datetime.now(), total_ticks=10, tick_time=1000)
 
     for game_id in [not_nat_game_id, nat_game_id]:
         await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id, money=15000, coal=1000)

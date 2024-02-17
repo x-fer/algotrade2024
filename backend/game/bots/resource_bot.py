@@ -1,8 +1,6 @@
-from typing import List
-import dataclasses
-import abc
+import pandas as pd
 from game.tick.tick_data import TickData
-from model import Order, Resource, OrderSide
+from model import Order, Resource, OrderSide, Team, Player
 from . import Bot
 from config import config
 
@@ -20,11 +18,23 @@ expiration_ticks = config['bots']['expiration_ticks']
 
 class ResourceBot(Bot):
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.buy_prices = {resource: 50 for resource in Resource}
         self.sell_prices = {resource: 50 for resource in Resource}
         self.last_tick = None
+        self.player_id = None
 
     async def run(self, tick_data: TickData):
+        if self.player_id is None:
+            team = await Team.get(team_secret=config['bots']['team_secret'])
+            self.player_id = await Player.create(
+                player_name="resource_bot",
+                game_id=tick_data.game.game_id,
+                team_id=team.team_id,
+                is_bot=True
+            )
+            self.game_id = tick_data.game.game_id
+            
         if self.last_tick is not None and tick_data.game.current_tick < self.last_tick + expiration_ticks:
             return
         self.last_tick = tick_data.game.current_tick
@@ -32,7 +42,7 @@ class ResourceBot(Bot):
         resources_sum = {resource: 0 for resource in Resource}
         for resource in Resource:
             for player in tick_data.players.values():
-                resources_sum[resource] += player[resource]
+                resources_sum[resource] += player[resource.name]
 
         orders = await self.get_last_orders()
 
@@ -48,8 +58,8 @@ class ResourceBot(Bot):
             buy_volume = default_volume + wanted_volume_change
             # koliko bot stavlja na trziste
             sell_volume = wanted_volume_change - wanted_volume_change
-            buy_volume = clamp(min_volume, max_volume, buy_volume)
-            sell_volume = clamp(min_volume, max_volume, sell_volume)
+            buy_volume = clamp(min_volume, max_volume, int(buy_volume))
+            sell_volume = clamp(min_volume, max_volume, int(sell_volume))
 
             filled_buy_perc, filled_sell_perc = self.get_filled_perc(resource_orders)
             buy_price -= price_change_coeff * buy_price * (1-2*filled_buy_perc)
@@ -59,8 +69,8 @@ class ResourceBot(Bot):
                 price = (buy_price * buy_volume + sell_price * sell_volume) / (buy_volume + sell_volume)
                 buy_price = price
                 sell_price = price
-            buy_price = clamp(min_price, max_price, buy_price)
-            sell_price = clamp(min_price, max_price, sell_price)
+            buy_price = clamp(min_price, max_price, int(buy_price))
+            sell_price = clamp(min_price, max_price, int(sell_price))
             if buy_price == sell_price:
                 buy_price = sell_price - 1
 
@@ -75,7 +85,9 @@ class ResourceBot(Bot):
         for order in orders:
             size[order.order_side] += order.size
             filled_size[order.order_side] += order.filled_size
-        filled_perc = {side: filled_size[side] / size[side] for side in OrderSide}
+        filled_perc = {side: filled_size[side] / size[side] 
+                       if size[side] > 0 else 0
+                       for side in OrderSide}
         return filled_perc[OrderSide.BUY], filled_perc[OrderSide.SELL]
 
     async def get_last_orders(self) -> dict[str, Order]:
@@ -87,28 +99,28 @@ class ResourceBot(Bot):
         return orders
     
     async def create_orders(self, tick, resource, buy_price, sell_price, buy_volume, sell_volume) -> None:
-        Order.create(**dataclasses.asdict(Order(
+        await Order.create(
             game_id=self.game_id,
             player_id=self.player_id,
             price=buy_price,
             tick=tick,
-            timestamp=tick,
+            timestamp=pd.Timestamp.now(),
             size=buy_volume,
             order_side=OrderSide.BUY,
             resource=resource,
             expiration_tick=tick+expiration_ticks
-        )))
-        Order.create(**dataclasses.asdict(Order(
+        )
+        await Order.create(
             game_id=self.game_id,
             player_id=self.player_id,
             price=sell_price,
             tick=tick,
-            timestamp=tick,
+            timestamp=pd.Timestamp.now(),
             size=sell_volume,
             order_side=OrderSide.SELL,
             resource=resource,
             expiration_tick=tick+expiration_ticks
-        )))
+        )
 
 
 def clamp(_min, _max, x):

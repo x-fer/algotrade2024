@@ -9,7 +9,7 @@ from .resource_bot import ResourceBot
 class Bots:
     bots = {
         "dummy": DummyBot,
-        "resources": ResourceBot
+        "resource_bot": ResourceBot
     }
 
     def exists(bot_id):
