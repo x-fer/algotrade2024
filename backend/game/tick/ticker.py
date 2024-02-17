@@ -22,6 +22,8 @@ class GameData:
 
         self.energy_market = EnergyMarket()
         self.bots = Bots.create_bots(game.bots)
+        for bot in self.bots:
+            bot.game_id = game.game_id
 
 
 class Ticker:
