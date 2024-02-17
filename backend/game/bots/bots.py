@@ -1,12 +1,15 @@
 from fastapi import HTTPException
 from typing import List, Tuple
+
 from .bot import Bot
 from .dummy import DummyBot
+from .resource_bot import ResourceBot
 
 
 class Bots:
     bots = {
-        "dummy": DummyBot
+        "dummy": DummyBot,
+        "resources": ResourceBot
     }
 
     def exists(bot_id):

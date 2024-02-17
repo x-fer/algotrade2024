@@ -1,9 +1,7 @@
 import pytest
-from datetime import datetime
-from model import Game, Player
-from game.tick.ticker import Ticker, TickData
+from model import Game
+from game.tick import Ticker
 from unittest.mock import patch
-from model.power_plant import PowerPlant
 from tick.test_tick_fixtures import *
 
 
@@ -37,4 +35,4 @@ async def test_run_game_tick(
         Ticker.save_tick_data.assert_called_once()
         Game.update.assert_called_once_with(
             game_id=sample_game.game_id, current_tick=sample_game.current_tick + 1)
-        Ticker.run_bots.assert_called_once_with(sample_game)
+        Ticker.run_bots.assert_called_once_with(tick_data)

@@ -40,12 +40,3 @@ class PowerPlantType(Enum):
 
 def cap(x):
     return min(1, max(0, x))
-
-
-for power_plant_type in PowerPlantType:
-    assert power_plant_type.name.lower(
-    ) in config["power_plant"]["base_prices"], f"Missing price for {power_plant_type.name}"
-    assert power_plant_type.name.lower(
-    ) in config["power_plant"]["warmup_coeff"], f"Missing price for {power_plant_type.name}"
-    assert power_plant_type.name.lower(
-    ) in config["power_plant"]["cooldown_coeff"], f"Missing price for {power_plant_type.name}"

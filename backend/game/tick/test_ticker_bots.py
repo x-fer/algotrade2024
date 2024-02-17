@@ -1,13 +1,14 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from datetime import datetime
-from game.tick.ticker import Ticker, GameData
+from game.tick import Ticker, GameData
 from model import Game
-from game.bots import DummyBot
+from game.bots import DummyBot, ResourceBot
+from game.fixtures.fixtures import *
 
 
 @pytest.mark.asyncio
-async def test_run_bots():
+async def test_run_bots(get_tick_data):
     # Create sample game
     game = Game(
         game_id=1,
@@ -36,11 +37,12 @@ async def test_run_bots():
 
         # Set the bots for the game
         ticker.game_data[game.game_id] = GameData(game, players)
+        tick_data = get_tick_data(power_plants={}, markets={}, players={})
 
         # Run the method being tested
-        await ticker.run_bots(game)
+        await ticker.run_bots(tick_data)
 
         # Assertions
         # Ensure Bot.run is called once for each bot
         assert mock_run.call_count == len(bots)
-        mock_run.assert_called_with()  # Ensure Bot.run is called with no arguments
+        mock_run.assert_called_with(tick_data)  # Ensure Bot.run is called with no arguments

@@ -1,11 +1,10 @@
 import pandas as pd
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from datetime import datetime
-from game.tick.ticker import GameData
-from model import Player, PowerPlant, Game, Order, OrderStatus, Resource
+from model import Order, OrderStatus, Resource
 from model.order_types import OrderSide, OrderType
-from tick import Ticker, TickData
+from game.tick import Ticker, TickData
 from tick.test_tick_fixtures import *
 
 
@@ -58,7 +57,7 @@ async def test_save_tick_data(mock_order_update, mock_powerplant_update, mock_pl
         updated_orders=sample_update_orders
     )
 
-    await ticker.save_tick_data(sample_game, tick_data)
+    await ticker.save_tick_data(tick_data)
 
     assert mock_player_update.call_count == len(sample_players)
     assert mock_powerplant_update.call_count == len(sample_power_plants[1]) + len(

@@ -1,6 +1,4 @@
-from typing import List
 import abc
-from model import Order
 
 
 class Bot():
@@ -10,3 +8,4 @@ class Bot():
     @abc.abstractmethod
     async def run(self, *args, **kwargs) -> None:
         pass
+

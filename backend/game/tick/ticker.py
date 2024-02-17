@@ -9,6 +9,7 @@ from model import Player, PowerPlant, Game, Order, OrderStatus, Resource, Team, 
 from game.market import ResourceMarket, EnergyMarket
 from game.bots import Bots, Bot
 from config import config
+from .tick_data import TickData
 
 
 class GameData:
@@ -21,21 +22,6 @@ class GameData:
 
         self.energy_market = EnergyMarket()
         self.bots = Bots.create_bots(game.bots)
-
-
-@dataclass
-class TickData:
-    game: Game
-    players: dict[int, Player]
-    power_plants: dict[int, list[PowerPlant]]
-    markets: dict[int, ResourceMarket]
-    bots: list[Bot]
-
-    dataset_row: dict = field(default_factory=dict)
-
-    pending_orders: list[Order] = field(default_factory=list)
-    user_cancelled_orders: list[Order] = field(default_factory=list)
-    updated_orders: dict[int, Order] = field(default_factory=dict)
 
 
 class Ticker:
@@ -74,17 +60,17 @@ class Ticker:
     async def run_game_tick(self, game: Game):
 
         tick_data = await self.get_tick_data(game)
-        tick_data = self.run_markets(tick_data, game.current_tick)
+        tick_data = self.run_markets(tick_data)
         tick_data = self.run_power_plants(tick_data)
         tick_data, energy_sold = self.run_electricity_market(
             tick_data, self.game_data[game.game_id].energy_market)
         await self.save_electricity_orders(
             game, tick_data.players, energy_sold, game.current_tick)
 
-        await self.save_tick_data(game, tick_data)
+        await self.save_tick_data(tick_data)
         await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
 
-        await self.run_bots(game)
+        await self.run_bots(tick_data)
 
     async def get_tick_data(self, game: Game) -> TickData:
         players = {
@@ -115,7 +101,7 @@ class Ticker:
 
         return tick_data
 
-    def run_markets(self, tick_data: TickData, tick: int):
+    def run_markets(self, tick_data: TickData):
         updated_orders = {}
 
         for order in tick_data.user_cancelled_orders:
@@ -129,7 +115,7 @@ class Ticker:
             game_data = self.game_data[tick_data.game.game_id]
             market = game_data.markets[order.resource.value]
 
-            updated = market.match(order, tick)
+            updated = market.match(order, tick_data.game.current_tick)
             updated_orders.update(updated)
 
         tick_data.updated_orders.update(updated_orders)
@@ -189,7 +175,7 @@ class Ticker:
                 resource=Resource.energy.value
             )
 
-    async def save_tick_data(self, game: Game, tick_data: TickData):
+    async def save_tick_data(self, tick_data: TickData):
         for player in tick_data.players.values():
             await Player.update(**dataclasses.asdict(player))
 
@@ -200,8 +186,8 @@ class Ticker:
         for order in tick_data.updated_orders.values():
             await Order.update(**dataclasses.asdict(order))
 
-    async def run_bots(self, game: Game):
-        bots = self.game_data[game.game_id].bots
+    async def run_bots(self, tick_data: TickData):
+        bots = self.game_data[tick_data.game.game_id].bots
 
         for bot in bots:
-            await bot.run()
+            await bot.run(tick_data)

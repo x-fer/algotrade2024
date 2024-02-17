@@ -37,7 +37,7 @@ def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, 
         }
     )
 
-    tick_data = ticker.run_markets(tick_data, 1)
+    tick_data = ticker.run_markets(tick_data)
 
     assert tick_data.updated_orders[order1.order_id] == fresh_order1
     assert tick_data.updated_orders[order2.order_id] == fresh_order2
@@ -71,7 +71,7 @@ def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, get
         }
     )
 
-    tick_data = ticker.run_markets(tick_data, 1)
+    tick_data = ticker.run_markets(tick_data)
 
     assert tick_data.updated_orders[order1.order_id].order_status == OrderStatus.ACTIVE
     assert tick_data.updated_orders[order2.order_id].order_status == OrderStatus.COMPLETED
@@ -114,7 +114,7 @@ def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_tick
         }
     )
 
-    tick_data = ticker.run_markets(tick_data, 1)
+    tick_data = ticker.run_markets(tick_data)
 
     assert tick_data.updated_orders[order1.order_id].order_status == OrderStatus.CANCELLED
     assert tick_data.updated_orders[order2.order_id].order_status == OrderStatus.ACTIVE
@@ -157,7 +157,7 @@ def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_
         }
     )
 
-    tick_data = ticker.run_markets(tick_data, 1)
+    tick_data = ticker.run_markets(tick_data)
 
     assert tick_data.updated_orders[order1.order_id].order_status == OrderStatus.ACTIVE
     assert tick_data.updated_orders[order2.order_id].order_status == OrderStatus.CANCELLED
@@ -202,25 +202,28 @@ def test_run_markets_cancel(get_tick_data, get_order, get_ticker, get_player, ge
 
     tick_data.pending_orders = [order1]
 
-    tick_data = ticker.run_markets(tick_data, 1)
+    tick_data.game.current_tick = 1
+    tick_data = ticker.run_markets(tick_data)
 
     assert tick_data.updated_orders[order1.order_id].order_status == OrderStatus.ACTIVE
     assert len(tick_data.updated_orders) == 1
 
+    tick_data.game.current_tick = 2
     tick_data.pending_orders = []
     tick_data.updated_orders = {}
     tick_data.user_cancelled_orders = [order1_cancelled]
 
-    tick_data = ticker.run_markets(tick_data, 2)
+    tick_data = ticker.run_markets(tick_data)
 
     assert tick_data.updated_orders[order1.order_id].order_status == OrderStatus.CANCELLED
     assert len(tick_data.updated_orders) == 1
 
+    tick_data.game.current_tick = 3
     tick_data.pending_orders = [order2]
     tick_data.updated_orders = {}
     tick_data.user_cancelled_orders = []
 
-    tick_data = ticker.run_markets(tick_data, 3)
+    tick_data = ticker.run_markets(tick_data)
 
     assert tick_data.updated_orders[order2.order_id].order_status == OrderStatus.ACTIVE
     assert len(tick_data.updated_orders) == 1
