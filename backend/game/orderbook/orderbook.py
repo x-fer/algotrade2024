@@ -18,6 +18,7 @@ class OrderBook():
 
         self.map_to_heaps = {}
         self.queue = deque()
+        self.queue_set = set()
 
         self.callbacks = {
             'check_add': [],
@@ -50,9 +51,21 @@ class OrderBook():
         return return_values
 
     def add_order(self, order: Order):
+        if order.order_id in self.queue_set:
+            raise ValueError(
+                f"Order with id {order.order_id} already in queue")
+
+        if order.expiration_tick < order.tick:
+            raise ValueError(
+                f"Order with id {order.order_id} has expiration earlier than timestamp")
+
+        if order.size <= 0:
+            raise ValueError(f"Order with id {order.order_id} has size <= 0")
+
         if all(self._invoke_callbacks('check_add', order)):
             order.order_status = OrderStatus.IN_QUEUE
             self.queue.append(order)
+            self.queue_set.add(order.order_id)
             self._invoke_callbacks('on_order_update', order)
         else:
             order.order_status = OrderStatus.REJECTED
@@ -89,12 +102,13 @@ class OrderBook():
             return None
         return self.expire_heap.peek()
 
-    def match(self, timestamp: pd.Timestamp):
+    def match(self, timestamp: int):
         self._invoke_callbacks('on_begin_match')
         self._remove_expired(timestamp)
         self.match_trades = []
         while len(self.queue) > 0:
             order: Order = self.queue.popleft()
+            self.queue_set.remove(order.order_id)
             order.order_status = OrderStatus.ACTIVE
             self._invoke_callbacks('on_order_update', order)
             self._add_order(order)
@@ -110,18 +124,9 @@ class OrderBook():
             self._remove_order(order.order_id)
 
     def _add_order(self, order: Order):
-        if order.order_id in self.map_to_heaps:
-            raise ValueError(f"Order with id {order.order_id} already exists")
-
-        if order.expiration_tick < order.timestamp:
-            raise ValueError(
-                f"Order with id {order.order_id} has expiration earlier than timestamp")
-
-        if order.size <= 0:
-            raise ValueError(f"Order with id {order.order_id} has size <= 0")
-
         order.filled_money = 0
         order.filled_size = 0
+        order.filled_price = 0
 
         order.order_status = OrderStatus.ACTIVE
 
@@ -167,6 +172,9 @@ class OrderBook():
 
             buy_order.filled_money += filled_money
             sell_order.filled_money += filled_money
+
+            buy_order.filled_price = buy_order.filled_money / buy_order.filled_size
+            sell_order.filled_price = sell_order.filled_money / sell_order.filled_size
 
             self._invoke_callbacks('on_order_update', buy_order)
             self._invoke_callbacks('on_order_update', sell_order)

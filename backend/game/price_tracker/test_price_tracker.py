@@ -19,12 +19,18 @@ def test_price_tracker(get_order, get_timestamp):
                         size=50, order_side=OrderSide.BUY))
     orderbook.add_order(get_order(player_id=6, price=15,
                         size=50, order_side=OrderSide.SELL))
+    orderbook.add_order(get_order(player_id=7, price=3,
+                        size=50, order_side=OrderSide.BUY))
+    orderbook.add_order(get_order(player_id=8, price=3,
+                        size=50, order_side=OrderSide.SELL))
 
     orderbook.match(timestamp=get_timestamp(1))
 
     assert price_tracker.get_high() == 15
-    assert price_tracker.get_low() == 5
-    assert price_tracker.get_market() == 10
+    assert price_tracker.get_low() == 3
+    assert price_tracker.get_market() == 8.25
+    assert price_tracker.get_open() == 5
+    assert price_tracker.get_close() == 3
 
     orderbook.add_order(get_order(player_id=5, price=30,
                         size=50, order_side=OrderSide.BUY))
@@ -36,6 +42,8 @@ def test_price_tracker(get_order, get_timestamp):
     assert price_tracker.get_high() == 30
     assert price_tracker.get_low() == 30
     assert price_tracker.get_market() == 30
+    assert price_tracker.get_open() == 30
+    assert price_tracker.get_close() == 30
 
 
 def test_price_tracker_market_weighted(get_order, get_timestamp):

@@ -22,6 +22,9 @@ class Order(Table):
 
     price: int
     size: int
+    tick: int
+
+    timestamp: pd.Timestamp
 
     order_side: OrderSideField
     order_type: OrderTypeField = OrderTypeField(default=OrderType.LIMIT)
@@ -32,7 +35,6 @@ class Order(Table):
     filled_money: int = field(default=0)
     filled_price: int = field(default=0)
 
-    timestamp: pd.Timestamp = field(default=0)
     expiration_tick: int = field(default=1)
 
     resource: ResourceField = ResourceField(default=0)
@@ -42,8 +44,8 @@ class Order(Table):
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, type(self)):
-            return NotImplemented
+            return NotImplemented  # pragma: no cover
         return self.order_id == other.order_id and self.timestamp == other.timestamp
 
-    def __lt__(self, other):
-        return self.timestamp < other.timestamp
+    def __lt__(self, other):  # pragma: no cover
+        return self.timestamp < other.timestamp  # pragma: no cover

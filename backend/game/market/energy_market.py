@@ -1,47 +1,34 @@
-from model import Trade, Contract, Resource
-from .market import Market
+from model import Trade, Resource
+from model.order import Order
 from config import config
+from model.player import Player
+from model.power_plant import PowerPlant
 
 
-class EnergyMarket(Market):
-    def __init__(self):
-        super().__init__(Resource.energy)
+class EnergyMarket:
+    def match(self, players: dict[int, Player], demand: int, max_price: int) -> dict[int, int]:
+        players_sorted = sorted(players.values(), key=lambda x: x.energy_price)
+        players_sorted = [
+            player for player in players_sorted if player.energy_price <= max_price]
 
-    def _check_trade(self, trade: Trade):
-        bot_id = trade.buy_order.player_id
-        player_id = trade.sell_order.player_id
+        max_per_player = int(demand * config["max_energy_per_player"])
 
-        down_payment = Contract.get_down_payment(
-            trade.filled_size, trade.filled_price)
+        orders = {}
 
-        can_buy = self._players[bot_id].money >= trade.filled_money
-        can_sell = self._players[player_id].money >= down_payment
+        for player in players_sorted:
+            to_sell = min(player.energy, demand, max_per_player)
 
-        if not can_buy or not can_sell:
-            return {"can_buy": can_buy, "can_sell": can_sell}
-        return {"can_buy": True, "can_sell": True}
+            if to_sell == 0:
+                continue
 
-    def _on_trade(self, trade: Trade):
-        bot_id = trade.buy_order.player_id
-        player_id = trade.sell_order.player_id
+            # player.energy -= to_sell # ne trebamo, zelimo da im se prikaze koliko proizvode
+            demand -= to_sell
 
-        down_payment = Contract.get_down_payment(
-            trade.filled_size, trade.filled_price)
+            player.money += to_sell * player.energy_price
 
-        self._players[bot_id].money -= trade.filled_money
-        self._players[player_id].money -= down_payment
+            orders[player.player_id] = to_sell
 
-        new_contract = Contract(
-            contract_id=0,
-            game_id=trade.buy_order.game_id,
-            player_id=player_id,
-            bot_id=bot_id,
-            size=trade.filled_size,
-            price=trade.filled_money,
-            down_payment=down_payment,
-            start_tick=self._tick_data.game.current_tick,
-            end_tick=self._tick_data.game.current_tick +
-            config["contracts"]["length"],
-        )
+            if demand == 0:
+                break
 
-        self._tick_data.new_contracts.append(new_contract)
+        return orders

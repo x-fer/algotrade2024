@@ -27,13 +27,13 @@ class CreateGameParams(BaseModel):
 
 
 class EditGameParams(BaseModel):
-    game_name: str | None
-    contest: bool | None
-    bots: str | None
-    dataset: str | None
-    start_time: datetime | None
-    total_ticks: int | None
-    tick_time: int | None
+    game_name: str
+    contest: bool
+    bots: str
+    dataset_id: int
+    start_time: datetime
+    total_ticks: int
+    tick_time: int
 
 
 @router.post("/game/create")
@@ -42,8 +42,13 @@ async def game_create(params: CreateGameParams):
 
     try:
         Bots.validate_string(params.bots)  # a:10;b:10;c:10;d:10
-        Datasets.validate_string(params.dataset)
-        Datasets.ensure_ticks(params.dataset, params.total_ticks)
+
+        try:
+            Datasets.get(params.dataset_id)
+        except:
+            raise Exception("Dataset does not exist")
+
+        Datasets.ensure_ticks(params.dataset_id, params.total_ticks)
 
         if params.start_time < datetime.now():
             raise Exception("Start time must be in the future")
@@ -52,7 +57,7 @@ async def game_create(params: CreateGameParams):
             game_name=params.game_name,
             is_contest=params.contest,
             bots=params.bots,
-            dataset=params.dataset,
+            dataset_id=params.dataset_id,
             start_time=params.start_time,
             total_ticks=params.total_ticks,
             tick_time=params.tick_time,

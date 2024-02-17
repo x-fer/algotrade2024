@@ -10,7 +10,7 @@ class Game(Table):
     game_name: str
     is_contest: bool
     bots: str
-    dataset: str
+    dataset_id: int
     start_time: datetime
     total_ticks: int
     tick_time: int  # TODO??

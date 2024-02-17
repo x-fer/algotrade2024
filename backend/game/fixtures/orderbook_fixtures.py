@@ -51,15 +51,16 @@ def get_random_order(get_order_id, get_order, traders):
 
 @pytest.fixture()
 def get_order(get_timestamp, get_order_id):
-    def get_order(player_id: int, price: int, size: int, order_side: OrderSide, time=0, expiration=2):
+    def get_order(player_id: int, price: int, size: int, order_side: OrderSide, time=0, expiration=2, tick=1):
         return Order(timestamp=get_timestamp(time),
-                     expiration_tick=get_timestamp(expiration),
+                     expiration_tick=expiration,
                      order_id=get_order_id(),
                      player_id=player_id,
                      game_id=1,
                      price=price,
                      size=size,
-                     order_side=order_side)
+                     order_side=order_side,
+                     tick=tick)
     return get_order
 
 
@@ -81,10 +82,10 @@ def check_trade(traders):
         sell_order = trade.sell_order
 
         if buy_order is None or sell_order is None:
-            assert trade.filled_money == 0
-            assert trade.filled_size == 0
-            assert trade.filled_price is None
-            return {"can_buy": False, "can_sell": False}
+            assert trade.filled_money == 0  # pragma: no cover
+            assert trade.filled_size == 0  # pragma: no cover
+            assert trade.filled_price is None  # pragma: no cover
+            return {"can_buy": False, "can_sell": False}  # pragma: no cover
 
         buyer_id = buy_order.player_id
         seller_id = sell_order.player_id

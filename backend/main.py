@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from config import config
 from db import database, migration
-from game import run_all_game_ticks
+from game.tick import Ticker
 from routers import admin_router, users_router
 import psutil
 import os
@@ -16,16 +16,19 @@ async def background_tasks():
         recursive=True)
 
     if len(children) == 1 or children[1].pid == os.getpid():
+        ticker = Ticker()
+
         while True:
             t1 = time.time()
 
-            await run_all_game_ticks()
+            await ticker.run_all_game_ticks()
 
             t2 = time.time()
 
             tick_interval = config["game"]["tick_interval"]
             to_wait = tick_interval - time.time() % tick_interval
 
+            # print(f"Tick took: {t2 - t1} seconds")
             if to_wait > 0:
                 await asyncio.sleep(to_wait)
             else:

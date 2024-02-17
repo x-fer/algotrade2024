@@ -1,6 +1,8 @@
 from db.table import Table
 from dataclasses import dataclass
 
+from model.dataset_data import DatasetData
+
 
 @dataclass
 class Datasets(Table):
@@ -11,25 +13,11 @@ class Datasets(Table):
     dataset_description: str
 
     @classmethod
-    async def exists(cls, dataset_id):
-        try:
-            Datasets.get(dataset_id)
-            return True
-        except Exception:
-            return False
+    async def ensure_ticks(cls, dataset_id, min_ticks):
 
-    @classmethod
-    async def validate_string(cls, dataset_string):
-        if not Datasets.exists(dataset_string):
-            raise Exception("Dataset does not exist")
+        row = await DatasetData.list(dataset_id=dataset_id)
 
-        return dataset_string
-
-    @classmethod
-    async def ensure_ticks(cls, dataset_string, min_ticks):
-        Datasets.validate_string(dataset_string)
-
-        if Datasets.count(dataset_string) < min_ticks:
+        if len(row) < min_ticks:
             raise Exception("Dataset does not have enough ticks")
 
-        return dataset_string
+        return dataset_id

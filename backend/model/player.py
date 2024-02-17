@@ -12,6 +12,8 @@ class Player(Table):
     is_active: bool = field(default=True)
     is_bot: bool = field(default=False)
 
+    energy_price: int = field(default=1e9)
+
     money: int = field(default=0)
     energy: int = field(default=0)
     coal: int = field(default=0)

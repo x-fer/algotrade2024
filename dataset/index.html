@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Chart.js example</title>
+    <script type="module" src="chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas2svg@1.0.16/canvas2svg.min.js"></script>
+  </head>
+  <body>
+    <canvas id="chart" width="400" height="400"></canvas>
+
+    <script>
+      function tweakLib() {
+        C2S.prototype.getContext = function (contextId) {
+          if (contextId == "2d" || contextId == "2D") {
+            return this;
+          }
+          return null;
+        };
+
+        C2S.prototype.style = function () {
+          return this.__canvas.style;
+        };
+
+        C2S.prototype.getAttribute = function (name) {
+          return this[name];
+        };
+
+        C2S.prototype.addEventListener = function (
+          type,
+          listener,
+          eventListenerOptions
+        ) {
+          console.log("canvas2svg.addEventListener() not implemented.");
+        };
+      }
+
+      // load example.csv
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "example.csv", true);
+
+      xhr.onreadystatechange = function () {
+        console.log(xhr.readyState, xhr.status);
+      };
+
+      xhr.onload = function () {
+        var data = xhr.responseText;
+
+        // split the data into rows
+        var rows = data.split("\n");
+
+        // create a dict to store the data
+        var chartData = {};
+
+        // get the headers
+        var headers = rows[0].split(",");
+        for (var i = 0; i < headers.length; i++) {
+          chartData[headers[i]] = [];
+        }
+
+        // get the data
+        for (var i = 1; i < rows.length; i++) {
+          var row = rows[i].split(",");
+          for (var j = 0; j < row.length; j++) {
+            chartData[headers[j]].push(row[j]);
+          }
+        }
+
+        // create the chart
+        // var ctx = document.getElementById("chart").getContext("2d");
+        // mock
+        tweakLib();
+        var ctx = new C2S(400, 400);
+
+        // date,COAL,URANIUM,BIOMASS,GAS,OIL,GEOTHERMAL,WIND,SOLAR,HYDRO,ENERGY_DEMAND,MAX_ENERGY_PRICE
+        const to_plot = ["ENERGY_DEMAND"];
+
+        // label y as kW
+        // color is #e86050
+        // no animation
+        var chart = new window.Chart(ctx, {
+          type: "line",
+          data: {
+            labels: chartData[headers[0]],
+            datasets: [
+              {
+                label: "Energy Demand",
+                data: chartData[headers[10]],
+                borderColor: "#e86050",
+                fill: false,
+                animation: false,
+                responsive: false,
+              },
+            ],
+          },
+        });
+
+        var mySerializedSVG = ctx.getSerializedSvg(); //true here, if you need to convert named to numbered entities.
+
+        //If you really need to you can access the shadow inline SVG created by calling:
+        var svg = ctx.getSvg();
+
+        // download the svg
+        var svgBlob = new Blob([mySerializedSVG], { type: "image/svg+xml" });
+        var svgUrl = URL.createObjectURL(svgBlob);
+        var downloadLink = document.createElement("a");
+        downloadLink.href = svgUrl;
+        downloadLink.download = "chart.svg";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      };
+
+      xhr.send();
+    </script>
+  </body>
+</html>
