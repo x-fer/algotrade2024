@@ -15,9 +15,9 @@ async def background_tasks():
     children = parent_process.children(
         recursive=True)
 
-    ticker = Ticker()
-
     if len(children) == 1 or children[1].pid == os.getpid():
+        ticker = Ticker()
+
         while True:
             t1 = time.time()
 

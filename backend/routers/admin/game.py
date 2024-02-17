@@ -42,8 +42,13 @@ async def game_create(params: CreateGameParams):
 
     try:
         Bots.validate_string(params.bots)  # a:10;b:10;c:10;d:10
-        Datasets.validate_string(params.dataset)
-        Datasets.ensure_ticks(params.dataset, params.total_ticks)
+
+        try:
+            Datasets.get(params.dataset_id)
+        except:
+            raise Exception("Dataset does not exist")
+
+        Datasets.ensure_ticks(params.dataset_id, params.total_ticks)
 
         if params.start_time < datetime.now():
             raise Exception("Start time must be in the future")

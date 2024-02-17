@@ -13,6 +13,9 @@ class Bots:
         return bot_id in Bots.bots
 
     def parse_string(bot_string: str) -> List[Tuple[str, int]]:
+        if bot_string == "":
+            return []
+
         try:
             bots = bot_string.split(";")
             bots = [bot.replace(" ", "") for bot in bots]
@@ -33,9 +36,6 @@ class Bots:
         return bots
 
     def create_bots(bot_string: str, *args, **kwargs) -> List[Bot]:
-
-        if bot_string == "":
-            return []
 
         bots = Bots.parse_string(bot_string)
         return [

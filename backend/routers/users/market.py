@@ -59,9 +59,9 @@ async def offer_create_player(order: UserOrder, game_id: int = Depends(game_id),
         game_id=game_id,
         player_id=player.player_id,
 
-        order_type=order.type.value,
-        order_side=order.side.value,
-        order_status=OrderStatus.PENDING.value,
+        order_type=order.type,
+        order_side=order.side,
+        order_status=OrderStatus.PENDING,
         timestamp=pd.Timestamp.now(),
 
         price=order.price,

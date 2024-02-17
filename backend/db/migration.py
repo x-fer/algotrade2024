@@ -23,7 +23,7 @@ async def fill_tables():
         await Player.create(player_name="Kruno", is_active=True, is_bot=False, game_id=game_id, team_id=k_team_id)
         await Player.create(player_name="Zvone", is_active=True, is_bot=False, game_id=game_id, team_id=z_team_id)
 
-    await PowerPlant.create(type=PowerPlantType.COAL.value, player_id=1, price=1, powered_on=True)
+    await PowerPlant.create(type=PowerPlantType.COAL, player_id=1, price=1, powered_on=True)
 
     print("Filled database with dummy data")
 

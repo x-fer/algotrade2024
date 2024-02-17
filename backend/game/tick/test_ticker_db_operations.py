@@ -89,11 +89,11 @@ async def test_save_electricity_orders(sample_game, sample_players):
             args, kwargs = call_args
             assert args == ()  # No positional arguments
             assert kwargs["game_id"] == game.game_id
-            assert kwargs["order_type"] == OrderType.LIMIT.value
-            assert kwargs["order_side"] == OrderSide.SELL.value
+            assert kwargs["order_type"] == OrderType.LIMIT
+            assert kwargs["order_side"] == OrderSide.SELL
             # Check timestamp is a datetime object
             assert kwargs["timestamp"].__class__ == pd.Timestamp
-            assert kwargs["order_status"] == OrderStatus.COMPLETED.value
+            assert kwargs["order_status"] == OrderStatus.COMPLETED
             assert kwargs["size"] == expected_energy_sold
             assert kwargs["filled_size"] == expected_energy_sold
             assert kwargs["price"] == players[kwargs["player_id"]].energy_price
