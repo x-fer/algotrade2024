@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
-from game.tick.ticker import Ticker, GameData
+from unittest.mock import patch
+from game.tick import Ticker, GameData
 from model import Game
 
 

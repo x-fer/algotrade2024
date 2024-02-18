@@ -1,6 +1,6 @@
 from datetime import datetime
 import pytest
-from game.tick.ticker import TickData, Ticker, GameData
+from game.tick import TickData, Ticker, GameData
 from model import Game, Player, PowerPlant, Order, OrderStatus, Resource
 
 

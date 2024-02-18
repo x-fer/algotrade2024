@@ -1,1 +1,2 @@
-from .ticker import Ticker, TickData, GameData
+from .ticker import Ticker, GameData
+from .tick_data import TickData
