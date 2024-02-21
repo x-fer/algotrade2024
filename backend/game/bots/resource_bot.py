@@ -3,6 +3,7 @@ from game.tick.tick_data import TickData
 from model import Order, Resource, OrderSide, Team, Player
 from . import Bot
 from config import config
+from logger import logger
 
 
 resource_wanted_sum = config['bots']['resource_sum']
@@ -99,6 +100,7 @@ class ResourceBot(Bot):
         return orders
     
     async def create_orders(self, tick, resource, buy_price, sell_price, buy_volume, sell_volume) -> None:
+        logger.debug(f"({self.game_id}) Bot creating orders {tick=}, {resource=}, {buy_price=}, {sell_price=}, {buy_volume=}, {sell_volume=}")
         await Order.create(
             game_id=self.game_id,
             player_id=self.player_id,

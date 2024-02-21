@@ -16,20 +16,15 @@ class GameData:
             resource.value: ResourceMarket(resource, players)
             for resource in Resource
         }
-
         self.energy_market = EnergyMarket()
         self.bots = Bots.create_bots(game.bots)
 
 class Ticker:
-
-    # in ram data
     def __init__(self):
         self.game_data: dict[int, GameData] = {}
 
     async def run_all_game_ticks(self):
         games = await Game.list()
-
-        logger.debug("Running all game ticks")
 
         for game in games:
             if game.is_finished:
@@ -39,22 +34,31 @@ class Ticker:
                 continue
 
             if game.current_tick >= game.total_ticks:
-                await Game.update(game_id=game.game_id, is_finished=True)
-                logger.info(f"Finished game ({game.game_id}) {game.game_name}")
-
-                if self.game_data.get(game.game_id) is not None:
-                    del self.game_data[game.game_id]
+                try:
+                    await Game.update(game_id=game.game_id, is_finished=True)
+                    if self.game_data.get(game.game_id) is not None:
+                        del self.game_data[game.game_id]
+                    logger.info(f"Finished game ({game.game_id}) {game.game_name}")
+                except Exception as e:
+                    logger.critical(f"Failed finishing game ({game.game_id}) {game.current_tick} with error: " + str(e))
                 continue
 
             if self.game_data.get(game.game_id) is None:
-                logger.info(f"Starting game ({game.game_id}) {game.game_name}")
-                self.game_data[game.game_id] = GameData(game, {})    
-
-            logger.debug(f"({game.game_id}) {game.game_name} - tick")
-            await self.run_game_tick(game)
+                try:
+                    logger.info(f"Starting game ({game.game_id}) {game.game_name}")
+                    self.game_data[game.game_id] = GameData(game, {})
+                except Exception as e:
+                    logger.critical(f"Failed creating game ({game.game_id}) {game.current_tick} with error: " + str(e))
+                    continue
+            
+            try:
+                await self.run_game_tick(game)
+            except Exception as e:
+                logger.critical(f"({game.game_id}) {game.game_name} tick {game.current_tick} failed with error: " + str(e))
+                
 
     async def run_game_tick(self, game: Game):
-
+        logger.debug(f"({game.game_id}) {game.game_name}: {game.current_tick} tick")
         tick_data = await self.get_tick_data(game)
         tick_data = self.run_markets(tick_data)
         tick_data = self.run_power_plants(tick_data)
@@ -81,7 +85,7 @@ class Ticker:
 
         pending_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.PENDING)
         user_cancelled_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.USER_CANCELLED)
-
+        dataset_row = await DatasetData.get(dataset_id=game.dataset_id, tick=game.current_tick)
         markets = self.game_data[game.game_id].markets
 
         tick_data = TickData(
@@ -92,7 +96,7 @@ class Ticker:
             bots=self.game_data[game.game_id].bots,
             pending_orders=pending_orders,
             user_cancelled_orders=user_cancelled_orders,
-            dataset_row=await DatasetData.get(dataset_id=game.dataset_id, tick=game.current_tick)
+            dataset_row=dataset_row
         )
 
         return tick_data
@@ -127,8 +131,6 @@ class Ticker:
             player = tick_data.players[player_id]
 
             for power_plant in power_plants:
-                # update temperature
-
                 type = PowerPlantType(power_plant.type)
 
                 if power_plant.has_resources(player):

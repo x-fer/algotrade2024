@@ -1,6 +1,6 @@
 from db.table import Table
 from dataclasses import dataclass
-
+from fastapi import HTTPException
 from model.dataset_data import DatasetData
 
 
@@ -13,11 +13,10 @@ class Datasets(Table):
     dataset_description: str
 
     @classmethod
-    async def ensure_ticks(cls, dataset_id, min_ticks):
+    async def validate_ticks(cls, dataset_id, min_ticks):
+        rows = await DatasetData.count(dataset_id=dataset_id)
 
-        row = await DatasetData.list(dataset_id=dataset_id)
-
-        if len(row) < min_ticks:
-            raise Exception("Dataset does not have enough ticks")
+        if rows < min_ticks:
+            raise HTTPException(400, "Dataset does not have enough ticks")
 
         return dataset_id
