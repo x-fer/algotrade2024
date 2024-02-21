@@ -80,7 +80,7 @@ async def test_run_all_game_ticks_game_data_not_exist():
     mock_run_game_tick.assert_called_once_with(game)
 
 # if game.is_finished:
-#     print(f" {game.game_name} is finished")
+#     logger.info(f" {game.game_name} is finished")
 #     continue
 
 

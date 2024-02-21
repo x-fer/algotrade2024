@@ -1,10 +1,10 @@
 import os
-from databases import Database
 import pandas as pd
 from db.db import database
 from model import Team, Player, PowerPlant, PowerPlantType, Game, Datasets, DatasetData
 from datetime import datetime
 from config import config
+from logger import logger
 
 
 async def fill_tables():
@@ -12,11 +12,26 @@ async def fill_tables():
     k_team_id = await Team.create(team_name="Krunov_tim", team_secret="kruno")
     z_team_id = await Team.create(team_name="Zvonetov_tim", team_secret="zvone")
 
-    # dataset_id = await Datasets.create(dataset_name="Dummy dataset", dataset_description="Opis")
     datasets = await Datasets.list()
 
-    not_nat_game_id = await Game.create(game_name="Stalna igra", is_contest=False, bots="dummy:3;resource_bot:1", dataset_id=1, start_time=datetime.now(), total_ticks=2400, tick_time=3000)
-    nat_game_id = await Game.create(game_name="Natjecanje", is_contest=True, bots="dummy:2;resource_bot:1", dataset_id=1, start_time=datetime.now(), total_ticks=10, tick_time=1000)
+    dataset_id = datasets[0].dataset_id
+
+    not_nat_game_id = await Game.create(
+        game_name="Stalna igra", 
+        is_contest=False, 
+        bots="dummy:3;resource_bot:1", 
+        dataset_id=dataset_id, 
+        start_time=datetime.now(),
+        total_ticks=2300,
+        tick_time=3000)
+    nat_game_id = await Game.create(
+        game_name="Natjecanje", 
+        is_contest=True, 
+        bots="dummy:2;resource_bot:1", 
+        dataset_id=dataset_id, 
+        start_time=datetime.now(), 
+        total_ticks=100, 
+        tick_time=1000)
 
     for game_id in [not_nat_game_id, nat_game_id]:
         await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id, money=15000, coal=1000)
@@ -25,7 +40,7 @@ async def fill_tables():
 
     await PowerPlant.create(type=PowerPlantType.COAL, player_id=1, price=1, powered_on=True)
 
-    print("Filled database with dummy data")
+    logger.info("Filled database with dummy data")
 
 
 async def delete_tables():
@@ -38,6 +53,7 @@ async def drop_tables():
 
 
 async def run_migrations():
+    logger.info("Running migration script")
     await database.execute('''
               CREATE TABLE IF NOT EXISTS teams (
               team_id SERIAL PRIMARY KEY,
@@ -45,7 +61,6 @@ async def run_migrations():
               team_secret TEXT UNIQUE
               )''')
 
-    # dataset_id, dataset_name, dataset_path, dataset_description
     await database.execute('''
                 CREATE TABLE IF NOT EXISTS datasets (
                 dataset_id SERIAL PRIMARY KEY,
@@ -159,52 +174,55 @@ async def run_migrations():
                 FOREIGN KEY (dataset_id) REFERENCES datasets(dataset_id)
                 )''')
 
-    datasets_path = config["datasets_path"]
-
     try:
+        await Team.get(
+            team_name=config["bots"]["team_name"],
+            team_secret=config["bots"]["team_secret"]
+        )
+        logger.info("Bots team already created")
+    except:
+        logger.info("Creating bots team")
         await Team.create(
             team_name=config["bots"]["team_name"],
             team_secret=config["bots"]["team_secret"]
         )
-        print("Created bots team")
-    except:
-        print("Bots team already created")
 
+    logger.info("Filling datasets")
+    datasets_path = config["datasets_path"]
     for x in os.listdir(datasets_path):
+        if not x.endswith(".csv"):
+            continue
         try:
-            if not x.endswith(".csv"):
-                continue
+            await Datasets.get(dataset_name=x)
+            logger.debug(f"Dataset {x} already created")
+            continue
+        except:
+            pass
 
-            df = pd.read_csv(f"{datasets_path}/{x}")
+        df = pd.read_csv(f"{datasets_path}/{x}")
 
-            # TODO: asserts
+        # TODO: asserts, async transaction - ne zelimo da se dataset kreira ako faila kreiranje redaka
+        dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
 
-            dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
-
-            # date,COAL,URANIUM,BIOMASS,GAS,OIL,GEOTHERMAL,WIND,SOLAR,HYDRO,ENERGY_DEMAND,MAX_ENERGY_PRICE
-            i = 0
-            for index, row in df.iterrows():
-                await DatasetData.create(dataset_id=dataset_id,
-                                         tick=i,
-                                         date=datetime.strptime(
-                                             row["date"], "%Y-%m-%d %H:%M:%S"),
-                                         coal=row["COAL"],
-                                         uranium=row["URANIUM"],
-                                         biomass=row["BIOMASS"],
-                                         gas=row["GAS"],
-                                         oil=row["OIL"],
-                                         geothermal=row["GEOTHERMAL"],
-                                         wind=row["WIND"],
-                                         solar=row["SOLAR"],
-                                         hydro=row["HYDRO"],
-                                         energy_demand=row["ENERGY_DEMAND"],
-                                         max_energy_price=row["MAX_ENERGY_PRICE"]
-                                         )
-                i += 1
-            print(f"Added dataset {x}")
-        except Exception as e:
-            print(e)
-            raise e
-            # print(f"Dataset {x} already created")
-
-    print("Migrated database")
+        # date,COAL,URANIUM,BIOMASS,GAS,OIL,GEOTHERMAL,WIND,SOLAR,HYDRO,ENERGY_DEMAND,MAX_ENERGY_PRICE
+        i = 0
+        for index, row in df.iterrows():
+            await DatasetData.create(dataset_id=dataset_id,
+                                        tick=i,
+                                        date=datetime.strptime(
+                                            row["date"], "%Y-%m-%d %H:%M:%S"),
+                                        coal=row["COAL"],
+                                        uranium=row["URANIUM"],
+                                        biomass=row["BIOMASS"],
+                                        gas=row["GAS"],
+                                        oil=row["OIL"],
+                                        geothermal=row["GEOTHERMAL"],
+                                        wind=row["WIND"],
+                                        solar=row["SOLAR"],
+                                        hydro=row["HYDRO"],
+                                        energy_demand=row["ENERGY_DEMAND"],
+                                        max_energy_price=row["MAX_ENERGY_PRICE"]
+                                        )
+            i += 1
+        logger.info(f"Added dataset {x}")
+    logger.info("Migrated database")
