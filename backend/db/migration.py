@@ -1,10 +1,10 @@
 import os
-from databases import Database
 import pandas as pd
 from db.db import database
 from model import Team, Player, PowerPlant, PowerPlantType, Game, Datasets, DatasetData
 from datetime import datetime
 from config import config
+from logger import logger
 
 
 async def fill_tables():
@@ -25,7 +25,7 @@ async def fill_tables():
 
     await PowerPlant.create(type=PowerPlantType.COAL, player_id=1, price=1, powered_on=True)
 
-    print("Filled database with dummy data")
+    logger.info("Filled database with dummy data")
 
 
 async def delete_tables():
@@ -166,9 +166,9 @@ async def run_migrations():
             team_name=config["bots"]["team_name"],
             team_secret=config["bots"]["team_secret"]
         )
-        print("Created bots team")
+        logger.info("Bots team created")
     except:
-        print("Bots team already created")
+        logger.info("Bots team already created")
 
     for x in os.listdir(datasets_path):
         try:
@@ -201,10 +201,9 @@ async def run_migrations():
                                          max_energy_price=row["MAX_ENERGY_PRICE"]
                                          )
                 i += 1
-            print(f"Added dataset {x}")
+            logger.info(f"Added dataset {x}")
         except Exception as e:
-            print(e)
+            logger.error(e)
             raise e
-            # print(f"Dataset {x} already created")
-
-    print("Migrated database")
+            # logger.info(f"Dataset {x} already created")
+    logger.info("Migrated database")

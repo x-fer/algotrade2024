@@ -16,7 +16,6 @@ Valjda ovo radi:
     
     apt install postgresql postgresql-contrib
     sudo service postgresql start
-    sudo -u postgres psql
     sudo -u postgres psql -c "ALTER ROLE postgres WITH password 'postgres'"
     sudo -u postgres psql -c "CREATE DATABASE mydatabase"
     sudo -u postgres psql -c "CREATE DATABASE test_database"

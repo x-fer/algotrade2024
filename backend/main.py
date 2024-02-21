@@ -8,6 +8,7 @@ from game.tick import Ticker
 from routers import admin_router, users_router
 import psutil
 import os
+from logger import logger
 
 
 async def background_tasks():
@@ -28,42 +29,39 @@ async def background_tasks():
             tick_interval = config["game"]["tick_interval"]
             to_wait = tick_interval - time.time() % tick_interval
 
-            # print(f"Tick took: {t2 - t1} seconds")
+            # logger.info(f"Tick took: {t2 - t1} seconds")
             if to_wait > 0:
                 await asyncio.sleep(to_wait)
             else:
-                print("Tick took too long: ", t2 - t1)
+                logger.info("Tick took too long: ", t2 - t1)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await database.connect()
-    if config['testing']:
-        await migration.drop_tables()
-        await migration.run_migrations()
-        await migration.fill_tables()
-    else:
-        await migration.run_migrations()
-    # await print_hello()
     asyncio.create_task(background_tasks())
     yield
-
     await database.disconnect()
 
 
 app = FastAPI(lifespan=lifespan)
 
 
+@app.middleware("http")
+async def log_requests(request, call_next):
+    start_time = time.time()
+    
+    response = await call_next(request)
+    
+    process_time = (time.time() - start_time) * 1000
+    formatted_process_time = '{0:.2f}'.format(process_time)
+    logger.debug(f"{request.client.host}:{request.client.port} - \"{request.method} {request.url.path}\" [{response.status_code}] completed_in={formatted_process_time}ms")
+    
+    return response
+
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
 
-
 app.include_router(admin_router, prefix="/admin")
 app.include_router(users_router)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app,
-                host=config["server"]['host'],
-                port=config["server"]['port'])

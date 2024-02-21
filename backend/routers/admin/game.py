@@ -4,6 +4,7 @@ from model import Game, Datasets, Player
 from game.bots import Bots
 from pydantic import BaseModel
 from datetime import datetime
+from logger import logger
 
 # GAME PATHS
 
@@ -77,8 +78,6 @@ async def game_list():
         games = await Game.list()
     except Exception as e:
         return {"message": str(e)}
-    print(games)
-
     return {"games": games}
 
 

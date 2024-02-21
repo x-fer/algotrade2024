@@ -1,15 +1,12 @@
-from dataclasses import dataclass, field
 import dataclasses
 from datetime import datetime
 from typing import Tuple
-
 import pandas as pd
-from db import database
-from model import Player, PowerPlant, Game, Order, OrderStatus, Resource, Team, DatasetData, OrderSide, OrderType, PowerPlantType, Trade
+from model import Player, PowerPlant, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType, PowerPlantType
 from game.market import ResourceMarket, EnergyMarket
-from game.bots import Bots, Bot
-from config import config
+from game.bots import Bots
 from .tick_data import TickData
+from logger import logger
 
 
 class GameData:
@@ -32,28 +29,28 @@ class Ticker:
     async def run_all_game_ticks(self):
         games = await Game.list()
 
-        print("Running game ticks:")
+        logger.debug("Running all game ticks")
 
         for game in games:
             if game.is_finished:
-                print(f" {game.game_name} is finished")
                 continue
 
             if datetime.now() < game.start_time:
-                print(f" {game.game_name} has not started")
                 continue
 
             if game.current_tick >= game.total_ticks:
                 await Game.update(game_id=game.game_id, is_finished=True)
-                print(f" {game.game_name} has just finished")
+                logger.info(f"Finished game ({game.game_id}) {game.game_name}")
 
                 if self.game_data.get(game.game_id) is not None:
                     del self.game_data[game.game_id]
                 continue
 
             if self.game_data.get(game.game_id) is None:
+                logger.info(f"Starting game ({game.game_id}) {game.game_name}")
                 self.game_data[game.game_id] = GameData(game, {})    
 
+            logger.debug(f"({game.game_id}) {game.game_name} - tick")
             await self.run_game_tick(game)
 
     async def run_game_tick(self, game: Game):
