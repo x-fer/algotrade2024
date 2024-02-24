@@ -1,5 +1,3 @@
-from copy import deepcopy
-from pprint import pprint
 import pytest
 from game.tick import TickData
 from game.fixtures.fixtures import *

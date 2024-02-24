@@ -7,6 +7,7 @@ from game.market import ResourceMarket, EnergyMarket
 from game.bots import Bots
 from .tick_data import TickData
 from logger import logger
+from db import database
 
 
 class GameData:
@@ -56,7 +57,13 @@ class Ticker:
                     continue
 
             try:
-                await self.run_game_tick(game)
+
+                async with database.transaction():
+                    await database.execute(
+                        f"LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
+
+                    await self.run_game_tick(game)
+
             except Exception as e:
                 logger.critical(
                     f"({game.game_id}) {game.game_name} tick {game.current_tick} failed with error: " + str(e))

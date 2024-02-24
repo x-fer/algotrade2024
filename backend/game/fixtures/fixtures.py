@@ -1,4 +1,3 @@
-from pprint import pprint
 import pandas as pd
 from game.tick import TickData, Ticker
 from game.tick.ticker import GameData
