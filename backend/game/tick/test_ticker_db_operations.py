@@ -3,29 +3,45 @@ import pytest
 from unittest.mock import patch
 from datetime import datetime
 from model import Order, OrderStatus, Resource
+from model.dataset_data import DatasetData
 from model.order_types import OrderSide, OrderType
 from game.tick import Ticker, TickData
 from tick.test_tick_fixtures import *
 
 
-@patch('model.Player.list')
-@patch('model.Order.list')
-@patch('model.DatasetData.get')
 @pytest.mark.asyncio
-async def test_get_tick_data(mock_dataset_get, mock_order_list, mock_player_list, ticker, sample_game, sample_players, sample_pending_orders, sample_user_cancelled_orders, sample_dataset_row):
-    # mock_player_list.return_value = sample_players.values()
-    # mock_order_list.side_effect = lambda **kwargs: sample_pending_orders if kwargs.get(
-    #     "order_status") == OrderStatus.PENDING else sample_user_cancelled_orders
-    # mock_dataset_get.return_value = sample_dataset_row
+async def test_get_tick_data(sample_game, sample_players, sample_pending_orders, sample_user_cancelled_orders, sample_dataset_row):
+    # Setup ticker
+    ticker = Ticker()
+    ticker.game_data[sample_game.game_id] = GameData(
+        sample_game, sample_players)
 
-    # tick_data = await ticker.get_tick_data(sample_game)
+    # Mocking database interaction
+    async def mock_list_players(*args, **kwargs):
+        return [sample_players[1], sample_players[2]]
 
-    # assert len(tick_data.players) == len(sample_players)
-    # assert len(tick_data.pending_orders) == len(sample_pending_orders)
-    # assert len(tick_data.user_cancelled_orders) == len(
-    #     sample_user_cancelled_orders)
-    # assert tick_data.dataset_row == sample_dataset_row
-    pass
+    async def mock_list_orders(*args, **kwargs):
+        if kwargs.get('order_status') == OrderStatus.PENDING:
+            return sample_pending_orders
+        elif kwargs.get('order_status') == OrderStatus.USER_CANCELLED:
+            return sample_user_cancelled_orders
+
+    async def mock_get_dataset_data(*args, **kwargs):
+        return sample_dataset_row
+
+    with patch('model.Player.list', new=mock_list_players), patch('model.Order.list', new=mock_list_orders), patch('model.DatasetData.get', new=mock_get_dataset_data):
+        # Execute get_tick_data method
+        tick_data = await ticker.get_tick_data(sample_game)
+
+        # Assertions
+        assert len(tick_data.players) == 2
+        # Assuming 2 pending orders in sample_pending_orders fixture
+        assert len(tick_data.pending_orders) == 2
+        # Assuming 2 user cancelled orders in sample_user_cancelled_orders fixture
+        assert len(tick_data.user_cancelled_orders) == 2
+        assert tick_data.dataset_row == sample_dataset_row
+        # Assuming all resources have markets created
+        assert len(tick_data.markets) == len(Resource)
 
 
 @pytest.fixture
