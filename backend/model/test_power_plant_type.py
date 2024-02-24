@@ -24,7 +24,7 @@ def test_get_cooldown_coeff():
 
 def test_get_plant_price():
     assert PowerPlantType.COAL.get_plant_price(
-        2) == config["power_plant"]["base_prices"]["coal"] + (5000 * 2)
+        2) == config["power_plant"]["base_prices"]["coal"] * (1 + config["power_plant"]["price_coeff"] * 2)
 
 
 def test_get_produced_energy():

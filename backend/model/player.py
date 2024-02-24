@@ -28,7 +28,7 @@ class PowerPlantType(str, Enum):
         return config["power_plant"]["cooldown_coeff"][self.get_name()]
 
     def get_plant_price(self, power_plant_count: int):
-        return self.get_base_price() + (5000 * power_plant_count)
+        return int(self.get_base_price() * (1 + config["power_plant"]["price_coeff"] * power_plant_count))
 
     def get_produced_energy(self, dataset_row: dict):
         return dataset_row[self.get_name()]
