@@ -11,7 +11,10 @@ from routers import admin_router, users_router
 import psutil
 import os
 from logger import logger
-from starlette.types import Message
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
 
 
 async def background_tasks():
@@ -46,7 +49,24 @@ async def lifespan(app: FastAPI):
     await database.disconnect()
 
 
+def team_secret(request: Request):
+    param = request.query_params.get("team_secret")
+    if param is None:
+        return get_remote_address(request)
+
+    return param
+
+
+limiter = Limiter(key_func=team_secret, default_limits=[
+                  "10/second"], storage_uri="redis://localhost:6379/0")
+
 app = FastAPI(lifespan=lifespan)
+
+app.state.limiter = limiter
+
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+app.add_middleware(SlowAPIMiddleware)
 
 
 @app.exception_handler(Exception)
