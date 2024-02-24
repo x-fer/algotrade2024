@@ -1,3 +1,4 @@
+from databases import Database
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import patch
@@ -50,11 +51,12 @@ async def test_run_all_game_ticks_game_started():
     ticker = Ticker()
     ticker.game_data[game.game_id] = GameData(game, {})
 
-    # Execute
-    with patch.object(Game, 'list') as mock_game_list:
-        mock_game_list.return_value = [game]
-        with patch.object(Ticker, 'run_game_tick') as mock_run_game_tick:
-            await ticker.run_all_game_ticks()
+    with patch.object(Database, 'transaction') as mock_transaction:
+        with patch.object(Database, 'execute') as mock_execute:
+            with patch.object(Game, 'list') as mock_game_list:
+                mock_game_list.return_value = [game]
+                with patch.object(Ticker, 'run_game_tick') as mock_run_game_tick:
+                    await ticker.run_all_game_ticks()
 
     mock_run_game_tick.assert_called_once_with(game)
 
@@ -70,10 +72,12 @@ async def test_run_all_game_ticks_game_data_not_exist():
     ticker = Ticker()
 
     # Execute
-    with patch.object(Game, 'list') as mock_game_list:
-        mock_game_list.return_value = [game]
-        with patch.object(Ticker, 'run_game_tick') as mock_run_game_tick:
-            await ticker.run_all_game_ticks()
+    with patch.object(Database, 'transaction') as mock_transaction:
+        with patch.object(Database, 'execute') as mock_execute:
+            with patch.object(Game, 'list') as mock_game_list:
+                mock_game_list.return_value = [game]
+                with patch.object(Ticker, 'run_game_tick') as mock_run_game_tick:
+                    await ticker.run_all_game_ticks()
 
     # Verify
     assert game.game_id in ticker.game_data

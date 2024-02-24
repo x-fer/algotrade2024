@@ -1,4 +1,3 @@
-from pprint import pprint
 from game.orderbook.orderbook import OrderBook
 from game.price_tracker.price_tracker import PriceTracker
 from model import Resource, Trade, Order

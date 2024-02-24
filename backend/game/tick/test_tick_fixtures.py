@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytest
 from game.tick import TickData, Ticker, GameData
-from model import Game, Player, PowerPlant, Order, OrderStatus, Resource
+from model import Game, Player, Order, OrderStatus, Resource
 
 
 @pytest.fixture
@@ -23,8 +23,8 @@ def sample_game():
 @pytest.fixture
 def sample_players():
     return {
-        1: Player(player_id=1, game_id=1, player_name="Player 1", energy=0, team_id=1),
-        2: Player(player_id=2, game_id=1, player_name="Player 2", energy=0, team_id=1)
+        1: Player(player_id=1, game_id=1, player_name="Player 1", energy=0, team_id=1, wind_plants_owned=2, wind_plants_powered=2),
+        2: Player(player_id=2, game_id=1, player_name="Player 2", energy=0, team_id=1, coal=100, coal_plants_powered=2, coal_plants_owned=2)
     }
 
 
@@ -34,22 +34,6 @@ def ticker(sample_game, sample_players):
     t.game_data[sample_game.game_id] = GameData(sample_game, sample_players)
 
     return t
-
-
-@pytest.fixture
-def sample_power_plants():
-    return {
-        1: [
-            PowerPlant(power_plant_id=1, player_id=1, type=1, price=100,
-                       temperature=0.5, powered_on=True),
-            PowerPlant(power_plant_id=2, player_id=1, type=2, price=100,
-                       temperature=0.6, powered_on=True)
-        ],
-        2: [
-            PowerPlant(power_plant_id=3, player_id=2, type=1, price=100,
-                       temperature=0.7, powered_on=True)
-        ]
-    }
 
 
 @pytest.fixture
@@ -74,7 +58,7 @@ def sample_user_cancelled_orders():
 
 @pytest.fixture
 def sample_dataset_row():
-    return {"energy_demand": 100, "max_energy_price": 50}
+    return {"energy_demand": 100, "max_energy_price": 50, "coal": 100, "oil": 100, "uranium": 100, 'biomass': 100, 'gas': 100, 'geothermal': 100, 'solar': 100, 'wind': 100, 'hydro': 100}
 
 
 @pytest.fixture
@@ -82,7 +66,6 @@ def tick_data(sample_game, sample_players):
     return TickData(
         game=sample_game,
         players=sample_players,
-        power_plants={},
         markets={},
         bots=[],
         dataset_row={},

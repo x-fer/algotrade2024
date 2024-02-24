@@ -1,5 +1,4 @@
 from copy import deepcopy
-from pprint import pprint
 import pytest
 from game.tick import TickData
 from game.fixtures.fixtures import *
@@ -7,7 +6,7 @@ from model.order_types import OrderSide, OrderStatus
 from model.player import Player
 
 
-def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market):
+def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, coal_market):
 
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
@@ -31,7 +30,7 @@ def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, 
         ],
         updated_orders={},
         players=player_dict,
-        power_plants={},
+
         markets={
             Resource.coal.value: coal_market(player_dict)
         }
@@ -44,7 +43,7 @@ def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, 
     assert len(tick_data.updated_orders) == 2
 
 
-def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market):
+def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, coal_market):
 
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
@@ -65,7 +64,7 @@ def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, get
         ],
         updated_orders={},
         players=player_dict,
-        power_plants={},
+
         markets={
             Resource.coal.value: coal_market(player_dict)
         }
@@ -87,7 +86,7 @@ def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, get
     assert len(tick_data.updated_orders) == 2
 
 
-def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market):
+def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_ticker, get_player, coal_market):
 
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
@@ -108,7 +107,6 @@ def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_tick
         ],
         updated_orders={},
         players=player_dict,
-        power_plants={},
         markets={
             Resource.coal.value: coal_market(player_dict)
         }
@@ -130,7 +128,7 @@ def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_tick
     assert len(tick_data.updated_orders) == 2
 
 
-def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market):
+def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_ticker, get_player, coal_market):
 
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
@@ -151,7 +149,6 @@ def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_
         ],
         updated_orders={},
         players=player_dict,
-        power_plants={},
         markets={
             Resource.coal.value: coal_market(player_dict)
         }
@@ -173,7 +170,7 @@ def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_
     assert len(tick_data.updated_orders) == 2
 
 
-def test_run_markets_cancel(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market):
+def test_run_markets_cancel(get_tick_data, get_order, get_ticker, get_player, coal_market):
 
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
@@ -194,7 +191,7 @@ def test_run_markets_cancel(get_tick_data, get_order, get_ticker, get_player, ge
         pending_orders=[],
         updated_orders={},
         players=player_dict,
-        power_plants={},
+
         markets={
             Resource.coal.value: coal_market(player_dict)
         }

@@ -1,4 +1,3 @@
-from pprint import pprint
 from model import Order, Player, OrderSide, OrderStatus
 from . import ResourceMarket, EnergyMarket
 from game.fixtures.fixtures import *

@@ -5,6 +5,7 @@ from logger import logger
 
 async def main():
     await database.connect()
+
     if config['testing']:
         await migration.drop_tables()
         await migration.run_migrations()
@@ -16,7 +17,7 @@ async def main():
             logger.warn("Migration script failed, dropping tables...")
             await migration.drop_tables()
             await migration.run_migrations()
-            
+
 
 if __name__ == "__main__":
     import asyncio
