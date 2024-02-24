@@ -8,7 +8,7 @@ from tick.test_tick_fixtures import *
 @pytest.mark.asyncio
 async def test_run_game_tick(
     sample_game, sample_players, tick_data,
-    sample_power_plants, sample_pending_orders,
+    sample_pending_orders,
     sample_user_cancelled_orders, sample_dataset_row
 ):
     with patch.object(Ticker, 'get_tick_data', return_value=tick_data), \

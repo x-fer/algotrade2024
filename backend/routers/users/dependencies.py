@@ -1,5 +1,5 @@
 from fastapi import HTTPException, Query, Depends
-from model import Team, Player, PowerPlant, Game
+from model import Team, Player, Game
 
 
 async def game_id(game_id: int) -> int:
@@ -31,13 +31,3 @@ async def player(player_id: int, game_id: int = Depends(game_id), team_id: int =
     if player.is_active == False:
         raise HTTPException(400, f"This player is inactive")
     return player
-
-
-async def power_plant(power_plant_id: int, player: Player = Depends(player)) -> PowerPlant:
-    try:
-        power_plant = await PowerPlant.get(power_plant_id=power_plant_id)
-    except:
-        raise HTTPException(status_code=403, detail="Invalid power_plant_id")
-    if power_plant.player_id != player.player_id:
-        raise HTTPException(400, "This power plant doesn't belong to you")
-    return power_plant

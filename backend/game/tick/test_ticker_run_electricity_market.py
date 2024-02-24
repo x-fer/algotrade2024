@@ -8,13 +8,12 @@ from model.player import Player
 from config import config
 
 
-def test_successful(get_tick_data, get_ticker, get_player, get_power_plant):
+def test_successful(get_tick_data, get_ticker, get_player):
 
     player1 = get_player(money=0, coal=0, energy=10,  energy_price=100)
     player_dict = get_player_dict([player1])
 
-    tick_data = get_tick_data(power_plants={},
-                              markets=[],
+    tick_data = get_tick_data(markets=[],
                               players=player_dict,
                               energy_demand=100,
                               max_energy_price=100
@@ -28,13 +27,12 @@ def test_successful(get_tick_data, get_ticker, get_player, get_power_plant):
     assert energy_sold == {player1.player_id: 10}
 
 
-def test_player_price_too_high(get_tick_data, get_ticker, get_player, get_power_plant):
+def test_player_price_too_high(get_tick_data, get_ticker, get_player):
 
     player1 = get_player(money=0, coal=0, energy=10,  energy_price=101)
     player_dict = get_player_dict([player1])
 
-    tick_data = get_tick_data(power_plants={},
-                              markets=[],
+    tick_data = get_tick_data(markets=[],
                               players=player_dict,
                               energy_demand=100,
                               max_energy_price=100
@@ -48,7 +46,7 @@ def test_player_price_too_high(get_tick_data, get_ticker, get_player, get_power_
     assert energy_sold == {}
 
 
-def test_player_over_max_demand(get_tick_data, get_ticker, get_player, get_power_plant):
+def test_player_over_max_demand(get_tick_data, get_ticker, get_player):
     demand = 100
 
     max_sold_per_player = int(config["max_energy_per_player"] * demand)
@@ -57,8 +55,7 @@ def test_player_over_max_demand(get_tick_data, get_ticker, get_player, get_power
         money=0, coal=0, energy=max_sold_per_player + 1,  energy_price=99)
     player_dict = get_player_dict([player1])
 
-    tick_data = get_tick_data(power_plants={},
-                              markets=[],
+    tick_data = get_tick_data(markets=[],
                               players=player_dict,
                               energy_demand=demand,
                               max_energy_price=100
@@ -72,13 +69,12 @@ def test_player_over_max_demand(get_tick_data, get_ticker, get_player, get_power
     assert energy_sold == {player1.player_id: max_sold_per_player}
 
 
-def test_player_no_energy(get_tick_data, get_ticker, get_player, get_power_plant):
+def test_player_no_energy(get_tick_data, get_ticker, get_player):
 
     player1 = get_player(money=0, coal=0, energy=0,  energy_price=1)
     player_dict = get_player_dict([player1])
 
-    tick_data = get_tick_data(power_plants={},
-                              markets=[],
+    tick_data = get_tick_data(markets=[],
                               players=player_dict,
                               energy_demand=100,
                               max_energy_price=100
@@ -92,7 +88,7 @@ def test_player_no_energy(get_tick_data, get_ticker, get_player, get_power_plant
     assert energy_sold == {}
 
 
-def test_demand_filled(get_tick_data, get_ticker, get_player, get_power_plant):
+def test_demand_filled(get_tick_data, get_ticker, get_player):
     demand = 101
 
     players = [get_player(money=0, coal=0, energy=50,  energy_price=90),
@@ -109,8 +105,7 @@ def test_demand_filled(get_tick_data, get_ticker, get_player, get_power_plant):
 
     player_dict = get_player_dict(players)
 
-    tick_data = get_tick_data(power_plants={},
-                              markets=[],
+    tick_data = get_tick_data(markets=[],
                               players=player_dict,
                               energy_demand=demand,
                               max_energy_price=100

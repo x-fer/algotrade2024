@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytest
 from game.tick import TickData, Ticker, GameData
-from model import Game, Player, PowerPlant, Order, OrderStatus, Resource
+from model import Game, Player, Order, OrderStatus, Resource
 
 
 @pytest.fixture
@@ -37,22 +37,6 @@ def ticker(sample_game, sample_players):
 
 
 @pytest.fixture
-def sample_power_plants():
-    return {
-        1: [
-            PowerPlant(power_plant_id=1, player_id=1, type=1, price=100,
-                       temperature=0.5, powered_on=True),
-            PowerPlant(power_plant_id=2, player_id=1, type=2, price=100,
-                       temperature=0.6, powered_on=True)
-        ],
-        2: [
-            PowerPlant(power_plant_id=3, player_id=2, type=1, price=100,
-                       temperature=0.7, powered_on=True)
-        ]
-    }
-
-
-@pytest.fixture
 def sample_pending_orders():
     return [
         Order(order_id=1, game_id=1, player_id=1, order_type="BUY", order_side="SELL",
@@ -82,7 +66,6 @@ def tick_data(sample_game, sample_players):
     return TickData(
         game=sample_game,
         players=sample_players,
-        power_plants={},
         markets={},
         bots=[],
         dataset_row={},

@@ -2,8 +2,8 @@ import dataclasses
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from db import database
-from model import Player, PowerPlant, PowerPlantType
-from .dependencies import player, power_plant
+from model import Player, PowerPlantType
+from .dependencies import player
 from config import config
 
 # POWER_PLANT PATHS
@@ -21,82 +21,66 @@ from config import config
 router = APIRouter(dependencies=[Depends(player)])
 
 
-@router.get("/game/{game_id}/player/{player_id}/plant/prices")
-async def list_plant_prices(player_id: int):
-    return [
-        {"type": type,
-         "name": type.name,
-         "price": type.get_plant_price(player_id=player_id)}
-        for type in PowerPlantType
-    ]
-
-
 @router.get("/game/{game_id}/player/{player_id}/plant/list")
 async def list_plants(player_id: int):
-    return [{**dataclasses.asdict(x),
-             "sell_price": round(x.price * config["power_plant_sell_coef"])}
-            for x in (await PowerPlant.list(player_id=player_id))]
+    player = await Player.get(player_id=player_id)
+
+    return {
+        x.name: {
+            "plants_powered": player[x.name.lower() + "_plants_powered"],
+            "plants_owned": player[x.name.lower() + "_plants_owned"],
+            "next_price": x.get_plant_price(player[x.name.lower() + "_plants_owned"]),
+            "sell_price": round(x.get_plant_price(player[x.name.lower() + "_plants_owned"]) * config["power_plant"]["sell_coeff"]),
+        }
+        for x in PowerPlantType
+    }
 
 
-class PlantBuy(BaseModel):
+class PlantBuySell(BaseModel):
     type: PowerPlantType
 
 
 @router.post("/game/{game_id}/player/{player_id}/plant/buy")
-async def buy_plant(player_id: int, plant: PlantBuy):
+async def buy_plant(player_id: int, plant: PlantBuySell):
     type = PowerPlantType(plant.type)
 
     async with database.transaction():
-        player_balance = (await Player.get(player_id=player_id)).money
-        price = type.get_plant_price(player_id=player_id)
+        player = await Player.get(player_id=player_id)
+        plant_count = player[type.name.lower() + "_plants_owned"]
+        plant_price = type.get_plant_price(plant_count)
 
-        if player_balance < price:
+        if player.money < plant_price:
             raise HTTPException(status_code=400, detail="Not enough money")
 
-        await Player.update(player_id=player_id, money=player_balance - price)
-
-        plant_id = await PowerPlant.create(type=type.value, player_id=player_id, price=price)
-
-    return {"power_plant_id": plant_id}
+        await Player.update(player_id=player_id, money=player.money - plant_price)
+        await Player.update(player_id=player_id, **{type.name.lower() + "_plants_owned": plant_count + 1})
 
 
-@router.get("/game/{game_id}/player/{player_id}/plant/{power_plant_id}/sell_price")
-async def get_sell_price(power_plant: PowerPlant = Depends(power_plant)):
-    sell_coef = config["power_plant_sell_coef"]
-
-    return {"sell_price": round(power_plant.price * sell_coef)}
-
-
-@router.get("/game/{game_id}/player/{player_id}/plant/{power_plant_id}/sell")
-async def sell_plant(power_plant: PowerPlant = Depends(power_plant)):
-
-    sell_coef = config["power_plant_sell_coef"]
+@router.post("/game/{game_id}/player/{player_id}/plant/sell")
+async def sell_plant(player_id: int, plant: PlantBuySell):
+    type = PowerPlantType(plant.type)
 
     async with database.transaction():
-        sell_price = round(power_plant.price * sell_coef)
+        player = await Player.get(player_id=player_id)
+        plant_count = player[type.name.lower() + "_plants_owned"]
+        plant_price = type.get_plant_price(plant_count)
 
-        balance = (await Player.get(player_id=power_plant.player_id)).money
-
-        await Player.update(player_id=power_plant.player_id, money=balance + sell_price)
-        await PowerPlant.delete(power_plant_id=power_plant.power_plant_id)
-
-    return {"sell_price": sell_price, "new_balance": balance + sell_price}
+        await Player.update(player_id=player_id, money=player.money + round(plant_price * config["power_plant"]["sell_coeff"]))
+        await Player.update(player_id=player_id, **{type.name.lower() + "_plants_owned": plant_count - 1})
 
 
-@router.get("/game/{game_id}/player/{player_id}/plant/{power_plant_id}/on")
-async def turn_on(power_plant: PowerPlant = Depends(power_plant)):
+class PowerOn(BaseModel):
+    number: int
+
+
+@router.post("/game/{game_id}/player/{player_id}/plant/on")
+async def turn_on(player_id: int, plant: PowerOn):
     async with database.transaction():
-        await PowerPlant.update(power_plant_id=power_plant.power_plant_id, is_on=True)
-    return {"success": True}
+        player = await Player.get(player_id=player_id)
+        plant_count = player[type.name.lower() + "_plants_owned"]
 
+        if plant_count < plant.number or plant.number < 0:
+            raise HTTPException(
+                status_code=400, detail="Not enough plants or invalid number")
 
-@router.get("/game/{game_id}/player/{player_id}/plant/{power_plant_id}/off")
-async def turn_off(power_plant: PowerPlant = Depends(power_plant)):
-    async with database.transaction():
-        await PowerPlant.update(power_plant_id=power_plant.power_plant_id, is_on=False)
-    return {"success": True}
-
-
-@router.get("/game/{game_id}/player/{player_id}/plant/{power_plant_id}")
-async def get_plant(power_plant: PowerPlant = Depends(power_plant)):
-    return await PowerPlant.get(power_plant_id=power_plant.power_plant_id)
+        await Player.update(player_id=player_id, **{type.name.lower() + "_plants_powered": plant.number})

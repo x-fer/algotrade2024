@@ -11,6 +11,7 @@ from routers import admin_router, users_router
 import psutil
 import os
 from logger import logger
+from starlette.types import Message
 
 
 async def background_tasks():
@@ -63,17 +64,20 @@ async def log_request(message):
 
 @app.middleware("http")
 async def log_request_middleware(request: Request, call_next):
+    body = await request.body()
+
     start_time = time.time()
     response = await call_next(request)
     process_time = (time.time() - start_time) * 1000
     formatted_process_time = '{0:.8f}'.format(process_time)
-    url = f"{request.url.path}" + (f"?{request.query_params}" if request.query_params else "")
-    body = await request.body()
+    url = f"{request.url.path}" + \
+        (f"?{request.query_params}" if request.query_params else "")
+
     message = (f"{request.client.host}:{request.client.port} - "
-        f"\"{request.method} {url}\" "
-        f"[{response.status_code}], "
-        f"completed in: {formatted_process_time}ms, "
-        f"request body: {body}")
+               f"\"{request.method} {url}\" "
+               f"[{response.status_code}], "
+               f"completed in: {formatted_process_time}ms, "
+               f"request body: {body}")
     asyncio.create_task(log_request(message))
     return response
 

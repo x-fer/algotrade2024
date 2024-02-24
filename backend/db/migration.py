@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from db.db import database
-from model import Team, Player, PowerPlant, PowerPlantType, Game, Datasets, DatasetData
+from model import Team, Player, Game, Datasets, DatasetData
 from datetime import datetime
 from config import config
 from logger import logger
@@ -17,20 +17,20 @@ async def fill_tables():
     dataset_id = datasets[0].dataset_id
 
     not_nat_game_id = await Game.create(
-        game_name="Stalna igra", 
-        is_contest=False, 
-        bots="dummy:3;resource_bot:1", 
-        dataset_id=dataset_id, 
+        game_name="Stalna igra",
+        is_contest=False,
+        bots="dummy:3;resource_bot:1",
+        dataset_id=dataset_id,
         start_time=datetime.now(),
         total_ticks=2300,
         tick_time=3000)
     nat_game_id = await Game.create(
-        game_name="Natjecanje", 
-        is_contest=True, 
-        bots="dummy:2;resource_bot:1", 
-        dataset_id=dataset_id, 
-        start_time=datetime.now(), 
-        total_ticks=100, 
+        game_name="Natjecanje",
+        is_contest=True,
+        bots="dummy:2;resource_bot:1",
+        dataset_id=dataset_id,
+        start_time=datetime.now(),
+        total_ticks=100,
         tick_time=1000)
 
     for game_id in [not_nat_game_id, nat_game_id]:
@@ -38,17 +38,15 @@ async def fill_tables():
         await Player.create(player_name="Kruno", is_active=True, is_bot=False, game_id=game_id, team_id=k_team_id)
         await Player.create(player_name="Zvone", is_active=True, is_bot=False, game_id=game_id, team_id=z_team_id)
 
-    await PowerPlant.create(type=PowerPlantType.COAL, player_id=1, price=1, powered_on=True)
-
     logger.info("Filled database with dummy data")
 
 
 async def delete_tables():
-    await database.execute('TRUNCATE power_plants, orders, players, games, teams, market, datasets, dataset_data CASCADE')
+    await database.execute('TRUNCATE orders, players, games, teams, market, datasets, dataset_data CASCADE')
 
 
 async def drop_tables():
-    for table_name in ["power_plants", "orders", "players", "games", "teams", "market", "datasets", "dataset_data"]:
+    for table_name in ["orders", "players", "games", "teams", "market", "datasets", "dataset_data"]:
         await database.execute(f'DROP TABLE IF EXISTS {table_name} CASCADE')
 
 
@@ -101,20 +99,29 @@ async def run_migrations():
               biomass INT NOT NULL DEFAULT 0,
               gas INT NOT NULL DEFAULT 0,
               oil INT NOT NULL DEFAULT 0,
+                           
+              coal_plants_owned INT NOT NULL DEFAULT 0,
+              uranium_plants_owned INT NOT NULL DEFAULT 0,
+              biomass_plants_owned INT NOT NULL DEFAULT 0,
+              gas_plants_owned INT NOT NULL DEFAULT 0,
+              oil_plants_owned INT NOT NULL DEFAULT 0,
+              geothermal_plants_owned INT NOT NULL DEFAULT 0,
+              wind_plants_owned INT NOT NULL DEFAULT 0,
+              solar_plants_owned INT NOT NULL DEFAULT 0,
+              hydro_plants_owned INT NOT NULL DEFAULT 0,    
+                           
+              coal_plants_powered INT NOT NULL DEFAULT 0,
+              uranium_plants_powered INT NOT NULL DEFAULT 0,
+              biomass_plants_powered INT NOT NULL DEFAULT 0,
+              gas_plants_powered INT NOT NULL DEFAULT 0,
+              oil_plants_powered INT NOT NULL DEFAULT 0,
+              geothermal_plants_powered INT NOT NULL DEFAULT 0,
+              wind_plants_powered INT NOT NULL DEFAULT 0,
+              solar_plants_powered INT NOT NULL DEFAULT 0,
+              hydro_plants_powered INT NOT NULL DEFAULT 0,       
               
               FOREIGN KEY (game_id) REFERENCES games(game_id),
               FOREIGN KEY (team_id) REFERENCES teams(team_id)
-              )''')
-
-    await database.execute('''
-              CREATE TABLE IF NOT EXISTS power_plants (
-              power_plant_id SERIAL PRIMARY KEY,
-              type INT NOT NULL,
-              player_id INT NOT NULL,
-              price INT NOT NULL,
-              powered_on BOOLEAN NOT NULL DEFAULT false,
-              temperature REAL NOT NULL DEFAULT 0,
-              FOREIGN KEY (player_id) REFERENCES players(player_id)
               )''')
 
     await database.execute('''
@@ -208,21 +215,21 @@ async def run_migrations():
         i = 0
         for index, row in df.iterrows():
             await DatasetData.create(dataset_id=dataset_id,
-                                        tick=i,
-                                        date=datetime.strptime(
-                                            row["date"], "%Y-%m-%d %H:%M:%S"),
-                                        coal=row["COAL"],
-                                        uranium=row["URANIUM"],
-                                        biomass=row["BIOMASS"],
-                                        gas=row["GAS"],
-                                        oil=row["OIL"],
-                                        geothermal=row["GEOTHERMAL"],
-                                        wind=row["WIND"],
-                                        solar=row["SOLAR"],
-                                        hydro=row["HYDRO"],
-                                        energy_demand=row["ENERGY_DEMAND"],
-                                        max_energy_price=row["MAX_ENERGY_PRICE"]
-                                        )
+                                     tick=i,
+                                     date=datetime.strptime(
+                                         row["date"], "%Y-%m-%d %H:%M:%S"),
+                                     coal=row["COAL"],
+                                     uranium=row["URANIUM"],
+                                     biomass=row["BIOMASS"],
+                                     gas=row["GAS"],
+                                     oil=row["OIL"],
+                                     geothermal=row["GEOTHERMAL"],
+                                     wind=row["WIND"],
+                                     solar=row["SOLAR"],
+                                     hydro=row["HYDRO"],
+                                     energy_demand=row["ENERGY_DEMAND"],
+                                     max_energy_price=row["MAX_ENERGY_PRICE"]
+                                     )
             i += 1
         logger.info(f"Added dataset {x}")
     logger.info("Migrated database")

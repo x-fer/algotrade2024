@@ -2,7 +2,7 @@ from pprint import pprint
 import pandas as pd
 from game.tick import TickData, Ticker
 from game.tick.ticker import GameData
-from model import Order, Player, Resource, Game, PowerPlant, PowerPlantType, OrderSide
+from model import Order, Player, Resource, Game, PowerPlantType, OrderSide
 from game.market import ResourceMarket, EnergyMarket
 import pytest
 from model.dataset_data import DatasetData
@@ -73,7 +73,7 @@ def get_ticker(game, get_game_data):
 
 @pytest.fixture
 def get_tick_data(game_id):
-    def get_tick_data(power_plants, markets, players, user_cancelled_orders=[], pending_orders=[], updated_orders=[], coal=100, energy_demand=100, max_energy_price=100) -> TickData:
+    def get_tick_data(markets, players, user_cancelled_orders=[], pending_orders=[], updated_orders=[], coal=100, energy_demand=100, max_energy_price=100) -> TickData:
         tick_data = TickData(
             game=Game(
                 game_id=game_id,
@@ -103,7 +103,6 @@ def get_tick_data(game_id):
                 energy_demand=energy_demand,
                 max_energy_price=max_energy_price
             ),
-            power_plants=power_plants,
             markets=markets,
             players=players,
             user_cancelled_orders=user_cancelled_orders,
@@ -188,25 +187,6 @@ def coal_market():
 @pytest.fixture
 def energy_market():
     return EnergyMarket()
-
-
-@pytest.fixture
-def get_power_plant():
-    plant_id = 0
-
-    def get_power_plant(player_id: int, type: PowerPlantType, powered_on: int = True, **kwargs):
-        nonlocal plant_id
-        power_plant = PowerPlant(
-            power_plant_id=plant_id,
-            player_id=player_id,
-            type=type,
-            price=100,
-            powered_on=powered_on,
-            **kwargs
-        )
-        plant_id += 1
-        return power_plant
-    return get_power_plant
 
 
 @pytest.fixture
