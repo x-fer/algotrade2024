@@ -8,7 +8,7 @@ const App = () => {
   const [count, setCount] = useState(0)
 
   return (
-    <div className='flex flex-row'>
+    <div className='flex'>
       <LeftBar/>
       <MiddleScreen/>
       <RightBar/>
