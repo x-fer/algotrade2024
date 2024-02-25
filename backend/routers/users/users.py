@@ -1,9 +1,7 @@
-from fastapi import APIRouter, Depends
-from .dependencies import team
+from fastapi import APIRouter
 from . import player, game, power_plant, market
 
-
-router = APIRouter(dependencies=[Depends(team)])
+router = APIRouter()
 
 
 router.include_router(game.router, tags=["Games"])

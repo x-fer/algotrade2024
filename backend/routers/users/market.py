@@ -7,12 +7,12 @@ from model import Order, OrderSide, OrderType, OrderStatus, Resource
 from model.game import Game
 from model.market import Market
 from model.player import Player
-from .dependencies import game, player, check_game_active
+from .dependencies import game_dep, player_dep, check_game_active_dep
 
 # GAME PATHS
 
 
-router = APIRouter(dependencies=[Depends(game), Depends(check_game_active)])
+router = APIRouter(dependencies=[Depends(check_game_active_dep)])
 
 
 class OrderResponse(BaseModel):
@@ -34,7 +34,7 @@ class OrderResponse(BaseModel):
 
 
 @router.get("/game/{game_id}/market/order/list")
-async def order_list(game: Game) -> List[OrderResponse]:
+async def order_list(game: Game = Depends(game_dep)) -> List[OrderResponse]:
     return await Order.list(
         game_id=game.game_id,
         order_status=OrderStatus.ACTIVE.value
@@ -42,7 +42,7 @@ async def order_list(game: Game) -> List[OrderResponse]:
 
 
 @router.get("/game/{game_id}/market/order/prices/from/{start_tick}/to/{end_tick}")
-async def orded_list(game: Game, start_tick: int = 0, end_tick: int = 0) -> List[OrderResponse]:
+async def orded_list(game: Game = Depends(game_dep), start_tick: int = 0, end_tick: int = 0) -> List[OrderResponse]:
     if start_tick < 0 or end_tick < 0:
         raise HTTPException(
             status_code=400, detail="Tick must be greater than 0")
@@ -68,7 +68,7 @@ class EnergyPriceResponse(BaseModel):
 
 
 @router.post("/game/{game_id}/player/{player_id}/market/energy/set_price")
-async def energy_set_price_player(price: EnergyPrice, game: Game, player: int = Depends(player)) -> EnergyPriceResponse:
+async def energy_set_price_player(price: EnergyPrice, game: Game = Depends(game_dep), player: int = Depends(player_dep)) -> EnergyPriceResponse:
     if price <= 0:
         raise HTTPException(
             status_code=400, detail="Price must be greater than 0")
@@ -95,7 +95,7 @@ class OrderCreateResponse(BaseModel):
 
 
 @router.post("/game/{game_id}/player/{player_id}/market/order/create")
-async def order_create_player(order: UserOrder, game: int = Depends(game), player: int = Depends(player)) -> OrderCreateResponse:
+async def order_create_player(order: UserOrder, game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> OrderCreateResponse:
     if order.type == OrderType.ENERGY:
         raise Exception(
             "Use /game/{game_id}/player/{player_id}/market/energy/set_price to set energy price")
@@ -118,7 +118,7 @@ async def order_create_player(order: UserOrder, game: int = Depends(game), playe
 
 
 @router.post("/game/{game_id}/player/{player_id}/market/order/list")
-async def order_list_player(game: Game, player: int = Depends(player)) -> List[OrderResponse]:
+async def order_list_player(game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> List[OrderResponse]:
     return await Order.list(
         game_id=game.game_id,
         player_id=player.player_id,
@@ -135,7 +135,7 @@ class OrderCancelResponse(BaseModel):
 
 
 @router.post("/game/{game_id}/player/{player_id}/market/order/cancel")
-async def order_cancel_player(body: OrderCancel, game: Game, player: int = Depends(player)) -> OrderCancelResponse:
+async def order_cancel_player(body: OrderCancel, game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> OrderCancelResponse:
     for order_id in body.ids:
         await Order.update(
             order_id=order_id,

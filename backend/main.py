@@ -15,6 +15,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
+from docs import tags_metadata, description
 
 
 async def background_tasks():
@@ -60,37 +61,11 @@ def team_secret(request: Request):
 limiter = Limiter(key_func=team_secret, default_limits=[
                   "10/second"], storage_uri="redis://localhost:6379/0")
 
-description = """
-Docs for Algotrade hackathon - the biggest hackathon in Zagreb.
-
-*IMPORTANT:* Each team will get a team_id. Make sure to send it as a query
-parameter in all requests you send!
-
-## Game
-
-Here you can see avaliable games.
-
-- One game will be open all night long for testing your bots.
-
-- There will be three competition rounds lasting for 30 minutes. These 
-rounds will be scored and they have annotation is_contest=True.
-
-- Before these competition rounds, we will start test rounds that will 
-simulate contest. They will also last 30 minutes, but will not be scored.
-
-## Player
-
-You will be able to
-- Create player in a game
-- Get all created players in a game
-- Get player info - player resources, money, power plants etc.
-
-"""
-
 app = FastAPI(
     title="Algotrade API",
     version="0.0.1",
     description=description,
+    openapi_tags=tags_metadata,
     lifespan=lifespan
 )
 

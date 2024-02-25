@@ -5,7 +5,7 @@ from db import database
 from model import Player, Team
 from config import config
 from model.game import Game
-from .dependencies import game, player, check_game_active, team
+from .dependencies import game_dep, player_dep, check_game_active_dep, team_dep
 
 # PLAYER PATHS
 
@@ -14,7 +14,7 @@ from .dependencies import game, player, check_game_active, team
 # /game/[id]/player/[player_id]/delete?team_secret=
 
 
-router = APIRouter(dependencies=[Depends(game), Depends(team)])
+router = APIRouter(dependencies=[])
 
 
 class PlayerListResponseItem(BaseModel):
@@ -23,7 +23,8 @@ class PlayerListResponseItem(BaseModel):
 
 
 @router.get("/game/{game_id}/player/list")
-async def player_list(game: Game, team: Team) -> List[PlayerListResponseItem]:
+async def player_list(game: Game = Depends(game_dep),
+                      team: Team = Depends(team_dep)) -> List[PlayerListResponseItem]:
     players = await Player.list(game_id=game.game_id, team_id=team.team_id, is_active=True)
     return [{
         "player_id": x.player_id,
@@ -41,7 +42,9 @@ class PlayerResponse(BaseModel):
 
 
 @router.post("/game/{game_id}/player/create")
-async def player_create(game: Game, team: Team, player_create: PlayerCreate | None | dict = None) -> PlayerResponse:
+async def player_create(game: Game = Depends(game_dep),
+                        team: Team = Depends(team_dep),
+                        player_create: PlayerCreate | None | dict = None) -> PlayerResponse:
     async with database.transaction():
         team_id = team.team_id
         game_id = game.game_id
@@ -56,8 +59,9 @@ async def player_create(game: Game, team: Team, player_create: PlayerCreate | No
     return {"player_id": player_id, "player_name": player_name}
 
 
-@router.get("/game/{game_id}/player/{player_id}", dependencies=[Depends(check_game_active)])
-async def player_get(game: Game, player: Player = Depends(player)) -> Player:
+@router.get("/game/{game_id}/player/{player_id}", dependencies=[Depends(check_game_active_dep)])
+async def player_get(game: Game = Depends(game_dep),
+                     player: Player = Depends(player_dep)) -> Player:
     return await Player.get(player_id=player.player_id)
 
 
@@ -66,6 +70,7 @@ class PlayerDeleteResponse(BaseModel):
 
 
 @router.get("/game/{game_id}/player/{player_id}/delete")
-async def player_delete(game: Game, player: Player = Depends(player)) -> PlayerDeleteResponse:
+async def player_delete(game: Game = Depends(game_dep),
+                        player: Player = Depends(player_dep)) -> PlayerDeleteResponse:
     await Player.update(player_id=player.player_id, is_active=False)
     return {"successfull": True}
