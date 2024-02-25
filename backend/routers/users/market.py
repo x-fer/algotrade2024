@@ -5,6 +5,7 @@ import pandas as pd
 from pydantic import BaseModel
 from model import Order, OrderSide, OrderType, OrderStatus, Resource
 from model.game import Game
+from model.market import Market
 from model.player import Player
 from .dependencies import game_id, player
 
@@ -20,6 +21,20 @@ async def offer_list(game_id: int = Depends(game_id)):
         game_id=game_id,
         order_status=OrderStatus.ACTIVE.value
     )
+
+
+@router.get("/game/{game_id}/market/offer/prices/from/{start_tick}/to/{end_tick}")
+async def offer_list(game_id: int = Depends(game_id), start_tick: int = 0, end_tick: int = 0):
+    if start_tick < 0 or end_tick < 0:
+        raise HTTPException(
+            status_code=400, detail="Tick must be greater than 0")
+
+    # TODO: add new method
+    all_market = await Market.list(
+        game_id=game_id,
+    )
+
+    return list(filter(lambda x: start_tick <= x.tick <= end_tick, all_market))
 
 
 class EnergyPrice(BaseModel):
