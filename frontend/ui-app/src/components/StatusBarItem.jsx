@@ -1,9 +1,7 @@
 const StatusBarItem = ({ ammount, unit }) => {
   return (
-    <div className="flex justify-center align-center">
-      <p>
-        {ammount}&nbsp;{unit}
-      </p>
+    <div className="flex flex-col text-xl justify-center justify-items-center h-40">
+      {ammount}&nbsp;{unit}
     </div>
   );
 };

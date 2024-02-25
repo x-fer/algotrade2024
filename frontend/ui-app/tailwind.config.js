@@ -7,6 +7,7 @@ export default {
         red: "#dd4734",
         "black-gray": "#111111",
         "dark-gray": "#191919",
+        gray: "#373737",
       },
     },
   },
