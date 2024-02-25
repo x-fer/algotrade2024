@@ -3,17 +3,17 @@ from datetime import datetime
 from pprint import pprint
 from typing import Tuple
 import pandas as pd
-from model import Player, PowerPlant, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType, PowerPlantType
+from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType
 from game.market import ResourceMarket, EnergyMarket
 from game.bots import Bots
 from model.market import Market
 from .tick_data import TickData
 from logger import logger
+from db import database
 
 
 class GameData:
     def __init__(self, game: Game, players: dict[int, Player]):
-        self.players: dict[int, Player] = players
         self.markets: dict[int, ResourceMarket] = {
             resource.value: ResourceMarket(resource, players)
             for resource in Resource
@@ -59,7 +59,13 @@ class Ticker:
                     continue
 
             try:
-                await self.run_game_tick(game)
+
+                async with database.transaction():
+                    await database.execute(
+                        f"LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
+
+                    await self.run_game_tick(game)
+
             except Exception as e:
                 logger.critical(
                     f"({game.game_id}) {game.game_name} tick {game.current_tick} failed with error: " + str(e))
@@ -88,11 +94,6 @@ class Ticker:
             for player in await Player.list(game_id=game.game_id)
         }
 
-        power_plants = {
-            player_id: await PowerPlant.list(player_id=player_id)
-            for player_id in players.keys()
-        }
-
         pending_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.PENDING)
         user_cancelled_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.USER_CANCELLED)
         dataset_row = await DatasetData.get(dataset_id=game.dataset_id, tick=game.current_tick)
@@ -101,7 +102,6 @@ class Ticker:
         tick_data = TickData(
             game=game,
             players=players,
-            power_plants=power_plants,
             markets=markets,
             bots=self.game_data[game.game_id].bots,
             pending_orders=pending_orders,
@@ -135,28 +135,21 @@ class Ticker:
         return tick_data
 
     def run_power_plants(self, tick_data: TickData):
-        for player_id in tick_data.power_plants.keys():
-            tick_data.players[player_id].energy = 0
 
         for player_id in tick_data.players.keys():
-            power_plants = tick_data.power_plants[player_id]
             player = tick_data.players[player_id]
 
-            for power_plant in power_plants:
-                type = PowerPlantType(power_plant.type)
+            player.energy = 0
 
-                if power_plant.has_resources(player):
-                    if not type.is_renewable():
-                        player[type.name.lower()] -= 1
-                else:
-                    power_plant.powered_on = False
+            for type in PowerPlantType:
+                to_consume = player[type.name.lower() + "_plants_powered"]
 
-                power_plant.temperature = type.get_new_temp(
-                    power_plant.temperature, power_plant.powered_on)
+                if not type.is_renewable():
+                    to_consume = min(to_consume, player[type.name.lower()])
+                    player[type.name.lower()] -= to_consume
 
-                if power_plant.temperature > 0.99:
-                    player.energy += power_plant.get_produced_energy(
-                        tick_data.dataset_row)
+                player.energy += to_consume * type.get_produced_energy(
+                    tick_data.dataset_row)
 
         return tick_data
 
@@ -188,10 +181,6 @@ class Ticker:
     async def save_tick_data(self, tick_data: TickData):
         for player in tick_data.players.values():
             await Player.update(**dataclasses.asdict(player))
-
-        for power_plants in tick_data.power_plants.values():
-            for power_plant in power_plants:
-                await PowerPlant.update(**dataclasses.asdict(power_plant))
 
         for order in tick_data.updated_orders.values():
             await Order.update(**dataclasses.asdict(order))

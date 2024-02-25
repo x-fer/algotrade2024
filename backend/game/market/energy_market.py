@@ -2,7 +2,6 @@ from model import Trade, Resource
 from model.order import Order
 from config import config
 from model.player import Player
-from model.power_plant import PowerPlant
 
 
 class EnergyMarket:
