@@ -1,11 +1,12 @@
 from enum import Enum
 import pytest
-from model.enum_type import enum_type
+from dataclasses import dataclass
+from model.enum_type import EnumType
 
 
 class ExampleEnum(Enum):
-    VALUE1 = 1
-    VALUE2 = 2
+    VALUE1 = "VALUE1"
+    VALUE2 = "VALUE2"
 
 
 class AnotherEnum(Enum):
@@ -13,29 +14,22 @@ class AnotherEnum(Enum):
     OPTION2 = 'Option 2'
 
 
-@pytest.fixture
-def example_class():
-    class ExampleClass:
-        example_field = enum_type(ExampleEnum)
-        another_field = enum_type(AnotherEnum)
-
-        def __init__(self, example_field=None, another_field=None):
-            self.example_field = example_field
-            self.another_field = another_field
-
-    return ExampleClass
+class ExampleField(EnumType):
+    cls = ExampleEnum
 
 
-def test_enum_type_default(example_class):
-    instance = example_class()
+class AnotherField(EnumType):
+    cls = AnotherEnum
 
-    assert instance.example_field is None
-    assert instance.another_field is None
 
-    instance.example_field = 'VALUE1'
-    instance.another_field = 'Option 1'
+@dataclass
+class ExampleClass():
+    example_field: ExampleField
+    another_field: AnotherField
 
-    instance = example_class(example_field='VALUE2', another_field='Option 2')
+
+def test_enum_type_default():
+    instance = ExampleClass(example_field='VALUE2', another_field='Option 2')
 
     assert instance.example_field == 'VALUE2'
     assert instance.another_field == 'Option 2'

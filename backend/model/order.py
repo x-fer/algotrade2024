@@ -1,17 +1,25 @@
 from dataclasses import dataclass, field
-
-from pydantic import BaseModel
 from db.table import Table
 import pandas as pd
-from .order_types import *
-from .enum_type import enum_type
+from .order_types import OrderSide, OrderStatus, OrderType
+from .enum_type import EnumType
 from .resource import Resource
 
 
-OrderSideField = enum_type(OrderSide)
-OrderTypeField = enum_type(OrderType)
-OrderStatusField = enum_type(OrderStatus)
-ResourceField = enum_type(Resource)
+class ResourceField(EnumType):
+    cls = Resource
+
+
+class OrderSideField(EnumType):
+    cls = OrderSide
+
+
+class OrderStatusField(EnumType):
+    cls = OrderStatus
+
+
+class OrderTypeField(EnumType):
+    cls = OrderType
 
 
 @dataclass
