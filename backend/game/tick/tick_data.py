@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from model import Player, PowerPlant, Game, Order
+from model import Player, Game, Order
 from game.market import ResourceMarket
 from game.bots.bot import Bot
 
@@ -8,9 +8,9 @@ from game.bots.bot import Bot
 class TickData:
     game: Game
     players: dict[int, Player]
-    power_plants: dict[int, list[PowerPlant]]
     markets: dict[int, ResourceMarket]
     bots: list[Bot]
+    power_plants: dict[int, list[PowerPlant]]
 
     dataset_row: dict = field(default_factory=dict)
 

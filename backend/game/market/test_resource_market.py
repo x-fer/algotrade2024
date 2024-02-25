@@ -1,4 +1,3 @@
-from pprint import pprint
 from model import Order, Player, OrderSide, OrderStatus
 from . import ResourceMarket, EnergyMarket
 from game.fixtures.fixtures import *
@@ -17,9 +16,7 @@ def test_when_transaction_successful(get_player, get_order, coal_market):
 
     resource_market = coal_market(player_dict)
 
-    updated = resource_market.match(order_1, 1)
-    updated |= resource_market.match(order_2, 1)
-    updated |= resource_market.match(order_3, 1)
+    updated = resource_market.match([order_1, order_2, order_3], 1)
 
     assert updated[order_1.order_id].order_status == OrderStatus.COMPLETED
     assert updated[order_2.order_id].order_status == OrderStatus.COMPLETED
@@ -53,11 +50,10 @@ def test_cancel_before_match(get_player, get_order, coal_market):
 
     resource_market = coal_market(player_dict)
 
-    updated = resource_market.match(order_1, 1)
+    updated = resource_market.match([order_1], 1)
 
-    updated |= resource_market.cancel(order_1)
-    updated |= resource_market.match(order_2, 1)
-    updated |= resource_market.match(order_3, 1)
+    updated |= resource_market.cancel([order_1])
+    updated |= resource_market.match([order_2, order_3], 1)
 
     assert updated[order_1.order_id].order_status == OrderStatus.CANCELLED
     assert updated[order_2.order_id].order_status == OrderStatus.ACTIVE
@@ -86,9 +82,7 @@ def test_user_low_balance(get_player, get_order, coal_market):
 
     resource_market = coal_market(player_dict)
 
-    updated = resource_market.match(order_1, 1)
-    updated |= resource_market.match(order_2, 1)
-    updated |= resource_market.match(order_3, 1)
+    updated = resource_market.match([order_1, order_2, order_3], 1)
 
     assert updated[order_1.order_id].order_status == OrderStatus.CANCELLED
     assert updated[order_2.order_id].order_status == OrderStatus.ACTIVE
@@ -119,9 +113,7 @@ def test_user_low_resources(get_player, get_order, coal_market):
 
     resource_market = coal_market(player_dict)
 
-    updated = resource_market.match(order_1, 1)
-    updated |= resource_market.match(order_2, 1)
-    updated |= resource_market.match(order_3, 1)
+    updated = resource_market.match([order_1, order_2, order_3], 1)
 
     assert updated[order_1.order_id].order_status == OrderStatus.ACTIVE
     assert updated[order_2.order_id].order_status == OrderStatus.CANCELLED

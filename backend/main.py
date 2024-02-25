@@ -11,6 +11,10 @@ from routers import admin_router, users_router
 import psutil
 import os
 from logger import logger
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.errors import RateLimitExceeded
 
 
 async def background_tasks():
@@ -45,7 +49,24 @@ async def lifespan(app: FastAPI):
     await database.disconnect()
 
 
+def team_secret(request: Request):
+    param = request.query_params.get("team_secret")
+    if param is None:
+        return get_remote_address(request)
+
+    return param
+
+
+limiter = Limiter(key_func=team_secret, default_limits=[
+                  "10/second"], storage_uri="redis://localhost:6379/0")
+
 app = FastAPI(lifespan=lifespan)
+
+app.state.limiter = limiter
+
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+app.add_middleware(SlowAPIMiddleware)
 
 
 @app.exception_handler(Exception)
@@ -63,17 +84,20 @@ async def log_request(message):
 
 @app.middleware("http")
 async def log_request_middleware(request: Request, call_next):
+    body = await request.body()
+
     start_time = time.time()
     response = await call_next(request)
     process_time = (time.time() - start_time) * 1000
     formatted_process_time = '{0:.8f}'.format(process_time)
-    url = f"{request.url.path}" + (f"?{request.query_params}" if request.query_params else "")
-    body = await request.body()
+    url = f"{request.url.path}" + \
+        (f"?{request.query_params}" if request.query_params else "")
+
     message = (f"{request.client.host}:{request.client.port} - "
-        f"\"{request.method} {url}\" "
-        f"[{response.status_code}], "
-        f"completed in: {formatted_process_time}ms, "
-        f"request body: {body}")
+               f"\"{request.method} {url}\" "
+               f"[{response.status_code}], "
+               f"completed in: {formatted_process_time}ms, "
+               f"request body: {body}")
     asyncio.create_task(log_request(message))
     return response
 
