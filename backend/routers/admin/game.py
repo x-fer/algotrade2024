@@ -21,7 +21,7 @@ class CreateGameParams(BaseModel):
     game_name: str
     contest: bool
     bots: str
-    dataset: str
+    dataset_id: int
     start_time: datetime
     total_ticks: int
     tick_time: int
@@ -39,9 +39,8 @@ class EditGameParams(BaseModel):
 
 @router.post("/game/create", tags=["admin"])
 async def game_create(params: CreateGameParams):
-    Bots.validate_string(params.bots)
-
     try:
+        Bots.parse_string(params.bots)
         Datasets.get(params.dataset_id)
     except:
         raise HTTPException(400, "Dataset does not exist")
