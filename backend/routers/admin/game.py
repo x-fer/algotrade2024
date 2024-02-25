@@ -49,7 +49,7 @@ async def game_create(params: CreateGameParams):
     except Exception as e:
         raise HTTPException(400, "Dataset does not exist")
 
-    Datasets.validate_ticks(params.dataset_id, params.total_ticks)
+    await Datasets.validate_ticks(params.dataset_id, params.total_ticks)
 
     if params.start_time < datetime.now():
         raise HTTPException(400, "Start time must be in the future")

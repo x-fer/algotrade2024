@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field
+
+from pydantic import BaseModel
 from db.table import Table
 import pandas as pd
 from .order_types import *
