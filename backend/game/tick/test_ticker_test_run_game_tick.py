@@ -5,20 +5,20 @@ from unittest.mock import patch
 from tick.test_tick_fixtures import *
 
 
-@pytest.mark.asyncio
-async def test_run_game_tick(
-    sample_game, sample_players, tick_data,
-    sample_pending_orders,
-    sample_user_cancelled_orders, sample_dataset_row
-):
-    with patch.object(Ticker, 'get_tick_data', return_value=tick_data), \
-            patch.object(Ticker, 'run_markets'), \
-            patch.object(Ticker, 'run_power_plants'), \
-            patch.object(Ticker, 'run_electricity_market', return_value=(tick_data, {})), \
-            patch.object(Ticker, 'save_electricity_orders'), \
-            patch.object(Ticker, 'save_tick_data'), \
-            patch.object(Game, 'update'), \
-            patch.object(Ticker, 'run_bots'):
+# @pytest.mark.asyncio
+# async def test_run_game_tick(
+#     sample_game, sample_players, tick_data,
+#     sample_pending_orders,
+#     sample_user_cancelled_orders, sample_dataset_row
+# ):
+#     with patch.object(Ticker, 'get_tick_data', return_value=tick_data), \
+#             patch.object(Ticker, 'run_markets'), \
+#             patch.object(Ticker, 'run_power_plants'), \
+#             patch.object(Ticker, 'run_electricity_market', return_value=(tick_data, {})), \
+#             patch.object(Ticker, 'save_electricity_orders'), \
+#             patch.object(Ticker, 'save_tick_data'), \
+#             patch.object(Game, 'update'), \
+#             patch.object(Ticker, 'run_bots'):
 
 #         ticker = Ticker()
 #         ticker.game_data[sample_game.game_id] = GameData(

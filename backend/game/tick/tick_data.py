@@ -10,7 +10,6 @@ class TickData:
     players: dict[int, Player]
     markets: dict[int, ResourceMarket]
     bots: list[Bot]
-    power_plants: dict[int, list[PowerPlant]]
 
     dataset_row: dict = field(default_factory=dict)
 

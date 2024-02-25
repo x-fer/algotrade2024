@@ -16,7 +16,7 @@ def get_markets():
     return _get_markets
 
 
-def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market, get_markets):
+def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
     order2 = get_order(player_id=2, price=5, size=50,
@@ -50,8 +50,7 @@ def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, 
     assert len(tick_data.updated_orders) == 2
 
 
-
-def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market, get_markets):
+def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
     order2 = get_order(player_id=2, price=5, size=25,
@@ -89,7 +88,8 @@ def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, get
 
     assert len(tick_data.updated_orders) == 2
 
-def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market, get_markets):
+
+def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
 
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
@@ -129,7 +129,7 @@ def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_tick
     assert len(tick_data.updated_orders) == 2
 
 
-def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market, get_markets):
+def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
 
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
@@ -170,8 +170,7 @@ def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_
     assert len(tick_data.updated_orders) == 2
 
 
-
-def test_run_markets_cancel(get_tick_data, get_order, get_ticker, get_player, get_power_plant, coal_market, get_markets):
+def test_run_markets_cancel(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
     order1_cancelled = deepcopy(order1)
