@@ -1,11 +1,34 @@
+from datetime import datetime
 from fastapi import HTTPException, Query, Depends
 from model import Team, Player, Game
 
 
+async def game_id_no_check_time(game_id: int) -> int:
+    try:
+        game = await Game.get(game_id=game_id)
+
+        return game_id
+    except HTTPException as e:
+        raise e
+    except:
+        raise HTTPException(status_code=403, detail="Invalid game_id")
+
+
 async def game_id(game_id: int) -> int:
     try:
-        # TODO: add check if game is started
-        return (await Game.get(game_id=game_id)).game_id
+        game = await Game.get(game_id=game_id)
+        start_time = game.start_time
+        is_finished = game.is_finished
+
+        if is_finished:
+            raise HTTPException(403, "Game is already finished")
+
+        if datetime.now() < start_time:
+            raise HTTPException(403, "Game has not started yet")
+
+        return game_id
+    except HTTPException as e:
+        raise e
     except:
         raise HTTPException(status_code=403, detail="Invalid game_id")
 

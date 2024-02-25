@@ -21,7 +21,7 @@ class CreateGameParams(BaseModel):
     game_name: str
     contest: bool
     bots: str
-    dataset: str
+    dataset_id: int
     start_time: datetime
     total_ticks: int
     tick_time: int
@@ -39,11 +39,14 @@ class EditGameParams(BaseModel):
 
 @router.post("/game/create", tags=["admin"])
 async def game_create(params: CreateGameParams):
-    Bots.validate_string(params.bots)
+    try:
+        Bots.parse_string(params.bots)
+    except:
+        raise HTTPException(400, "Invalid bots string")
 
     try:
-        Datasets.get(params.dataset_id)
-    except:
+        await Datasets.get(dataset_id=params.dataset_id)
+    except Exception as e:
         raise HTTPException(400, "Dataset does not exist")
 
     Datasets.validate_ticks(params.dataset_id, params.total_ticks)
@@ -87,9 +90,10 @@ async def game_delete(game_id: int):
 
 @router.post("/game/{game_id}/edit", tags=["admin"])
 async def game_edit(game_id: int, params: EditGameParams):
-    if params.bots is not None:
-        Bots.validate_string(params.bots)  # a:10;b:10;c:10;d:10
-
+    try:
+        Bots.parse_string(params.bots)
+    except:
+        raise HTTPException(400, "Invalid bots string")
     if params.dataset is not None:
         Datasets.validate_string(params.dataset)
 
@@ -100,7 +104,7 @@ async def game_edit(game_id: int, params: EditGameParams):
         if params.dataset is not None:
             dataset = params.dataset
 
-        Datasets.validate_ticks(dataset, params.total_ticks)
+        await Datasets.validate_ticks(dataset, params.total_ticks)
 
     if params.start_time is not None and params.start_time < datetime.now():
         raise HTTPException(400, "Start time must be in the future")
