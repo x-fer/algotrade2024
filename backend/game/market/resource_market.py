@@ -1,3 +1,5 @@
+from pprint import pprint
+from typing import List
 from game.orderbook.orderbook import OrderBook
 from game.price_tracker.price_tracker import PriceTracker
 from model import Resource, Trade, Order
@@ -5,7 +7,7 @@ from model.player import Player
 
 
 class ResourceMarket:
-    def __init__(self, resource: Resource, players: dict[int, Player] = {}):
+    def __init__(self, resource: Resource, players: dict[int, Player]):
         self.resource = resource
         self.orderbook = OrderBook()
         self.price_tracker = PriceTracker(self.orderbook)
@@ -20,14 +22,16 @@ class ResourceMarket:
         for callback_type, callback in callbacks.items():
             self.orderbook.register_callback(callback_type, callback)
 
-    def cancel(self, order: Order):
+    def cancel(self, orders: List[Order]):
         self._updated = {}
-        self.orderbook.cancel_order(order.order_id)
+        for order in orders:
+            self.orderbook.cancel_order(order.order_id)
         return self._updated
 
-    def match(self, order: Order, tick: int):
+    def match(self, orders: Order, tick: int):
         self._updated = {}
-        self.orderbook.add_order(order)
+        for order in orders:
+            self.orderbook.add_order(order)
         self.orderbook.match(tick)
         return self._updated
 

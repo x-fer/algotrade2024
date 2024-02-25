@@ -1,10 +1,12 @@
 import dataclasses
 from datetime import datetime
+from pprint import pprint
 from typing import Tuple
 import pandas as pd
 from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType
 from game.market import ResourceMarket, EnergyMarket
 from game.bots import Bots
+from model.market import Market
 from .tick_data import TickData
 from logger import logger
 from db import database
@@ -73,6 +75,7 @@ class Ticker:
             f"({game.game_id}) {game.game_name}: {game.current_tick} tick")
         tick_data = await self.get_tick_data(game)
         tick_data = self.run_markets(tick_data)
+
         tick_data = self.run_power_plants(tick_data)
         tick_data, energy_sold = self.run_electricity_market(
             tick_data, self.game_data[game.game_id].energy_market)
@@ -80,6 +83,7 @@ class Ticker:
             game, tick_data.players, energy_sold, game.current_tick)
 
         await self.save_tick_data(tick_data)
+        await self.save_market_data(tick_data)
         await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
 
         await self.run_bots(tick_data)
@@ -108,23 +112,25 @@ class Ticker:
         return tick_data
 
     def run_markets(self, tick_data: TickData):
-        updated_orders = {}
+        for resource in Resource:
+            market = tick_data.markets[resource.value]
+            filtered_orders = list(filter(
+                lambda order: order.resource.value == resource.value, tick_data.user_cancelled_orders))
 
-        for order in tick_data.user_cancelled_orders:
-            game_data = self.game_data[tick_data.game.game_id]
-            market = game_data.markets[order.resource.value]
+            updated = market.cancel(
+                filtered_orders)
 
-            updated = market.cancel(order)
-            updated_orders.update(updated)
+            tick_data.updated_orders.update(updated)
 
-        for order in tick_data.pending_orders:
-            game_data = self.game_data[tick_data.game.game_id]
-            market = game_data.markets[order.resource.value]
+        for resource in Resource:
+            market = tick_data.markets[resource.value]
+            filtered_orders = list(filter(
+                lambda order: order.resource.value == resource.value, tick_data.pending_orders))
 
-            updated = market.match(order, tick_data.game.current_tick)
-            updated_orders.update(updated)
+            updated = market.match(
+                filtered_orders, tick_data.game.current_tick)
 
-        tick_data.updated_orders.update(updated_orders)
+            tick_data.updated_orders.update(updated)
 
         return tick_data
 
@@ -178,6 +184,26 @@ class Ticker:
 
         for order in tick_data.updated_orders.values():
             await Order.update(**dataclasses.asdict(order))
+
+    async def save_market_data(self, tick_data: TickData):
+        tick = tick_data.game.current_tick
+        game_id = tick_data.game.game_id
+
+        for resource in Resource:
+            await Market.create(
+                game_id=game_id,
+                tick=tick,
+                resource=resource.value,
+                low=tick_data.markets[resource.value].price_tracker.get_low(),
+                high=tick_data.markets[resource.value].price_tracker.get_high(
+                ),
+                open=tick_data.markets[resource.value].price_tracker.get_open(
+                ),
+                close=tick_data.markets[resource.value].price_tracker.get_close(
+                ),
+                market=tick_data.markets[resource.value].price_tracker.get_market(
+                )
+            )
 
     async def run_bots(self, tick_data: TickData):
         bots = self.game_data[tick_data.game.game_id].bots
