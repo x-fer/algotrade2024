@@ -15,6 +15,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
+from docs import tags_metadata, description
 
 
 async def background_tasks():
@@ -60,7 +61,14 @@ def team_secret(request: Request):
 limiter = Limiter(key_func=team_secret, default_limits=[
                   "10/second"], storage_uri="redis://localhost:6379/0")
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Algotrade API",
+    version="0.0.1",
+    description=description,
+    openapi_tags=tags_metadata,
+    lifespan=lifespan,
+    docs_url=None
+)
 
 app.state.limiter = limiter
 
@@ -102,7 +110,7 @@ async def log_request_middleware(request: Request, call_next):
     return response
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
     return {"message": "Hello World"}
 

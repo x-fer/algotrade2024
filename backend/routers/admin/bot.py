@@ -9,6 +9,6 @@ from game.bots.bots import Bots
 router = APIRouter()
 
 
-@router.get("/bot/list", tags=["admin"])
+@router.get("/bot/list")
 def bot_list():
     return Bots.list()

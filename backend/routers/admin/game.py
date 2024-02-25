@@ -37,15 +37,14 @@ class EditGameParams(BaseModel):
     tick_time: int
 
 
-@router.post("/game/create", tags=["admin"])
+@router.post("/game/create")
 async def game_create(params: CreateGameParams):
     try:
         Bots.parse_string(params.bots)
-        Datasets.get(params.dataset_id)
     except:
         raise HTTPException(400, "Dataset does not exist")
 
-    Datasets.validate_ticks(params.dataset_id, params.total_ticks)
+    await Datasets.validate_ticks(params.dataset_id, params.total_ticks)
 
     if params.start_time < datetime.now():
         raise HTTPException(400, "Start time must be in the future")
@@ -65,30 +64,31 @@ async def game_create(params: CreateGameParams):
     return {"message": "success"}
 
 
-@router.get("/game/list", tags=["admin"])
+@router.get("/game/list")
 async def game_list():
     games = await Game.list()
     return {"games": games}
 
 
-@router.get("/game/{game_id}/player/list", tags=["admin"])
+@router.get("/game/{game_id}/player/list")
 async def player_list(game_id: int):
     players = await Player.list(game_id=game_id)
     return {"players": players}
 
 
-@router.get("/game/{game_id}/delete", tags=["admin"])
+@router.get("/game/{game_id}/delete")
 async def game_delete(game_id: int):
     # TODO ne baca exception ako je vec zavrsena
     await Game.update(game_id=game_id, is_finished=True)
     return {"message": "success"}
 
 
-@router.post("/game/{game_id}/edit", tags=["admin"])
+@router.post("/game/{game_id}/edit")
 async def game_edit(game_id: int, params: EditGameParams):
-    if params.bots is not None:
-        Bots.validate_string(params.bots)  # a:10;b:10;c:10;d:10
-
+    try:
+        Bots.parse_string(params.bots)
+    except:
+        raise HTTPException(400, "Invalid bots string")
     if params.dataset is not None:
         Datasets.validate_string(params.dataset)
 
@@ -99,7 +99,7 @@ async def game_edit(game_id: int, params: EditGameParams):
         if params.dataset is not None:
             dataset = params.dataset
 
-        Datasets.validate_ticks(dataset, params.total_ticks)
+        await Datasets.validate_ticks(dataset, params.total_ticks)
 
     if params.start_time is not None and params.start_time < datetime.now():
         raise HTTPException(400, "Start time must be in the future")

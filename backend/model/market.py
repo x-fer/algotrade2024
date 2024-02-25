@@ -1,11 +1,11 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from db.table import Table
-from db.db import database
 from .resource import Resource
-from .enum_type import enum_type
+from .enum_type import EnumType
 
 
-ResourceField = enum_type(Resource)
+class ResourceField(EnumType):
+    cls = Resource
 
 
 @dataclass

@@ -10,6 +10,9 @@ database:
 test_database:
   url: postgresql://postgres:postgres@localhost:5432/test_database
 
+admin:
+  secret: mojkljuc
+
 game:
   tick_interval: 1
 

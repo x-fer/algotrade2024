@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter
 from model import Game
 
@@ -10,7 +11,7 @@ from model import Game
 router = APIRouter()
 
 
-@router.get("/game/list", tags=["users"])
-async def game_list():
+@router.get("/game/list")
+async def game_list() -> List[Game]:
     games = await Game.list()
-    return {"games": games}
+    return games

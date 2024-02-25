@@ -22,7 +22,7 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-@router.post("/team/create", tags=["admin"])
+@router.post("/team/create")
 async def team_create(params: CreateTeam):
     team_secret = id_generator()
     team_id = await Team.create(team_name=params.team_name, team_secret=team_secret)
@@ -30,12 +30,12 @@ async def team_create(params: CreateTeam):
     return {"team_id": team_id, "team_secret": team_secret}
 
 
-@router.get("/team/list", tags=["admin"])
+@router.get("/team/list")
 async def team_list():
     return await Team.list()
 
 
-@router.get("/team/{team_id}/delete", tags=["admin"])
+@router.get("/team/{team_id}/delete")
 async def team_delete(team_id: int):
     team_id = await Team.delete(team_id=team_id)
 
