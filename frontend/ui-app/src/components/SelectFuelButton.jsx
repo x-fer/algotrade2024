@@ -1,7 +1,7 @@
 const SelectFuelButton = ({ type, active, setSelectedFuel, image }) => {
   return (
     <button
-      className={`bg-dark-gray hover:bg-gray text-white text-xl p-2 rounded-3xl border-2 ${
+      className={`bg-dark-gray hover:bg-gray text-white text-xl p-2 rounded-3xl mx-0.5 border-2 ${
         active ? "border-red" : "border-black-gray"
       }`}
       onClick={() => setSelectedFuel(type)}
