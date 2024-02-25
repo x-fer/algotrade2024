@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from model.datasets import Datasets
+
 # DATASET PATHS
 
 # GET	/admin/dataset/list	-	[{"id": [id], "name": [name]}, {}, {}, {}]
@@ -7,6 +9,6 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
-@router.get("/dataset/list")
+@router.get("/dataset/list", tags=["admin"])
 async def dataset_list():
-    return {"message": "Hello World"}
+    return await Datasets.list()

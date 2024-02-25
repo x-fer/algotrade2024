@@ -15,7 +15,7 @@ from .dependencies import game_id, player
 router = APIRouter()
 
 
-@router.get("/game/{game_id}/market/offer/list")
+@router.get("/game/{game_id}/market/offer/list", tags=["users"])
 async def offer_list(game_id: int = Depends(game_id)):
     return await Order.list(
         game_id=game_id,
@@ -23,7 +23,7 @@ async def offer_list(game_id: int = Depends(game_id)):
     )
 
 
-@router.get("/game/{game_id}/market/offer/prices/from/{start_tick}/to/{end_tick}")
+@router.get("/game/{game_id}/market/offer/prices/from/{start_tick}/to/{end_tick}", tags=["users"])
 async def offer_list(game_id: int = Depends(game_id), start_tick: int = 0, end_tick: int = 0):
     if start_tick < 0 or end_tick < 0:
         raise HTTPException(
@@ -41,7 +41,7 @@ class EnergyPrice(BaseModel):
     price: int
 
 
-@router.post("/game/{game_id}/player/{player_id}/market/energy/set_price")
+@router.post("/game/{game_id}/player/{player_id}/market/energy/set_price", tags=["users"])
 async def energy_set_price_player(price: EnergyPrice, game_id: int = Depends(game_id), player: int = Depends(player)):
     if price <= 0:
         raise HTTPException(
@@ -64,7 +64,7 @@ class UserOrder(BaseModel):
     type: OrderType
 
 
-@router.post("/game/{game_id}/player/{player_id}/market/offer/create")
+@router.post("/game/{game_id}/player/{player_id}/market/offer/create", tags=["users"])
 async def offer_create_player(order: UserOrder, game_id: int = Depends(game_id), player: int = Depends(player)):
     if order.type == OrderType.ENERGY:
         raise Exception(
@@ -92,7 +92,7 @@ async def offer_create_player(order: UserOrder, game_id: int = Depends(game_id),
     return {"success": True}
 
 
-@router.post("/game/{game_id}/player/{player_id}/market/offer/list")
+@router.post("/game/{game_id}/player/{player_id}/market/offer/list", tags=["users"])
 async def offer_list_player(game_id: int = Depends(game_id), player: int = Depends(player)):
     return await Order.list(
         game_id=game_id,
@@ -105,7 +105,7 @@ class OfferCancel(BaseModel):
     ids: List[int]
 
 
-@router.post("/game/{game_id}/player/{player_id}/market/offer/cancel")
+@router.post("/game/{game_id}/player/{player_id}/market/offer/cancel", tags=["users"])
 async def offer_cancel_player(body: OfferCancel, game_id: int = Depends(game_id), player: int = Depends(player)):
     for order_id in body.ids:
         await Order.update(

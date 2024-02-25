@@ -10,7 +10,7 @@ from model import Game
 router = APIRouter()
 
 
-@router.get("/game/list")
+@router.get("/game/list", tags=["users"])
 async def game_list():
     games = await Game.list()
     return {"games": games}

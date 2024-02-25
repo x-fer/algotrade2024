@@ -21,7 +21,7 @@ from config import config
 router = APIRouter(dependencies=[Depends(player)])
 
 
-@router.get("/game/{game_id}/player/{player_id}/plant/list")
+@router.get("/game/{game_id}/player/{player_id}/plant/list", tags=["users"])
 async def list_plants(player_id: int):
     player = await Player.get(player_id=player_id)
 
@@ -40,7 +40,7 @@ class PlantBuySell(BaseModel):
     type: PowerPlantType
 
 
-@router.post("/game/{game_id}/player/{player_id}/plant/buy")
+@router.post("/game/{game_id}/player/{player_id}/plant/buy", tags=["users"])
 async def buy_plant(player_id: int, plant: PlantBuySell):
     type = PowerPlantType(plant.type)
 
@@ -56,7 +56,7 @@ async def buy_plant(player_id: int, plant: PlantBuySell):
         await Player.update(player_id=player_id, **{type.name.lower() + "_plants_owned": plant_count + 1})
 
 
-@router.post("/game/{game_id}/player/{player_id}/plant/sell")
+@router.post("/game/{game_id}/player/{player_id}/plant/sell", tags=["users"])
 async def sell_plant(player_id: int, plant: PlantBuySell):
     type = PowerPlantType(plant.type)
 
@@ -73,7 +73,7 @@ class PowerOn(BaseModel):
     number: int
 
 
-@router.post("/game/{game_id}/player/{player_id}/plant/on")
+@router.post("/game/{game_id}/player/{player_id}/plant/on", tags=["users"])
 async def turn_on(player_id: int, plant: PowerOn):
     async with database.transaction():
         player = await Player.get(player_id=player_id)

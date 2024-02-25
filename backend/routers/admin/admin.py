@@ -6,7 +6,7 @@ from . import dataset, bot, team, game
 router = APIRouter()
 
 
-@router.get("/migrate")
+@router.get("/migrate", tags=["admin"])
 async def migrate():
     await migration.drop_tables()
     await migration.run_migrations()

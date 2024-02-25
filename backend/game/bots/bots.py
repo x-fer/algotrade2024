@@ -12,6 +12,12 @@ class Bots:
         "resource_bot": ResourceBot
     }
 
+    def list():
+        return [
+            {"name": bot_name}
+            for bot_name, bot_id in Bots.bots.items()
+        ]
+
     def exists(bot_id):
         return bot_id in Bots.bots
 

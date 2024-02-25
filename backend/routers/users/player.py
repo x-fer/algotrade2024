@@ -15,7 +15,7 @@ from .dependencies import team_id, game_id, player
 router = APIRouter()
 
 
-@router.get("/game/{game_id}/player/list")
+@router.get("/game/{game_id}/player/list", tags=["users"])
 async def player_list(game_id: int, team_id: int = Depends(team_id)):
     players = await Player.list(game_id=game_id, team_id=team_id, is_active=True)
     return {"players": players}
@@ -25,7 +25,7 @@ class PlayerCreate(BaseModel):
     player_name: str = None
 
 
-@router.post("/game/{game_id}/player/create")
+@router.post("/game/{game_id}/player/create", tags=["users"])
 async def player_create(game_id: int = Depends(game_id), team_id: int = Depends(team_id), player_name: str = None):
     async with database.transaction():
         if player_name is None:
@@ -37,11 +37,11 @@ async def player_create(game_id: int = Depends(game_id), team_id: int = Depends(
     return {"player_id": player_id}
 
 
-@router.get("/game/{game_id}/player/{player_id}")
+@router.get("/game/{game_id}/player/{player_id}", tags=["users"])
 async def player_get(player=Depends(player)):
     return await Player.get(player_id=player.player_id)
 
 
-@router.get("/game/{game_id}/player/{player_id}/delete")
+@router.get("/game/{game_id}/player/{player_id}/delete", tags=["users"])
 async def player_delete(player=Depends(player)):
     return {"successfull": await Player.update(player_id=player.player_id, is_active=False)}

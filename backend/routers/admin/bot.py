@@ -1,5 +1,7 @@
 from fastapi import APIRouter
 
+from game.bots.bots import Bots
+
 # BOT PATHS
 
 # GET	/admin/bot/list	-	[{"id": [id], "name": [name]}, {}, {}, {}]
@@ -7,6 +9,6 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
-@router.get("/bot/list")
-async def bot_list():
-    return {"message": "Hello World"}
+@router.get("/bot/list", tags=["admin"])
+def bot_list():
+    return Bots.list()
