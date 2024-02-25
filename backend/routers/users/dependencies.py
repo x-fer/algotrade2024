@@ -36,5 +36,6 @@ async def player_dep(player_id: int, game: Game = Depends(game_dep), team: int =
     if player.game_id != game.game_id:
         raise HTTPException(400, f"This player is in game {player.game_id}")
     if player.is_active == False:
-        raise HTTPException(400, f"This player is inactive")
+        raise HTTPException(
+            400, f"This player is inactive or already has been deleted")
     return player

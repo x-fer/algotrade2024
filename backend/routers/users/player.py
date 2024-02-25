@@ -49,10 +49,11 @@ async def player_create(game: Game = Depends(game_dep),
         team_id = team.team_id
         game_id = game.game_id
 
-        player_name = player_create.player_name
         if player_create is None or player_create.player_name is None:
             team_players_len = await Player.count(team_id=team_id, game_id=game_id)
             player_name = f"{team.team_name}_{team_players_len}"
+        else:
+            player_name = player_create.player_name
 
         player_id = await Player.create(game_id=game_id, team_id=team_id, player_name=player_name, money=config["player"]["starting_money"])
 

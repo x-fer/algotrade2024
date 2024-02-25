@@ -66,7 +66,8 @@ app = FastAPI(
     version="0.0.1",
     description=description,
     openapi_tags=tags_metadata,
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url=None
 )
 
 app.state.limiter = limiter
@@ -109,7 +110,7 @@ async def log_request_middleware(request: Request, call_next):
     return response
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
     return {"message": "Hello World"}
 

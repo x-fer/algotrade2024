@@ -9,6 +9,6 @@ from model.datasets import Datasets
 router = APIRouter()
 
 
-@router.get("/dataset/list", tags=["admin"])
+@router.get("/dataset/list")
 async def dataset_list():
     return await Datasets.list()

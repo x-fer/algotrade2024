@@ -37,7 +37,7 @@ class EditGameParams(BaseModel):
     tick_time: int
 
 
-@router.post("/game/create", tags=["admin"])
+@router.post("/game/create")
 async def game_create(params: CreateGameParams):
     try:
         Bots.parse_string(params.bots)
@@ -69,26 +69,26 @@ async def game_create(params: CreateGameParams):
     return {"message": "success"}
 
 
-@router.get("/game/list", tags=["admin"])
+@router.get("/game/list")
 async def game_list():
     games = await Game.list()
     return {"games": games}
 
 
-@router.get("/game/{game_id}/player/list", tags=["admin"])
+@router.get("/game/{game_id}/player/list")
 async def player_list(game_id: int):
     players = await Player.list(game_id=game_id)
     return {"players": players}
 
 
-@router.get("/game/{game_id}/delete", tags=["admin"])
+@router.get("/game/{game_id}/delete")
 async def game_delete(game_id: int):
     # TODO ne baca exception ako je vec zavrsena
     await Game.update(game_id=game_id, is_finished=True)
     return {"message": "success"}
 
 
-@router.post("/game/{game_id}/edit", tags=["admin"])
+@router.post("/game/{game_id}/edit")
 async def game_edit(game_id: int, params: EditGameParams):
     try:
         Bots.parse_string(params.bots)
