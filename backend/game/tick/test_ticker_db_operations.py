@@ -1,9 +1,12 @@
+from pprint import pprint
 import pandas as pd
 import pytest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch, call
 from datetime import datetime
+from game.market.resource_market import ResourceMarket
 from model import Order, OrderStatus, Resource
 from model.dataset_data import DatasetData
+from model.market import Market
 from model.order_types import OrderSide, OrderType
 from game.tick import Ticker, TickData
 from tick.test_tick_fixtures import *
@@ -110,3 +113,33 @@ async def test_save_electricity_orders(sample_game, sample_players):
             assert kwargs["filled_price"] == players[kwargs["player_id"]].energy_price
             assert kwargs["expiration_tick"] == 1
             assert kwargs["resource"] == Resource.energy.value
+
+
+@pytest.mark.asyncio
+async def test_save_market_data(ticker, sample_game, tick_data, sample_players):
+    for resource in Resource:
+        price_tracker_mock = MagicMock()
+        price_tracker_mock.get_low.return_value = 50
+        price_tracker_mock.get_high.return_value = 60
+        price_tracker_mock.get_open.return_value = 45
+        price_tracker_mock.get_close.return_value = 55
+        price_tracker_mock.get_market.return_value = 70
+
+        tick_data.markets[resource.value] = ResourceMarket(
+            resource, sample_players)
+        tick_data.markets[resource.value].price_tracker = price_tracker_mock
+
+    with patch('model.market.Market.create') as mock_create:
+        await ticker.save_market_data(tick_data)
+
+        assert mock_create.call_count == len(Resource)
+
+        expected_calls = [
+            call(game_id=sample_game.game_id, tick=1, resource=resource.value,
+                 low=50, high=60, open=45, close=55, market=70)
+            for resource in Resource
+        ]
+        pprint(expected_calls)
+        pprint(mock_create.call_args_list)
+
+        mock_create.assert_has_calls(expected_calls, any_order=True)
