@@ -30,13 +30,17 @@ class Market(Table):
         return await super().create(*args, col_nums=0, **kwargs)
 
     @classmethod
-    async def list_by_game_id_where_tick(cls, game_id, min_tick, max_tick):
+    async def list_by_game_id_where_tick(cls, game_id, min_tick, max_tick, resource=None):
+        resource_query = "" if resource is None else " AND resource=:resource"
         query = f"""
         SELECT * FROM {cls.table_name} 
-        WHERE game_id=:game_id AND tick BETWEEN :min_tick AND :max_tick
+        WHERE game_id=:game_id AND tick BETWEEN :min_tick AND :max_tick{resource_query}
         ORDER BY tick
         """
         values = {"game_id": game_id,
-                  "min_tick": min_tick, "max_tick": max_tick}
+                  "min_tick": min_tick, 
+                  "max_tick": max_tick}
+        if not resource is None: 
+            values["resource"] = resource
         result = await database.fetch_all(query, values)
         return [cls(**game) for game in result]

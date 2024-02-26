@@ -1,4 +1,4 @@
-import dataclasses
+import traceback
 from datetime import datetime
 from pprint import pprint
 from typing import Tuple
@@ -38,14 +38,14 @@ class Ticker:
 
             if game.current_tick >= game.total_ticks:
                 try:
+                    logger.info(
+                        f"Ending game ({game.game_id}) {game.game_name}")
                     await Game.update(game_id=game.game_id, is_finished=True)
                     if self.game_data.get(game.game_id) is not None:
                         del self.game_data[game.game_id]
-                    logger.info(
-                        f"Finished game ({game.game_id}) {game.game_name}")
                 except Exception as e:
                     logger.critical(
-                        f"Failed finishing game ({game.game_id}) {game.current_tick} with error: " + str(e))
+                        f"Failed ending game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
                 continue
 
             if self.game_data.get(game.game_id) is None:
@@ -55,7 +55,7 @@ class Ticker:
                     self.game_data[game.game_id] = GameData(game, {})
                 except Exception as e:
                     logger.critical(
-                        f"Failed creating game ({game.game_id}) {game.current_tick} with error: " + str(e))
+                        f"Failed creating game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
                     continue
 
             try:
@@ -67,7 +67,7 @@ class Ticker:
 
             except Exception as e:
                 logger.critical(
-                    f"({game.game_id}) {game.game_name} tick {game.current_tick} failed with error: " + str(e))
+                    f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
 
     async def run_game_tick(self, game: Game):
         logger.debug(

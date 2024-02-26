@@ -1,6 +1,6 @@
 from dataclasses import dataclass
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from typing import List, Dict
+from fastapi import APIRouter, Depends, HTTPException, Query
 import pandas as pd
 from pydantic import BaseModel
 from model import Order, OrderSide, OrderType, OrderStatus, Resource
@@ -41,14 +41,8 @@ async def order_list(game: Game = Depends(game_dep)) -> List[OrderResponse]:
     )
 
 
-class OrderPricesQuery(BaseModel):
-    start_tick: int | None = None
-    end_tick: int | None = None
-
-
-class OrderPricesResponse(BaseModel):
+class MarketPricesResponse(BaseModel):
     tick: int
-    resource: Resource
     low: int
     high: int
     open: int
@@ -56,14 +50,13 @@ class OrderPricesResponse(BaseModel):
     market: int
 
 
-@router.post("/game/{game_id}/market/prices")
-async def order_prices(pricesRange: OrderPricesQuery = OrderPricesQuery(),
-                       game: Game = Depends(game_dep)) -> List[OrderResponse]:
-    start_tick = pricesRange.start_tick
-    end_tick = pricesRange.end_tick
-
-    if start_tick is None and end_tick is None:  # both are None
-        current_tick = game.current_tick
+@router.get("/game/{game_id}/market/prices")
+async def market_prices(start_tick: int = Query(default=None),
+                       end_tick: int = Query(default=None),
+                       resource: Resource = Query(default=None),
+                       game: Game = Depends(game_dep)) -> Dict[Resource, List[MarketPricesResponse]]:
+    if start_tick is None and end_tick is None:
+        current_tick = game.current_tick - 1
         start_tick = current_tick
         end_tick = current_tick
     if start_tick is None:
@@ -79,14 +72,18 @@ async def order_prices(pricesRange: OrderPricesQuery = OrderPricesQuery(),
         raise HTTPException(
             status_code=400, detail="End tick must be greater than start tick")
 
-    # TODO: add new method
     all_prices = await Market.list_by_game_id_where_tick(
         game_id=game.game_id,
         min_tick=start_tick,
-        max_tick=end_tick
+        max_tick=end_tick,
+        resource=resource,
     )
-
-    return all_prices
+    all_prices_dict = dict()
+    for price in all_prices:
+        if not price.resource in all_prices_dict:
+            all_prices_dict[price.resource] = []
+        all_prices_dict[price.resource].append(price)
+    return all_prices_dict
 
 
 class EnergyPrice(BaseModel):
