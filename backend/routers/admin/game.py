@@ -6,21 +6,12 @@ from pydantic import BaseModel
 from datetime import datetime
 from logger import logger
 
-# GAME PATHS
-
-# POST	/admin/game/create	{"game_name": [name], "start_time": [time], "bots": [[id], [id], [id]], "dataset": [id], "tick_time": [tick_time], "length": [len], "contest": [bool]} // contest brani delete i ogranicava pravljenje playera na 1	{"game_id":[game_id]}
-# GET	/admin/game/list	-	[{"start_time": TIME, "game_id": game_id, "contest": bool}]
-# GET	/admin/game/[id]/delete	-	{"success": [success]}
-# POST	/admin/game/[id]/edit	{}	{"success": [success]}
-
-
 router = APIRouter()
 
 
 class CreateGameParams(BaseModel):
     game_name: str
     contest: bool
-    bots: str
     dataset_id: int
     start_time: datetime
     total_ticks: int
@@ -28,22 +19,16 @@ class CreateGameParams(BaseModel):
 
 
 class EditGameParams(BaseModel):
-    game_name: str
-    contest: bool
-    bots: str
-    dataset_id: int
-    start_time: datetime
-    total_ticks: int
-    tick_time: int
+    game_name: str | None
+    contest: bool | None
+    dataset_id: int | None
+    start_time: datetime | None
+    total_ticks: int | None
+    tick_time: int | None
 
 
 @router.post("/game/create")
 async def game_create(params: CreateGameParams):
-    try:
-        Bots.parse_string(params.bots)
-    except:
-        raise HTTPException(400, "Dataset does not exist")
-
     await Datasets.validate_ticks(params.dataset_id, params.total_ticks)
 
     if params.start_time < datetime.now():
@@ -52,7 +37,6 @@ async def game_create(params: CreateGameParams):
     await Game.create(
         game_name=params.game_name,
         is_contest=params.contest,
-        bots=params.bots,
         dataset_id=params.dataset_id,
         start_time=params.start_time,
         total_ticks=params.total_ticks,
@@ -80,7 +64,7 @@ async def player_list(game_id: int):
 async def game_delete(game_id: int):
     # TODO ne baca exception ako je vec zavrsena
     await Game.update(game_id=game_id, is_finished=True)
-    return {"message": "success"}
+    return {"success": True}
 
 
 @router.post("/game/{game_id}/edit")
@@ -109,4 +93,4 @@ async def game_edit(game_id: int, params: EditGameParams):
         **params.dict(exclude_unset=True)
     )
 
-    return {"message": "success"}
+    return {"success": True}

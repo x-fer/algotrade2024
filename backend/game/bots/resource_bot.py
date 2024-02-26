@@ -35,11 +35,11 @@ class ResourceBot(Bot):
                 is_bot=True
             )
             self.game_id = tick_data.game.game_id
-            
+
         if self.last_tick is not None and tick_data.game.current_tick < self.last_tick + expiration_ticks:
             return
         self.last_tick = tick_data.game.current_tick
-        
+
         resources_sum = {resource: 0 for resource in Resource}
         for resource in Resource:
             for player in tick_data.players.values():
@@ -62,12 +62,15 @@ class ResourceBot(Bot):
             buy_volume = clamp(min_volume, max_volume, int(buy_volume))
             sell_volume = clamp(min_volume, max_volume, int(sell_volume))
 
-            filled_buy_perc, filled_sell_perc = self.get_filled_perc(resource_orders)
+            filled_buy_perc, filled_sell_perc = self.get_filled_perc(
+                resource_orders)
             buy_price -= price_change_coeff * buy_price * (1-2*filled_buy_perc)
-            sell_price += price_change_coeff * sell_price * (1-2*filled_sell_perc)
+            sell_price += price_change_coeff * \
+                sell_price * (1-2*filled_sell_perc)
 
             if buy_price >= sell_price:
-                price = (buy_price * buy_volume + sell_price * sell_volume) / (buy_volume + sell_volume)
+                price = (buy_price * buy_volume + sell_price *
+                         sell_volume) / (buy_volume + sell_volume)
                 buy_price = price
                 sell_price = price
             buy_price = clamp(min_price, max_price, int(buy_price))
@@ -86,21 +89,23 @@ class ResourceBot(Bot):
         for order in orders:
             size[order.order_side] += order.size
             filled_size[order.order_side] += order.filled_size
-        filled_perc = {side: filled_size[side] / size[side] 
+        filled_perc = {side: filled_size[side] / size[side]
                        if size[side] > 0 else 0
                        for side in OrderSide}
         return filled_perc[OrderSide.BUY], filled_perc[OrderSide.SELL]
 
     async def get_last_orders(self) -> dict[str, Order]:
-        if self.last_tick is None: return []
+        if self.last_tick is None:
+            return []
         orders_list = await Order.list(player_id=self.player_id, tick=self.last_tick)
         orders = {resource: [] for resource in Resource}
         for order in orders_list:
             orders[order.resource].append(order)
         return orders
-    
+
     async def create_orders(self, tick, resource, buy_price, sell_price, buy_volume, sell_volume) -> None:
-        logger.debug(f"({self.game_id}) Bot creating orders {tick=}, {resource=}, {buy_price=}, {sell_price=}, {buy_volume=}, {sell_volume=}")
+        logger.debug(
+            f"({self.game_id}) Bot creating orders {tick=}, {resource=}, {buy_price=}, {sell_price=}, {buy_volume=}, {sell_volume=}")
         await Order.create(
             game_id=self.game_id,
             player_id=self.player_id,

@@ -19,7 +19,7 @@ class GameData:
             for resource in Resource
         }
         self.energy_market = EnergyMarket()
-        self.bots = Bots.create_bots(game.bots)
+        self.bots = Bots.create_bots("resource_bot:1")
 
 
 class Ticker:
@@ -59,7 +59,6 @@ class Ticker:
                     continue
 
             try:
-
                 async with database.transaction():
                     await database.execute(
                         f"LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
@@ -179,11 +178,8 @@ class Ticker:
             )
 
     async def save_tick_data(self, tick_data: TickData):
-        for player in tick_data.players.values():
-            await Player.update(**dataclasses.asdict(player))
-
-        for order in tick_data.updated_orders.values():
-            await Order.update(**dataclasses.asdict(order))
+        await Player.update_many(tick_data.players.values())
+        await Order.update_many(tick_data.updated_orders.values())
 
     async def save_market_data(self, tick_data: TickData):
         tick = tick_data.game.current_tick

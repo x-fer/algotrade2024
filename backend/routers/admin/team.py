@@ -4,11 +4,6 @@ from fastapi import APIRouter, HTTPException
 from model import Team
 from pydantic import BaseModel
 
-# TEAM PATHS
-
-# POST	/admin/team/create	{"name": [name]}	{"team_id":[team_id], "team_secret": [team_secret]}
-# GET	/admin/team/list	-	[{}, {}, {}]
-# GET	/admin/team/[team_id]/delete	-	{"success": [success]}
 
 router = APIRouter()
 

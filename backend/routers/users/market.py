@@ -41,8 +41,36 @@ async def order_list(game: Game = Depends(game_dep)) -> List[OrderResponse]:
     )
 
 
-@router.get("/game/{game_id}/market/order/prices/from/{start_tick}/to/{end_tick}")
-async def orded_list(game: Game = Depends(game_dep), start_tick: int = 0, end_tick: int = 0) -> List[OrderResponse]:
+class OrderPricesQuery(BaseModel):
+    start_tick: int | None = None
+    end_tick: int | None = None
+
+
+class OrderPricesResponse(BaseModel):
+    tick: int
+    resource: Resource
+    low: int
+    high: int
+    open: int
+    close: int
+    market: int
+
+
+@router.post("/game/{game_id}/market/prices")
+async def order_prices(pricesRange: OrderPricesQuery = OrderPricesQuery(),
+                       game: Game = Depends(game_dep)) -> List[OrderResponse]:
+    start_tick = pricesRange.start_tick
+    end_tick = pricesRange.end_tick
+
+    if start_tick is None and end_tick is None:  # both are None
+        current_tick = game.current_tick
+        start_tick = current_tick
+        end_tick = current_tick
+    if start_tick is None:
+        start_tick = end_tick
+    if end_tick is None:
+        end_tick = start_tick
+
     if start_tick < 0 or end_tick < 0:
         raise HTTPException(
             status_code=400, detail="Tick must be greater than 0")
@@ -52,11 +80,13 @@ async def orded_list(game: Game = Depends(game_dep), start_tick: int = 0, end_ti
             status_code=400, detail="End tick must be greater than start tick")
 
     # TODO: add new method
-    all_market = await Market.list(
-        game_id=Game.game_id,
+    all_prices = await Market.list_by_game_id_where_tick(
+        game_id=game.game_id,
+        min_tick=start_tick,
+        max_tick=end_tick
     )
 
-    return list(filter(lambda x: start_tick <= x.tick <= end_tick, all_market))
+    return all_prices
 
 
 class EnergyPrice(BaseModel):
@@ -109,7 +139,7 @@ async def order_create_player(order: UserOrder, game: Game = Depends(game_dep), 
         timestamp=pd.Timestamp.now(),
         price=order.price,
         size=order.size,
-        tick=(await Game.get(game_id=game.game_id)).current_tick,
+        tick=game.current_tick,
         expiration_tick=order.expiration_tick,
         resource=order.resource.value
     )

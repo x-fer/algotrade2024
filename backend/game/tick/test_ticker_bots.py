@@ -5,6 +5,7 @@ from game.tick import Ticker, GameData
 from model import Game
 from game.bots import DummyBot, ResourceBot
 from game.fixtures.fixtures import *
+from model.team import Team
 
 
 @pytest.mark.asyncio
@@ -32,18 +33,20 @@ async def test_run_bots(get_tick_data):
     bots = [DummyBot(), DummyBot(), DummyBot()]
     # Mock the Bot.run method
     with patch.object(DummyBot, 'run') as mock_run:
-        # Create a Ticker instance
-        ticker = Ticker()
+        with patch.object(ResourceBot, 'run') as mock_run:
 
-        # Set the bots for the game
-        ticker.game_data[game.game_id] = GameData(game, players)
-        tick_data = get_tick_data(markets={}, players={})
+            # Create a Ticker instance
+            ticker = Ticker()
 
-        # Run the method being tested
-        await ticker.run_bots(tick_data)
+            # Set the bots for the game
+            ticker.game_data[game.game_id] = GameData(game, players)
+            tick_data = get_tick_data(markets={}, players={})
 
-        # Assertions
-        # Ensure Bot.run is called once for each bot
-        assert mock_run.call_count == len(bots)
-        # Ensure Bot.run is called with no arguments
-        mock_run.assert_called_with(tick_data)
+            # Run the method being tested
+            await ticker.run_bots(tick_data)
+
+            # Assertions
+            # Ensure Bot.run is called once for each bot
+            assert mock_run.call_count == len(bots)
+            # Ensure Bot.run is called with no arguments
+            mock_run.assert_called_with(tick_data)

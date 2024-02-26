@@ -2,9 +2,6 @@ from fastapi import APIRouter
 
 from model.datasets import Datasets
 
-# DATASET PATHS
-
-# GET	/admin/dataset/list	-	[{"id": [id], "name": [name]}, {}, {}, {}]
 
 router = APIRouter()
 

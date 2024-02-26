@@ -67,7 +67,7 @@ app = FastAPI(
     description=description,
     openapi_tags=tags_metadata,
     lifespan=lifespan,
-    docs_url=None
+    # docs_url=None
 )
 
 app.state.limiter = limiter

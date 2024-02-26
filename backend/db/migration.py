@@ -19,7 +19,6 @@ async def fill_tables():
     not_nat_game_id = await Game.create(
         game_name="Stalna igra",
         is_contest=False,
-        bots="dummy:3;resource_bot:1",
         dataset_id=dataset_id,
         start_time=datetime.now(),
         total_ticks=2300,
@@ -27,7 +26,6 @@ async def fill_tables():
     nat_game_id = await Game.create(
         game_name="Natjecanje",
         is_contest=True,
-        bots="dummy:2;resource_bot:1",
         dataset_id=dataset_id,
         start_time=datetime.now(),
         total_ticks=100,
@@ -71,7 +69,6 @@ async def run_migrations():
               game_id SERIAL PRIMARY KEY,
               game_name TEXT,
               is_contest BOOLEAN NOT NULL,
-              bots TEXT,
               dataset_id INT,
               start_time TIMESTAMP NOT NULL,
               total_ticks INT NOT NULL,

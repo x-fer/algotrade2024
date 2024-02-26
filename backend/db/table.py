@@ -1,8 +1,9 @@
 from typing import Any
 from databases import Database
-from dataclasses import fields
+from dataclasses import fields, asdict
 from .db import database
 from enum import Enum
+from logger import logger
 
 
 class Table:
@@ -35,6 +36,20 @@ class Table:
         query = f"UPDATE {cls.table_name} SET {set_query} WHERE {cols[0]}=:{cols[0]} RETURNING *"
         kwargs = _transform_kwargs(kwargs)
         return await database.fetch_val(query, kwargs)
+
+    @classmethod
+    async def update_many(cls, l: list) -> int:
+        if len(l) == 0:
+            return 0
+
+        values = [_transform_kwargs(asdict(obj)) for obj in l]
+
+        cols = [field.name for field in fields(cls)]
+        set_query = ', '.join(
+            f'{col}=:{col}' for col in values[0] if col != cols[0])
+        query = f"UPDATE {cls.table_name} SET {set_query} WHERE {cols[0]}=:{cols[0]} RETURNING *"
+
+        return await database.execute_many(query, values)
 
     @classmethod
     async def delete(cls, **kwargs) -> int:
@@ -73,7 +88,7 @@ class Table:
         """
         query, values = cls._select(**kwargs)
         result = await database.fetch_all(query, values)
-        return [cls(**team) for team in result]
+        return [cls(**obj) for obj in result]
 
     @classmethod
     async def count(cls, **kwargs) -> int:
