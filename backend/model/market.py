@@ -20,6 +20,7 @@ class Market(Table):
     open: int
     close: int
     market: int
+    volume: int
 
     @classmethod
     async def create(cls, *args, **kwargs) -> int:
@@ -38,9 +39,9 @@ class Market(Table):
         ORDER BY tick
         """
         values = {"game_id": game_id,
-                  "min_tick": min_tick, 
+                  "min_tick": min_tick,
                   "max_tick": max_tick}
-        if not resource is None: 
-            values["resource"] = resource
+        if not resource is None:
+            values["resource"] = resource.value
         result = await database.fetch_all(query, values)
         return [cls(**game) for game in result]

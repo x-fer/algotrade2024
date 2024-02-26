@@ -1,3 +1,4 @@
+from typing import Dict, List
 import pandas as pd
 from game.tick.tick_data import TickData
 from model import Order, Resource, OrderSide, Team, Player
@@ -83,7 +84,7 @@ class ResourceBot(Bot):
             self.buy_prices[resource] = buy_price
             self.sell_prices[resource] = sell_price
 
-    def get_filled_perc(self, orders: list[Order]):
+    def get_filled_perc(self, orders: List[Order]):
         size = {side: 0 for side in OrderSide}
         filled_size = {side: 0 for side in OrderSide}
         for order in orders:
@@ -94,7 +95,7 @@ class ResourceBot(Bot):
                        for side in OrderSide}
         return filled_perc[OrderSide.BUY], filled_perc[OrderSide.SELL]
 
-    async def get_last_orders(self) -> dict[str, Order]:
+    async def get_last_orders(self) -> Dict[str, Order]:
         if self.last_tick is None:
             return []
         orders_list = await Order.list(player_id=self.player_id, tick=self.last_tick)

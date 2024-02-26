@@ -1,3 +1,4 @@
+from typing import Dict
 from model import Trade, Resource
 from model.order import Order
 from config import config
@@ -5,7 +6,7 @@ from model.player import Player
 
 
 class EnergyMarket:
-    def match(self, players: dict[int, Player], demand: int, max_price: int) -> dict[int, int]:
+    def match(self, players: Dict[int, Player], demand: int, max_price: int) -> Dict[int, int]:
         players_sorted = sorted(players.values(), key=lambda x: x.energy_price)
         players_sorted = [
             player for player in players_sorted if player.energy_price <= max_price]

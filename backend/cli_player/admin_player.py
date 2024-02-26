@@ -49,15 +49,6 @@ def list_datasets():
     pprint(response.json())
 
 
-def list_bots():
-    response = requests.get(
-        f"http://{URL}/admin/bot/list", params={"admin_secret": admin_secret})
-
-    if response.status_code != 200:
-        print("Error " + response.status_code)
-    pprint(response.json())
-
-
 def create_game():
     game_name = input("Enter game name: ")
     contest = input("Is contest? (true/false): ")
@@ -226,16 +217,15 @@ def main():
         print(f"2. Set Game ID, current: {game_id}")
         print(f"3. Migrate database")
         print(f"4. List datasets")
-        print(f"5. List bots")
-        print(f"6. Create game")
-        print(f"7. List games")
-        print(f"8. List players")
-        print(f"9. Delete game")
-        print(f"10. Edit game")
-        print(f"11. Create team")
-        print(f"12. List teams")
-        print(f"13. Delete team")
-        print(f"14. Exit")
+        print(f"5. Create game")
+        print(f"6. List games")
+        print(f"7. List players")
+        print(f"8. Delete game")
+        print(f"9. Edit game")
+        print(f"10. Create team")
+        print(f"11. List teams")
+        print(f"12. Delete team")
+        print(f"13. Exit")
         print()
 
         action = input(">")
@@ -245,16 +235,15 @@ def main():
             "2": lambda: set_game_id(),
             "3": lambda: migrate(),
             "4": lambda: list_datasets(),
-            "5": lambda: list_bots(),
-            "6": lambda: create_game(),
-            "7": lambda: list_games(),
-            "8": lambda: list_players(),
-            "9": lambda: delete_game(),
-            "10": lambda: edit_game(),
-            "11": lambda: create_team(),
-            "12": lambda: list_teams(),
-            "13": lambda: delete_team(),
-            "14": lambda: exit(0)
+            "5": lambda: create_game(),
+            "6": lambda: list_games(),
+            "7": lambda: list_players(),
+            "8": lambda: delete_game(),
+            "9": lambda: edit_game(),
+            "10": lambda: create_team(),
+            "11": lambda: list_teams(),
+            "12": lambda: delete_team(),
+            "13": lambda: exit()
         }
 
         try:

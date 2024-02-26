@@ -1,6 +1,107 @@
 from pprint import pprint
 import requests
 
+# GET
+# /game/list
+# Game List
+
+
+# GET
+# /game/{game_id}/dataset
+# Dataset List
+
+# Player
+# You will be able to
+
+# Create player in a game
+# Get all created players in a game
+# Get player info - player resources, money, power plants etc.
+
+
+# GET
+# /game/{game_id}/player/list
+# Player List
+
+
+# POST
+# /game/{game_id}/player/create
+# Player Create
+
+
+# GET
+# /game/{game_id}/player/{player_id}
+# Player Get
+
+
+# GET
+# /game/{game_id}/player/{player_id}/delete
+# Player Delete
+
+# Market
+# You can:
+
+# Create buy and sell orders for resources that will be matched at the end of every tick.
+# List your orders and cancel ones you do not longer need
+# Set your price for produced electricity
+
+
+# GET
+# /game/{game_id}/market/prices
+# Market Prices
+
+
+# POST
+# /game/{game_id}/player/{player_id}/energy/set_price
+# Energy Set Price Player
+
+
+# GET
+# /game/{game_id}/orders
+# Order List
+
+
+# GET
+# /game/{game_id}/player/{player_id}/orders
+# Order List Player
+
+
+# POST
+# /game/{game_id}/player/{player_id}/orders/create
+# Order Create Player
+
+
+# POST
+# /game/{game_id}/player/{player_id}/orders/cancel
+# Order Cancel Player
+
+# Power plants
+# You can:
+
+# Buy more power plants
+# Sell power plants
+# You can process at most the number of resources per tick as you have power plants of that type
+# You can also buy and sell renewables that will produce energy passively
+
+
+# GET
+# /game/{game_id}/player/{player_id}/plant/list
+# List Plants
+
+
+# POST
+# /game/{game_id}/player/{player_id}/plant/buy
+# Buy Plant
+
+
+# POST
+# /game/{game_id}/player/{player_id}/plant/sell
+# Sell Plant
+
+
+# POST
+# /game/{game_id}/player/{player_id}/plant/on
+# Turn On
+
 
 URL = "localhost:8000"
 
@@ -53,8 +154,8 @@ def list_games():
 
 
 def list_players():
-    response = requests.get(f"http://{URL}/game/{game_id}/player/list",
-                            params={"team_secret": team_secret})
+    response = requests.get(
+        f"http://{URL}/game/{game_id}/player/list", params={"team_secret": team_secret})
 
     return response
 
@@ -91,12 +192,18 @@ def list_orders():
 
 
 def list_prices():
+
+    # @router.get("/game/{game_id}/market/prices")
+    # async def market_prices(start_tick: int = Query(default=None),
+    #                         end_tick: int = Query(default=None),
+    #                         resource: Resource = Query(default=None),
+    #                         game: Game = Depends(game_dep)) -> Dict[Resource, List[MarketPricesResponse]]:
+
     start_tick = input("Enter start tick: ")
     end_tick = input("Enter end tick: ")
 
-    response = requests.post(f"http://{URL}/game/{game_id}/market/prices",
-                             params={"team_secret": team_secret},
-                             json={"start_tick": start_tick, "end_tick": end_tick})
+    response = requests.get(f"http://{URL}/game/{game_id}/market/prices",
+                            params={"team_secret": team_secret, "start_tick": start_tick, "end_tick": end_tick})
 
     return response
 
@@ -198,6 +305,16 @@ def turn_on_plant():
     return response
 
 
+def get_dataset():
+    start_tick = input("Enter start tick: ")
+    end_tick = input("Enter end tick: ")
+
+    response = requests.get(f"http://{URL}/game/{game_id}/dataset",
+                            params={"team_secret": team_secret, "start_tick": start_tick, "end_tick": end_tick})
+
+    return response
+
+
 def main():
     global team_secret, game_id, player_id
 
@@ -235,7 +352,8 @@ def main():
         print(f"16. Buy plant")
         print(f"17. Sell plant")
         print(f"18. Turn on plant")
-        print(f"19. Exit")
+        print(f"19. Dataset")
+        print(f"20. Exit")
         print()
 
         action = input(">")
@@ -259,7 +377,8 @@ def main():
             "16": buy_plant,
             "17": sell_plant,
             "18": turn_on_plant,
-            "19": lambda: exit()
+            "29": get_dataset,
+            "20": lambda: exit()
         }
 
         try:

@@ -6,19 +6,15 @@ from model import Player, PowerPlantType
 from .dependencies import check_game_active_dep, player_dep
 from config import config
 
-# POWER_PLANT PATHS
-
-# /game/[id]/player/[player_id]/plant/prices?team_secret=
-# /game/[id]/player/[player_id]/plant/buy?team_secret=
-# /game/[id]/player/[player_id]/plant/[plant_id]/sell?team_secret=
-# /game/[id]/player/[player_id]/plant/[plant_id]/on?team_secret=
-# /game/[id]/player/[player_id]/plant/[plant_id]/off?team_secret=
-# /game/[id]/player/[player_id]/plant/[plant_id]/state?team_secret=
-# /game/[id]/player/[player_id]/plant/list?team_secret=
-# /game/[id]/player/[player_id]/state
-
 
 router = APIRouter(dependencies=[Depends(check_game_active_dep)])
+
+
+class PowerPlantData(BaseModel):
+    plants_powered: int
+    plants_owned: int
+    next_price: int
+    sell_price: int
 
 
 @router.get("/game/{game_id}/player/{player_id}/plant/list")

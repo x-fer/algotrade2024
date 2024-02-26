@@ -1,7 +1,7 @@
 import traceback
 from datetime import datetime
 from pprint import pprint
-from typing import Tuple
+from typing import Dict, Tuple
 import pandas as pd
 from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType
 from game.market import ResourceMarket, EnergyMarket
@@ -13,8 +13,8 @@ from db import database
 
 
 class GameData:
-    def __init__(self, game: Game, players: dict[int, Player]):
-        self.markets: dict[int, ResourceMarket] = {
+    def __init__(self, game: Game, players: Dict[int, Player]):
+        self.markets: Dict[int, ResourceMarket] = {
             resource.value: ResourceMarket(resource, players)
             for resource in Resource
         }
@@ -24,7 +24,7 @@ class GameData:
 
 class Ticker:
     def __init__(self):
-        self.game_data: dict[int, GameData] = {}
+        self.game_data: Dict[int, GameData] = {}
 
     async def run_all_game_ticks(self):
         games = await Game.list()
@@ -152,13 +152,13 @@ class Ticker:
 
         return tick_data
 
-    def run_electricity_market(self, tick_data: TickData, energy_market: EnergyMarket) -> Tuple[TickData, dict[int, int]]:
+    def run_electricity_market(self, tick_data: TickData, energy_market: EnergyMarket) -> Tuple[TickData, Dict[int, int]]:
         energy_sold = energy_market.match(
             tick_data.players, tick_data.dataset_row.energy_demand, tick_data.dataset_row.max_energy_price)
 
         return tick_data, energy_sold
 
-    async def save_electricity_orders(self, players: dict[int, Player], game: Game, energy_sold: dict[int, int], tick: int):
+    async def save_electricity_orders(self, players: Dict[int, Player], game: Game, energy_sold: Dict[int, int], tick: int):
         for player_id, energy in energy_sold.items():
             await Order.create(
                 game_id=game.game_id,
@@ -197,7 +197,9 @@ class Ticker:
                 ),
                 close=tick_data.markets[resource.value].price_tracker.get_close(
                 ),
-                market=tick_data.markets[resource.value].price_tracker.get_market(
+                market=tick_data.markets[resource.value].price_tracker.get_average(
+                ),
+                volume=tick_data.markets[resource.value].price_tracker.get_volume(
                 )
             )
 

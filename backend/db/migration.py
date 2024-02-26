@@ -155,6 +155,7 @@ async def run_migrations():
               open INT,
               close INT,
               market INT,
+              volume INT,
               PRIMARY KEY (game_id, tick, resource)
               )''')
 
