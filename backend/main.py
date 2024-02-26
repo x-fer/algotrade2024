@@ -5,17 +5,17 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from config import config
-from db import database, migration
+from db import database
 from game.tick import Ticker
 from routers import admin_router, users_router
 import psutil
 import os
 from logger import logger
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
 from docs import tags_metadata, description
+from db import limiter
 
 
 async def background_tasks():
@@ -49,17 +49,6 @@ async def lifespan(app: FastAPI):
     yield
     await database.disconnect()
 
-
-def team_secret(request: Request):
-    param = request.query_params.get("team_secret")
-    if param is None:
-        return get_remote_address(request)
-
-    return param
-
-
-limiter = Limiter(key_func=team_secret, default_limits=[
-                  "10/second"], storage_uri="redis://localhost:6379/0")
 
 app = FastAPI(
     title="Algotrade API",

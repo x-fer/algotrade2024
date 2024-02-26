@@ -4,7 +4,9 @@ from model import Game, Datasets, Player
 from game.bots import Bots
 from pydantic import BaseModel
 from datetime import datetime
-from logger import logger
+from typing import List
+from routers.model import SuccessfulResponse
+from db import limiter
 
 router = APIRouter()
 
@@ -18,17 +20,9 @@ class CreateGameParams(BaseModel):
     tick_time: int
 
 
-class EditGameParams(BaseModel):
-    game_name: str | None
-    contest: bool | None
-    dataset_id: int | None
-    start_time: datetime | None
-    total_ticks: int | None
-    tick_time: int | None
-
-
 @router.post("/game/create")
-async def game_create(params: CreateGameParams):
+@limiter.exempt
+async def game_create(params: CreateGameParams) -> SuccessfulResponse:
     await Datasets.validate_ticks(params.dataset_id, params.total_ticks)
 
     if params.start_time < datetime.now():
@@ -44,31 +38,41 @@ async def game_create(params: CreateGameParams):
         is_finished=False,
         current_tick=0
     )
-
-    return {"message": "success"}
+    return SuccessfulResponse()
 
 
 @router.get("/game/list")
-async def game_list():
-    games = await Game.list()
-    return {"games": games}
+@limiter.exempt
+async def game_list() -> List[Game]:
+    return await Game.list()
 
 
 @router.get("/game/{game_id}/player/list")
-async def player_list(game_id: int):
-    players = await Player.list(game_id=game_id)
-    return {"players": players}
+@limiter.exempt
+async def player_list(game_id: int) -> List[Player]:
+    return await Player.list(game_id=game_id)
 
 
-@router.get("/game/{game_id}/delete")
-async def game_delete(game_id: int):
+@router.post("/game/{game_id}/delete")
+@limiter.exempt
+async def game_delete(game_id: int) -> SuccessfulResponse:
     # TODO ne baca exception ako je vec zavrsena
     await Game.update(game_id=game_id, is_finished=True)
-    return {"success": True}
+    return SuccessfulResponse()
+
+
+class EditGameParams(BaseModel):
+    game_name: str | None
+    contest: bool | None
+    dataset_id: int | None
+    start_time: datetime | None
+    total_ticks: int | None
+    tick_time: int | None
 
 
 @router.post("/game/{game_id}/edit")
-async def game_edit(game_id: int, params: EditGameParams):
+@limiter.exempt
+async def game_edit(game_id: int, params: EditGameParams) -> SuccessfulResponse:
     try:
         Bots.parse_string(params.bots)
     except:
@@ -92,5 +96,4 @@ async def game_edit(game_id: int, params: EditGameParams):
         game_id=game_id,
         **params.dict(exclude_unset=True)
     )
-
-    return {"success": True}
+    return SuccessfulResponse()

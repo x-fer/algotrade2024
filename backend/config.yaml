@@ -4,6 +4,9 @@ server:
 
 datasets_path: ./data
 
+redis:
+  port: 6379
+
 database:
   url: postgresql://postgres:postgres@localhost:5432/mydatabase
 

@@ -52,6 +52,7 @@ class Ticker:
                 try:
                     logger.info(
                         f"Starting game ({game.game_id}) {game.game_name}")
+                    await self.delete_all_running_bots(game.game_id)
                     self.game_data[game.game_id] = GameData(game, {})
                 except Exception as e:
                     logger.critical(
@@ -68,6 +69,12 @@ class Ticker:
             except Exception as e:
                 logger.critical(
                     f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
+
+    async def delete_all_running_bots(self, game_id: int):
+        bots = await Player.list(game_id=game_id, is_bot=True)
+
+        for bot in bots:
+            await Player.update(player_id=bot.player_id, is_active=False)
 
     async def run_game_tick(self, game: Game):
         logger.debug(

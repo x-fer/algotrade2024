@@ -19,7 +19,7 @@ expiration_ticks = config['bots']['expiration_ticks']
 
 
 class ResourceBot(Bot):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, player_id=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.buy_prices = {resource: 50 for resource in Resource}
         self.sell_prices = {resource: 50 for resource in Resource}

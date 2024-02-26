@@ -1,17 +1,15 @@
 from collections import defaultdict
-from dataclasses import dataclass
 from typing import List, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
 import pandas as pd
 from pydantic import BaseModel
 from model import Order, OrderSide, OrderType, OrderStatus, Resource
-from model.dataset_data import DatasetData
 from model.game import Game
 from model.market import Market
 from model.player import Player
 from .dependencies import game_dep, player_dep, check_game_active_dep, start_end_tick_dep
 from db.db import database
-from routers.model import SuccesfullResponse
+from routers.model import SuccessfulResponse
 
 
 router = APIRouter(dependencies=[Depends(check_game_active_dep)])
@@ -49,12 +47,8 @@ class EnergyPrice(BaseModel):
     price: int
 
 
-class EnergyPriceResponse(BaseModel):
-    success: bool
-
-
 @router.post("/game/{game_id}/player/{player_id}/energy/set_price")
-async def energy_set_price_player(price: EnergyPrice, game: Game = Depends(game_dep), player: int = Depends(player_dep)) -> EnergyPriceResponse:
+async def energy_set_price_player(price: EnergyPrice, game: Game = Depends(game_dep), player: int = Depends(player_dep)) -> SuccessfulResponse:
     if price <= 0:
         raise HTTPException(
             status_code=400, detail="Price must be greater than 0")
@@ -64,7 +58,7 @@ async def energy_set_price_player(price: EnergyPrice, game: Game = Depends(game_
         energy_price=price.price
     )
 
-    return {"success": True}
+    return SuccessfulResponse()
 
 
 class OrderResponse(BaseModel):
@@ -107,12 +101,8 @@ class UserOrder(BaseModel):
     type: OrderType
 
 
-class OrderCreateResponse(BaseModel):
-    success: bool
-
-
 @router.post("/game/{game_id}/player/{player_id}/orders/create")
-async def order_create_player(order: UserOrder, game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> OrderCreateResponse:
+async def order_create_player(order: UserOrder, game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> SuccessfulResponse:
     if order.type == OrderType.ENERGY:
         raise HTTPException(
             status_code=400,
@@ -132,7 +122,7 @@ async def order_create_player(order: UserOrder, game: Game = Depends(game_dep), 
         resource=order.resource.value
     )
 
-    return {"success": True}
+    return SuccessfulResponse()
 
 
 class OrderCancel(BaseModel):
@@ -140,7 +130,7 @@ class OrderCancel(BaseModel):
 
 
 @router.post("/game/{game_id}/player/{player_id}/orders/cancel")
-async def order_cancel_player(body: OrderCancel, game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> SuccesfullResponse:
+async def order_cancel_player(body: OrderCancel, game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> SuccessfulResponse:
     async with database.transaction():
         for order_id in body.ids:
             if (await Order.get(order_id=order_id)).player_id != player.player_id:
@@ -151,4 +141,4 @@ async def order_cancel_player(body: OrderCancel, game: Game = Depends(game_dep),
                 order_id=order_id,
                 order_status=OrderStatus.CANCELED.value
             )
-    return {"successfull": True}
+    return SuccessfulResponse()
