@@ -3,10 +3,12 @@ from pprint import pprint
 from typing import Dict, List
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from dataclasses import asdict
 from model import Game
 from model.dataset_data import DatasetData
 from routers.users.dependencies import game_dep, start_end_tick_dep
 from datetime import datetime
+import pandas as pd
 
 
 router = APIRouter()
@@ -27,6 +29,16 @@ class GameData(BaseModel):
 async def game_list() -> List[GameData]:
     games = await Game.list()
     return games
+
+
+class GameTimeData(GameData):
+    current_time: datetime
+
+
+@router.get("/game/{game_id}")
+async def get_game(game_id: int) -> GameTimeData:
+    game = await Game.get(game_id=game_id)
+    return GameTimeData(**asdict(game), current_time=pd.Timestamp.now())
 
 
 class DatasetListResponseItem(BaseModel):

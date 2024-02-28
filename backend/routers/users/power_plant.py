@@ -22,22 +22,22 @@ class PowerPlantData(BaseModel):
 @router.get("/game/{game_id}/player/{player_id}/plant/list")
 async def list_plants(player: Player = Depends(player_dep)) -> Dict[str, PowerPlantData]:
     return {
-        x.name: {
-            "plants_powered": player[x.name.lower() + "_plants_powered"],
-            "plants_owned": player[x.name.lower() + "_plants_owned"],
-            "next_price": x.get_plant_price(player[x.name.lower() + "_plants_owned"]),
-            "sell_price": round(x.get_plant_price(player[x.name.lower() + "_plants_owned"]) * config["power_plant"]["sell_coeff"]),
-        }
+        x.name: PowerPlantData(
+            plants_powered=player[x.name.lower() + "_plants_powered"],
+            plants_owned=player[x.name.lower() + "_plants_owned"],
+            next_price=x.get_plant_price(player[x.name.lower() + "_plants_owned"]),
+            sell_price=round(x.get_plant_price(player[x.name.lower() + "_plants_owned"]) * config["power_plant"]["sell_coeff"]),
+        )
         for x in PowerPlantType
     }
 
 
-class PlantBuySell(BaseModel):
+class PowerPlantTypeData(BaseModel):
     type: PowerPlantType
 
 
 @router.post("/game/{game_id}/player/{player_id}/plant/buy")
-async def buy_plant(plant: PlantBuySell, player: Player = Depends(player_dep)) -> SuccessfulResponse:
+async def buy_plant(plant: PowerPlantTypeData, player: Player = Depends(player_dep)) -> SuccessfulResponse:
     type = PowerPlantType(plant.type)
 
     async with database.transaction():
@@ -55,7 +55,7 @@ async def buy_plant(plant: PlantBuySell, player: Player = Depends(player_dep)) -
 
 
 @router.post("/game/{game_id}/player/{player_id}/plant/sell")
-async def sell_plant(plant: PlantBuySell, player: Player = Depends(player_dep)) -> SuccessfulResponse:
+async def sell_plant(plant: PowerPlantTypeData, player: Player = Depends(player_dep)) -> SuccessfulResponse:
     type = PowerPlantType(plant.type)
 
     async with database.transaction():

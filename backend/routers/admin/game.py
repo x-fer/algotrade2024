@@ -8,6 +8,7 @@ from typing import List
 from routers.model import SuccessfulResponse
 from db import limiter
 
+
 router = APIRouter()
 
 
