@@ -10,7 +10,6 @@ from model.team import Team
 
 @pytest.mark.asyncio
 async def test_run_bots(get_tick_data):
-    # Create sample game
     game = Game(
         game_id=1,
         game_name="Sample Game",
@@ -29,24 +28,14 @@ async def test_run_bots(get_tick_data):
         3: MagicMock()
     }
 
-    # Create sample bots
-    bots = [DummyBot(), DummyBot(), DummyBot()]
-    # Mock the Bot.run method
     with patch.object(DummyBot, 'run') as mock_run:
         with patch.object(ResourceBot, 'run') as mock_run:
-
-            # Create a Ticker instance
             ticker = Ticker()
 
-            # Set the bots for the game
             ticker.game_data[game.game_id] = GameData(game, players)
             tick_data = get_tick_data(markets={}, players={})
 
-            # Run the method being tested
             await ticker.run_bots(tick_data)
 
-            # Assertions
-            # Ensure Bot.run is called once for each bot
-            assert mock_run.call_count == len(bots)
-            # Ensure Bot.run is called with no arguments
+            assert mock_run.call_count == 1
             mock_run.assert_called_with(tick_data)

@@ -198,16 +198,11 @@ class Ticker:
                 tick=tick,
                 resource=resource.value,
                 low=tick_data.markets[resource.value].price_tracker.get_low(),
-                high=tick_data.markets[resource.value].price_tracker.get_high(
-                ),
-                open=tick_data.markets[resource.value].price_tracker.get_open(
-                ),
-                close=tick_data.markets[resource.value].price_tracker.get_close(
-                ),
-                market=tick_data.markets[resource.value].price_tracker.get_average(
-                ),
-                volume=tick_data.markets[resource.value].price_tracker.get_volume(
-                )
+                high=tick_data.markets[resource.value].price_tracker.get_high(),
+                open=tick_data.markets[resource.value].price_tracker.get_open(),
+                close=tick_data.markets[resource.value].price_tracker.get_close(),
+                market=tick_data.markets[resource.value].price_tracker.get_average(),
+                volume=tick_data.markets[resource.value].price_tracker.get_volume()
             )
 
     async def run_bots(self, tick_data: TickData):
