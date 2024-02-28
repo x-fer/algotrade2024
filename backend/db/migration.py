@@ -19,7 +19,6 @@ async def fill_tables():
     not_nat_game_id = await Game.create(
         game_name="Stalna igra",
         is_contest=False,
-        bots="dummy:3;resource_bot:1",
         dataset_id=dataset_id,
         start_time=datetime.now(),
         total_ticks=2300,
@@ -27,7 +26,6 @@ async def fill_tables():
     nat_game_id = await Game.create(
         game_name="Natjecanje",
         is_contest=True,
-        bots="dummy:2;resource_bot:1",
         dataset_id=dataset_id,
         start_time=datetime.now(),
         total_ticks=100,
@@ -71,8 +69,7 @@ async def run_migrations():
               game_id SERIAL PRIMARY KEY,
               game_name TEXT,
               is_contest BOOLEAN NOT NULL,
-              bots TEXT,
-              dataset_id int,
+              dataset_id INT,
               start_time TIMESTAMP NOT NULL,
               total_ticks INT NOT NULL,
               tick_time INT NOT NULL,
@@ -129,15 +126,15 @@ async def run_migrations():
                 order_id SERIAL PRIMARY KEY,
                 game_id INT NOT NULL,
                 player_id INT NOT NULL,
-                order_type INT NOT NULL,
-                order_side INT NOT NULL,
-                order_status INT NOT NULL,
+                order_type TEXT NOT NULL,
+                order_side TEXT NOT NULL,
+                order_status TEXT NOT NULL,
                 price INT NOT NULL,
                 size INT NOT NULL,
                 tick INT NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
                 expiration_tick INT NOT NULL,
-                resource INT NOT NULL,
+                resource TEXT NOT NULL,
                            
                 filled_size INT NOT NULL DEFAULT 0,
                 filled_money INT NOT NULL DEFAULT 0,
@@ -152,12 +149,13 @@ async def run_migrations():
               CREATE TABLE IF NOT EXISTS market (
               game_id INT,
               tick INT,
-              resource INT,
+              resource TEXT,
               low INT,
               high INT,
               open INT,
               close INT,
               market INT,
+              volume INT,
               PRIMARY KEY (game_id, tick, resource)
               )''')
 

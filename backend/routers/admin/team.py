@@ -3,18 +3,11 @@ import random
 from fastapi import APIRouter, HTTPException
 from model import Team
 from pydantic import BaseModel
-
-# TEAM PATHS
-
-# POST	/admin/team/create	{"name": [name]}	{"team_id":[team_id], "team_secret": [team_secret]}
-# GET	/admin/team/list	-	[{}, {}, {}]
-# GET	/admin/team/[team_id]/delete	-	{"success": [success]}
+from routers.model import SuccessfulResponse
+from typing import List
+from db import limiter
 
 router = APIRouter()
-
-
-class CreateTeam(BaseModel):
-    team_name: str
 
 
 def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
@@ -22,24 +15,35 @@ def id_generator(size=8, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 
-@router.post("/team/create")
-async def team_create(params: CreateTeam):
-    team_secret = id_generator()
-    team_id = await Team.create(team_name=params.team_name, team_secret=team_secret)
+class CreateTeam(BaseModel):
+    team_name: str
 
-    return {"team_id": team_id, "team_secret": team_secret}
+
+@router.post("/team/create")
+@limiter.exempt
+async def team_create(params: CreateTeam) -> Team:
+    team_secret = id_generator()
+    team_name = params.team_name
+    team_id = await Team.create(team_name=team_name, team_secret=team_secret)
+    return Team(
+        team_id=team_id,
+        team_secret=team_secret,
+        team_name=team_name
+    )
 
 
 @router.get("/team/list")
-async def team_list():
+@limiter.exempt
+async def team_list() -> List[Team]:
     return await Team.list()
 
 
 @router.get("/team/{team_id}/delete")
-async def team_delete(team_id: int):
+@limiter.exempt
+async def team_delete(team_id: int) -> SuccessfulResponse:
     team_id = await Team.delete(team_id=team_id)
 
     if team_id is None:
         raise HTTPException(status_code=400, detail="Team not found")
 
-    return {"success": True}
+    return SuccessfulResponse()

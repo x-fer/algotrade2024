@@ -1,22 +1,21 @@
+from pprint import pprint
 import pandas as pd
+from game.price_tracker.price_tracker import PriceTracker
 import pytest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch, call
 from datetime import datetime
-from model import Order, OrderStatus, Resource
-from model.dataset_data import DatasetData
-from model.order_types import OrderSide, OrderType
+from game.market.resource_market import ResourceMarket
+from model import Order, OrderStatus, Resource, OrderSide, OrderType
 from game.tick import Ticker, TickData
 from tick.test_tick_fixtures import *
 
 
 @pytest.mark.asyncio
 async def test_get_tick_data(sample_game, sample_players, sample_pending_orders, sample_user_cancelled_orders, sample_dataset_row):
-    # Setup ticker
     ticker = Ticker()
     ticker.game_data[sample_game.game_id] = GameData(
         sample_game, sample_players)
 
-    # Mocking database interaction
     async def mock_list_players(*args, **kwargs):
         return [sample_players[1], sample_players[2]]
 
@@ -33,7 +32,6 @@ async def test_get_tick_data(sample_game, sample_players, sample_pending_orders,
         # Execute get_tick_data method
         tick_data = await ticker.get_tick_data(sample_game)
 
-        # Assertions
         assert len(tick_data.players) == 2
         # Assuming 2 pending orders in sample_pending_orders fixture
         assert len(tick_data.pending_orders) == 2
@@ -54,10 +52,14 @@ def sample_update_orders():
             }
 
 
-@patch('model.Player.update')
-@patch('model.Order.update')
+@patch('model.Player.update_many')
+@patch('model.Order.update_many')
 @pytest.mark.asyncio
-async def test_save_tick_data(mock_order_update, mock_player_update, ticker, sample_game, sample_players, sample_pending_orders, sample_user_cancelled_orders, sample_dataset_row, sample_update_orders):
+async def test_save_tick_data(mock_order_update_many, 
+                              mock_player_update_many, 
+                              ticker: Ticker, sample_game, sample_players, 
+                              sample_pending_orders, sample_user_cancelled_orders, 
+                              sample_dataset_row, sample_update_orders):
     tick_data = TickData(
         game=sample_game,
         players=sample_players,
@@ -71,8 +73,8 @@ async def test_save_tick_data(mock_order_update, mock_player_update, ticker, sam
 
     await ticker.save_tick_data(tick_data)
 
-    assert mock_player_update.call_count == len(sample_players)
-    assert mock_order_update.call_count == len(sample_update_orders)
+    assert mock_player_update_many.call_count == 1
+    assert mock_order_update_many.call_count == 1
 
 
 @pytest.mark.asyncio
@@ -110,3 +112,32 @@ async def test_save_electricity_orders(sample_game, sample_players):
             assert kwargs["filled_price"] == players[kwargs["player_id"]].energy_price
             assert kwargs["expiration_tick"] == 1
             assert kwargs["resource"] == Resource.energy.value
+
+
+@pytest.mark.asyncio
+async def test_save_market_data(ticker: Ticker, sample_game, tick_data, sample_players):
+    for resource in Resource:
+        price_tracker_mock: PriceTracker = MagicMock()
+        price_tracker_mock.get_low.return_value = 50
+        price_tracker_mock.get_high.return_value = 60
+        price_tracker_mock.get_open.return_value = 45
+        price_tracker_mock.get_close.return_value = 55
+        price_tracker_mock.get_average.return_value = 70
+        price_tracker_mock.get_volume.return_value = 20
+
+        tick_data.markets[resource.value] = ResourceMarket(
+            resource, sample_players)
+        tick_data.markets[resource.value].price_tracker = price_tracker_mock
+
+    with patch('model.market.Market.create') as mock_create:
+        await ticker.save_market_data(tick_data)
+
+        assert mock_create.call_count == len(Resource)
+
+        expected_calls = [
+            call(game_id=sample_game.game_id, tick=1, resource=resource.value,
+                 low=50, high=60, open=45, close=55, market=70, volume=20)
+            for resource in Resource
+        ]
+
+        mock_create.assert_has_calls(expected_calls, any_order=True)

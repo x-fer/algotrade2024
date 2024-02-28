@@ -1,3 +1,4 @@
+from typing import Dict, List
 import pandas as pd
 from game.tick import TickData, Ticker
 from game.tick.ticker import GameData
@@ -172,13 +173,13 @@ def get_order():
     return get_order
 
 
-def get_player_dict(players: list[Player]) -> dict[int, Player]:
+def get_player_dict(players: List[Player]) -> Dict[int, Player]:
     return {player.player_id: player for player in players}
 
 
 @pytest.fixture
 def coal_market():
-    def get_coal_market(players: dict[int, Player] = {}) -> ResourceMarket:
+    def get_coal_market(players: Dict[int, Player] = {}) -> ResourceMarket:
         return ResourceMarket(Resource.coal, players)
     return get_coal_market
 

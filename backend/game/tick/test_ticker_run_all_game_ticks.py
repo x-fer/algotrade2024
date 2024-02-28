@@ -60,33 +60,6 @@ async def test_run_all_game_ticks_game_started():
 
     mock_run_game_tick.assert_called_once_with(game)
 
-# if self.game_data.get(game.game_id) is None:
-#                 self.game_data[game.game_id] = GameData(game, {})
-
-
-@pytest.mark.asyncio
-async def test_run_all_game_ticks_game_data_not_exist():
-    # Prepare
-    game = Game(game_id=4, game_name="Test Game 4", start_time=datetime.now() - timedelta(hours=1),
-                current_tick=1, total_ticks=10, is_finished=False, dataset_id=1, bots="", tick_time=1000, is_contest=False)
-    ticker = Ticker()
-
-    # Execute
-    with patch.object(Database, 'transaction') as mock_transaction:
-        with patch.object(Database, 'execute') as mock_execute:
-            with patch.object(Game, 'list') as mock_game_list:
-                mock_game_list.return_value = [game]
-                with patch.object(Ticker, 'run_game_tick') as mock_run_game_tick:
-                    await ticker.run_all_game_ticks()
-
-    # Verify
-    assert game.game_id in ticker.game_data
-    mock_run_game_tick.assert_called_once_with(game)
-
-# if game.is_finished:
-#     logger.info(f" {game.game_name} is finished")
-#     continue
-
 
 @pytest.mark.asyncio
 async def test_run_all_game_ticks_game_finished():
