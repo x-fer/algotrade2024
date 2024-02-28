@@ -57,6 +57,8 @@ async def run_migrations():
               team_secret TEXT UNIQUE
               )''')
 
+    await database.execute('CREATE INDEX CONCURRENTLY team_secret_idx ON teams (team_secret);')
+
     await database.execute('''
                 CREATE TABLE IF NOT EXISTS datasets (
                 dataset_id SERIAL PRIMARY KEY,
@@ -158,6 +160,8 @@ async def run_migrations():
               volume INT,
               PRIMARY KEY (game_id, tick, resource)
               )''')
+    
+    await database.execute('CREATE INDEX CONCURRENTLY tick_idx ON market (tick);')
 
     await database.execute('''
                 CREATE TABLE IF NOT EXISTS dataset_data (

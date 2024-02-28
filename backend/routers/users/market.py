@@ -84,7 +84,8 @@ async def order_list(game: Game = Depends(game_dep)) -> List[OrderResponse]:
 
 
 @router.get("/game/{game_id}/player/{player_id}/orders")
-async def order_list_player(game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> List[OrderResponse]:
+async def order_list_player(game: Game = Depends(game_dep), 
+                            player: Player = Depends(player_dep)) -> List[OrderResponse]:
     return await Order.list(
         game_id=game.game_id,
         player_id=player.player_id,
@@ -98,12 +99,13 @@ class UserOrder(BaseModel):
     size: int
     expiration_tick: int
     side: OrderSide
-    type: OrderType
 
 
 @router.post("/game/{game_id}/player/{player_id}/orders/create")
-async def order_create_player(order: UserOrder, game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> SuccessfulResponse:
-    if order.type == OrderType.ENERGY:
+async def order_create_player(order: UserOrder,
+                              game: Game = Depends(game_dep),
+                              player: Player = Depends(player_dep)) -> SuccessfulResponse:
+    if order.resource == Resource.ENERGY:
         raise HTTPException(
             status_code=400,
             detail="Use /game/{game_id}/player/{player_id}/energy/set_price to set energy price")
@@ -111,7 +113,7 @@ async def order_create_player(order: UserOrder, game: Game = Depends(game_dep), 
     await Order.create(
         game_id=game.game_id,
         player_id=player.player_id,
-        order_type=order.type,
+        order_type=OrderType.LIMIT,
         order_side=order.side,
         order_status=OrderStatus.PENDING,
         timestamp=pd.Timestamp.now(),
@@ -119,9 +121,8 @@ async def order_create_player(order: UserOrder, game: Game = Depends(game_dep), 
         size=order.size,
         tick=game.current_tick,
         expiration_tick=order.expiration_tick,
-        resource=order.resource.value
+        resource=order.resource
     )
-
     return SuccessfulResponse()
 
 
