@@ -123,7 +123,6 @@ async def order_create_player(order: UserOrder,
         expiration_tick=order.expiration_tick,
         resource=order.resource
     )
-
     return SuccessfulResponse()
 
 
