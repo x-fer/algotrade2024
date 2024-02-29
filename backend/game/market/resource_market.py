@@ -1,5 +1,5 @@
 from pprint import pprint
-from typing import List
+from typing import List, Dict
 from game.orderbook.orderbook import OrderBook
 from game.price_tracker.price_tracker import PriceTracker
 from model import Resource, Trade, Order
@@ -7,7 +7,7 @@ from model.player import Player
 
 
 class ResourceMarket:
-    def __init__(self, resource: Resource, players: dict[int, Player]):
+    def __init__(self, resource: Resource, players: Dict[int, Player]):
         self.resource = resource
         self.orderbook = OrderBook()
         self.price_tracker = PriceTracker(self.orderbook)

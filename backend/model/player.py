@@ -5,15 +5,15 @@ from config import config
 
 
 class PowerPlantType(str, Enum):
-    COAL = 1
-    URANIUM = 2
-    BIOMASS = 3
-    GAS = 4
-    OIL = 5
-    GEOTHERMAL = 6
-    WIND = 7
-    SOLAR = 8
-    HYDRO = 9
+    COAL = "COAL"
+    URANIUM = "URANIUM"
+    BIOMASS = "BIOMASS"
+    GAS = "GAS"
+    OIL = "OIL"
+    GEOTHERMAL = "GEOTHERMAL"
+    WIND = "WIND"
+    SOLAR = "SOLAR"
+    HYDRO = "HYDRO"
 
     def get_name(self):
         return self.name.lower()

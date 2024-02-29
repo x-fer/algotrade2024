@@ -2,21 +2,21 @@ from enum import Enum
 
 
 class OrderType(Enum):
-    LIMIT = 0
-    MARKET = 1
+    LIMIT = "LIMIT"
+    MARKET = "MARKET"
 
 
 class OrderSide(Enum):
-    BUY = 0
-    SELL = 1
+    BUY = "BUY"
+    SELL = "SELL"
 
 
 class OrderStatus(Enum):
-    PENDING = 0
-    IN_QUEUE = 1
-    ACTIVE = 2
-    COMPLETED = 3
-    CANCELLED = 4
-    EXPIRED = 5
-    REJECTED = 6
-    USER_CANCELLED = 7
+    PENDING = "PENDING"
+    IN_QUEUE = "IN_QUEUE"
+    ACTIVE = "ACTIVE"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+    EXPIRED = "EXPIRED"
+    REJECTED = "REJECTED"
+    USER_CANCELLED = "USER_CANCELLED"

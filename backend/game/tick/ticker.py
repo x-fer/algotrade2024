@@ -1,7 +1,7 @@
-import dataclasses
+import traceback
 from datetime import datetime
 from pprint import pprint
-from typing import Tuple
+from typing import Dict, Tuple
 import pandas as pd
 from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType
 from game.market import ResourceMarket, EnergyMarket
@@ -13,18 +13,18 @@ from db import database
 
 
 class GameData:
-    def __init__(self, game: Game, players: dict[int, Player]):
-        self.markets: dict[int, ResourceMarket] = {
+    def __init__(self, game: Game, players: Dict[int, Player]):
+        self.markets: Dict[int, ResourceMarket] = {
             resource.value: ResourceMarket(resource, players)
             for resource in Resource
         }
         self.energy_market = EnergyMarket()
-        self.bots = Bots.create_bots(game.bots)
+        self.bots = Bots.create_bots("resource_bot:1")
 
 
 class Ticker:
     def __init__(self):
-        self.game_data: dict[int, GameData] = {}
+        self.game_data: Dict[int, GameData] = {}
 
     async def run_all_game_ticks(self):
         games = await Game.list()
@@ -38,28 +38,28 @@ class Ticker:
 
             if game.current_tick >= game.total_ticks:
                 try:
+                    logger.info(
+                        f"Ending game ({game.game_id}) {game.game_name}")
                     await Game.update(game_id=game.game_id, is_finished=True)
                     if self.game_data.get(game.game_id) is not None:
                         del self.game_data[game.game_id]
-                    logger.info(
-                        f"Finished game ({game.game_id}) {game.game_name}")
                 except Exception as e:
                     logger.critical(
-                        f"Failed finishing game ({game.game_id}) {game.current_tick} with error: " + str(e))
+                        f"Failed ending game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
                 continue
 
             if self.game_data.get(game.game_id) is None:
                 try:
                     logger.info(
                         f"Starting game ({game.game_id}) {game.game_name}")
+                    await self.delete_all_running_bots(game.game_id)
                     self.game_data[game.game_id] = GameData(game, {})
                 except Exception as e:
                     logger.critical(
-                        f"Failed creating game ({game.game_id}) {game.current_tick} with error: " + str(e))
+                        f"Failed creating game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
                     continue
 
             try:
-
                 async with database.transaction():
                     await database.execute(
                         f"LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
@@ -68,7 +68,13 @@ class Ticker:
 
             except Exception as e:
                 logger.critical(
-                    f"({game.game_id}) {game.game_name} tick {game.current_tick} failed with error: " + str(e))
+                    f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
+
+    async def delete_all_running_bots(self, game_id: int):
+        bots = await Player.list(game_id=game_id, is_bot=True)
+
+        for bot in bots:
+            await Player.update(player_id=bot.player_id, is_active=False)
 
     async def run_game_tick(self, game: Game):
         logger.debug(
@@ -153,13 +159,13 @@ class Ticker:
 
         return tick_data
 
-    def run_electricity_market(self, tick_data: TickData, energy_market: EnergyMarket) -> Tuple[TickData, dict[int, int]]:
+    def run_electricity_market(self, tick_data: TickData, energy_market: EnergyMarket) -> Tuple[TickData, Dict[int, int]]:
         energy_sold = energy_market.match(
             tick_data.players, tick_data.dataset_row.energy_demand, tick_data.dataset_row.max_energy_price)
 
         return tick_data, energy_sold
 
-    async def save_electricity_orders(self, players: dict[int, Player], game: Game, energy_sold: dict[int, int], tick: int):
+    async def save_electricity_orders(self, players: Dict[int, Player], game: Game, energy_sold: Dict[int, int], tick: int):
         for player_id, energy in energy_sold.items():
             await Order.create(
                 game_id=game.game_id,
@@ -179,11 +185,8 @@ class Ticker:
             )
 
     async def save_tick_data(self, tick_data: TickData):
-        for player in tick_data.players.values():
-            await Player.update(**dataclasses.asdict(player))
-
-        for order in tick_data.updated_orders.values():
-            await Order.update(**dataclasses.asdict(order))
+        await Player.update_many(tick_data.players.values())
+        await Order.update_many(tick_data.updated_orders.values())
 
     async def save_market_data(self, tick_data: TickData):
         tick = tick_data.game.current_tick
@@ -195,14 +198,11 @@ class Ticker:
                 tick=tick,
                 resource=resource.value,
                 low=tick_data.markets[resource.value].price_tracker.get_low(),
-                high=tick_data.markets[resource.value].price_tracker.get_high(
-                ),
-                open=tick_data.markets[resource.value].price_tracker.get_open(
-                ),
-                close=tick_data.markets[resource.value].price_tracker.get_close(
-                ),
-                market=tick_data.markets[resource.value].price_tracker.get_market(
-                )
+                high=tick_data.markets[resource.value].price_tracker.get_high(),
+                open=tick_data.markets[resource.value].price_tracker.get_open(),
+                close=tick_data.markets[resource.value].price_tracker.get_close(),
+                market=tick_data.markets[resource.value].price_tracker.get_average(),
+                volume=tick_data.markets[resource.value].price_tracker.get_volume()
             )
 
     async def run_bots(self, tick_data: TickData):

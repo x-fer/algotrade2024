@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from . import player, game, power_plant, market
 
+
 router = APIRouter()
 
 
