@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from db.table import Table
 from .resource import Resource
 from .enum_type import EnumType
+from db import database
 
 
 class ResourceField(EnumType):
