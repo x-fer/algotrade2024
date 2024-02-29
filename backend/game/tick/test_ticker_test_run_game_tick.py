@@ -1,8 +1,12 @@
+from pprint import pprint
 import pytest
 from model import Game
 from game.tick import Ticker
 from unittest.mock import patch
 from tick.test_tick_fixtures import *
+
+import tracemalloc
+tracemalloc.start()
 
 
 @pytest.mark.asyncio

@@ -1,5 +1,7 @@
+import asyncio
+import sys
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 from pprint import pprint
 from typing import Dict, Tuple
 import pandas as pd
@@ -25,41 +27,79 @@ class GameData:
 class Ticker:
     def __init__(self):
         self.game_data: Dict[int, GameData] = {}
+        self.game_futures: Dict[int, asyncio.Future] = {}
 
-    async def run_all_game_ticks(self):
-        games = await Game.list()
+    async def run_all_game_ticks(self, iters=None):
+        for i in range(iters or sys.maxsize):
+            games = await Game.list()
 
-        for game in games:
-            if game.is_finished:
-                continue
-
-            if datetime.now() < game.start_time:
-                continue
-
-            if game.current_tick >= game.total_ticks:
-                try:
-                    logger.info(
-                        f"Ending game ({game.game_id}) {game.game_name}")
-                    await Game.update(game_id=game.game_id, is_finished=True)
-                    if self.game_data.get(game.game_id) is not None:
-                        del self.game_data[game.game_id]
-                except Exception as e:
-                    logger.critical(
-                        f"Failed ending game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
-                continue
-
-            if self.game_data.get(game.game_id) is None:
-                try:
-                    logger.info(
-                        f"Starting game ({game.game_id}) {game.game_name}")
-                    await self.delete_all_running_bots(game.game_id)
-                    self.game_data[game.game_id] = GameData(game, {})
-                except Exception as e:
-                    logger.critical(
-                        f"Failed creating game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+            for game in games:
+                if game.is_finished:
                     continue
 
+                if datetime.now() < game.start_time:
+                    continue
+
+                if game.current_tick >= game.total_ticks:
+                    await self.end_game(game)
+                    continue
+
+                if self.game_data.get(game.game_id) is None:
+                    await self.start_game(game)
+                    continue
+
+            await asyncio.sleep(0.1)
+
+    async def end_game(self, game: Game):
+        try:
+            logger.info(
+                f"Ending game ({game.game_id}) {game.game_name}")
+            await Game.update(game_id=game.game_id, is_finished=True)
+            if self.game_data.get(game.game_id) is not None:
+                del self.game_data[game.game_id]
+                self.game_futures[game.game_id].cancel()
+
+        except Exception as e:
+            logger.critical(
+                f"Failed ending game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+
+    async def start_game(self, game: Game):
+        try:
+            logger.info(
+                f"Starting game ({game.game_id}) {game.game_name}")
+
+            await self.delete_all_running_bots(game.game_id)
+
+            self.game_data[game.game_id] = GameData(game, {})
+            self.game_futures[game.game_id] = asyncio.create_task(
+                self.run_game(game), name=f"game_{game.game_id}")
+
+        except Exception as e:
+            logger.critical(
+                f"Failed creating game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+
+    async def run_game(self, game: Game, iters=None):
+        for i in range(iters or sys.maxsize):
+            game = await Game.get(game_id=game.game_id)
             try:
+                if game.current_tick >= game.total_ticks:
+                    return
+
+                # wait until the tick should start
+                should_start = game.start_time + \
+                    timedelta(milliseconds=game.current_tick *
+                              game.tick_time)
+
+                to_wait = max(
+                    0, (should_start - datetime.now()).total_seconds())
+
+                if to_wait < 0.1:
+                    logger.warning(
+                        f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}, catching up or possible overload")
+
+                await asyncio.sleep(to_wait)
+
+                # run the tick
                 async with database.transaction():
                     await database.execute(
                         f"LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
@@ -77,14 +117,18 @@ class Ticker:
             await Player.update(player_id=bot.player_id, is_active=False)
 
     async def run_game_tick(self, game: Game):
+
         logger.debug(
             f"({game.game_id}) {game.game_name}: {game.current_tick} tick")
         tick_data = await self.get_tick_data(game)
+
         tick_data = self.run_markets(tick_data)
 
         tick_data = self.run_power_plants(tick_data)
+
         tick_data, energy_sold = self.run_electricity_market(
             tick_data, self.game_data[game.game_id].energy_market)
+
         await self.save_electricity_orders(
             game, tick_data.players, energy_sold, game.current_tick)
 
@@ -198,11 +242,16 @@ class Ticker:
                 tick=tick,
                 resource=resource.value,
                 low=tick_data.markets[resource.value].price_tracker.get_low(),
-                high=tick_data.markets[resource.value].price_tracker.get_high(),
-                open=tick_data.markets[resource.value].price_tracker.get_open(),
-                close=tick_data.markets[resource.value].price_tracker.get_close(),
-                market=tick_data.markets[resource.value].price_tracker.get_average(),
-                volume=tick_data.markets[resource.value].price_tracker.get_volume()
+                high=tick_data.markets[resource.value].price_tracker.get_high(
+                ),
+                open=tick_data.markets[resource.value].price_tracker.get_open(
+                ),
+                close=tick_data.markets[resource.value].price_tracker.get_close(
+                ),
+                market=tick_data.markets[resource.value].price_tracker.get_average(
+                ),
+                volume=tick_data.markets[resource.value].price_tracker.get_volume(
+                )
             )
 
     async def run_bots(self, tick_data: TickData):

@@ -22,7 +22,7 @@ async def fill_tables():
         dataset_id=dataset_id,
         start_time=datetime.now(),
         total_ticks=2300,
-        tick_time=3000)
+        tick_time=5000)
     nat_game_id = await Game.create(
         game_name="Natjecanje",
         is_contest=True,
@@ -160,7 +160,7 @@ async def run_migrations():
               volume INT,
               PRIMARY KEY (game_id, tick, resource)
               )''')
-    
+
     await database.execute('CREATE INDEX CONCURRENTLY tick_idx ON market (tick);')
 
     await database.execute('''
