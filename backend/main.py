@@ -26,20 +26,7 @@ async def background_tasks():
     if len(children) == 1 or children[1].pid == os.getpid():
         ticker = Ticker()
 
-        while True:
-            t1 = time.time()
-
-            await ticker.run_all_game_ticks()
-
-            t2 = time.time()
-
-            tick_interval = config["game"]["tick_interval"]
-            to_wait = tick_interval - time.time() % tick_interval
-
-            if to_wait > 0:
-                await asyncio.sleep(to_wait)
-            else:
-                logger.warn("Tick took too long, duration: ", t2 - t1)
+        await ticker.run_tick_manager()
 
 
 @asynccontextmanager
