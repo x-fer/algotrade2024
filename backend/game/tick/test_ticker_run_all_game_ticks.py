@@ -9,7 +9,7 @@ from unittest.mock import Mock
 
 
 @pytest.mark.asyncio
-async def test_run_all_game_ticks():
+async def test_run_tick_manager():
 
     games = [Game(game_id=1, game_name="Game1", is_finished=False,
                   start_time=datetime.now(), current_tick=0, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)]
@@ -24,7 +24,7 @@ async def test_run_all_game_ticks():
 
         ticker = Ticker()
 
-        await ticker.run_all_game_ticks(1)
+        await ticker.run_tick_manager(1)
 
         mock_start_game.assert_called_once_with(games[0])
 
@@ -32,7 +32,7 @@ async def test_run_all_game_ticks():
 
 
 @pytest.mark.asyncio
-async def test_run_all_game_ticks_game_finished():
+async def test_run_tick_manager_game_finished():
 
     games = [Game(game_id=1, game_name="Game1", is_finished=True,
                   start_time=datetime.now(), current_tick=0, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)]
@@ -47,7 +47,7 @@ async def test_run_all_game_ticks_game_finished():
 
         ticker = Ticker()
 
-        await ticker.run_all_game_ticks(1)
+        await ticker.run_tick_manager(1)
 
         mock_start_game.assert_not_called()
 
@@ -55,7 +55,7 @@ async def test_run_all_game_ticks_game_finished():
 
 
 @pytest.mark.asyncio
-async def test_run_all_game_ticks_game_not_started():
+async def test_run_tick_manager_game_not_started():
 
     games = [Game(game_id=1, game_name="Game1", is_finished=False,
                   start_time=datetime.now() + timedelta(seconds=10), current_tick=0, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)]
@@ -70,7 +70,7 @@ async def test_run_all_game_ticks_game_not_started():
 
         ticker = Ticker()
 
-        await ticker.run_all_game_ticks(1)
+        await ticker.run_tick_manager(1)
 
         mock_start_game.assert_not_called()
 
@@ -78,7 +78,7 @@ async def test_run_all_game_ticks_game_not_started():
 
 
 @pytest.mark.asyncio
-async def test_run_all_game_ticks_game_end_game():
+async def test_run_tick_manager_game_end_game():
 
     games = [Game(game_id=1, game_name="Game1", is_finished=False,
                   start_time=datetime.now() - timedelta(seconds=1), current_tick=10, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)]
@@ -93,7 +93,7 @@ async def test_run_all_game_ticks_game_end_game():
 
         ticker = Ticker()
 
-        await ticker.run_all_game_ticks(1)
+        await ticker.run_tick_manager(1)
 
         mock_start_game.assert_not_called()
 

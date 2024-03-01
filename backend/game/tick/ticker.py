@@ -29,7 +29,7 @@ class Ticker:
         self.game_data: Dict[int, GameData] = {}
         self.game_futures: Dict[int, asyncio.Future] = {}
 
-    async def run_all_game_ticks(self, iters=None):
+    async def run_tick_manager(self, iters=None):
         for i in range(iters or sys.maxsize):
             games = await Game.list()
 
@@ -40,11 +40,7 @@ class Ticker:
                 if datetime.now() < game.start_time:
                     continue
 
-                if game.current_tick >= game.total_ticks:
-                    await self.end_game(game)
-                    continue
-
-                if self.game_data.get(game.game_id) is None:
+                if not game.game_id in self.game_data:
                     await self.start_game(game)
                     continue
 
@@ -83,6 +79,7 @@ class Ticker:
             game = await Game.get(game_id=game.game_id)
             try:
                 if game.current_tick >= game.total_ticks:
+                    await self.end_game(game)
                     return
 
                 # wait until the tick should start

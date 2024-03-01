@@ -26,7 +26,7 @@ async def background_tasks():
     if len(children) == 1 or children[1].pid == os.getpid():
         ticker = Ticker()
 
-        await ticker.run_all_game_ticks()
+        await ticker.run_tick_manager()
 
 
 @asynccontextmanager
