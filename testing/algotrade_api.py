@@ -56,7 +56,7 @@ class OrderSide():
 
 
 def get_games():
-    return requests.get(f"http://{URL}/game/list", 
+    return requests.get(f"http://{URL}/game/list",
                         params={"team_secret": team_secret})
 
 
@@ -79,7 +79,7 @@ def create_player(player_name: str = None):
 
 def get_player():
     return requests.get(f"http://{URL}/game/{game_id}/player/{player_id}",
-                            params={"team_secret": team_secret})
+                        params={"team_secret": team_secret})
 
 
 def delete_player():
@@ -100,9 +100,12 @@ def get_player_orders():
 def get_prices(start_tick=None, end_tick=None, resource=None):
     url = f"{URL}/game/{game_id}/market/prices"
     params = {"team_secret": team_secret}
-    if start_tick: params["start_tick"] = start_tick
-    if end_tick: params["end_tick"] = end_tick
-    if resource: params["resource"] = resource
+    if start_tick:
+        params["start_tick"] = start_tick
+    if end_tick:
+        params["end_tick"] = end_tick
+    if resource:
+        params["resource"] = resource
     return requests.get(url, params=params)
 
 
@@ -126,8 +129,8 @@ def create_order(resource, price, size, expiration_tick, side):
 
 def cancel_orders(ids):
     return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/market/order/cancel",
-                             params={"team_secret": team_secret},
-                             json={"ids": ids})
+                         params={"team_secret": team_secret},
+                         json={"ids": ids})
 
 
 def get_plants():
@@ -137,31 +140,33 @@ def get_plants():
 
 def buy_plant(type):
     return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/plant/buy",
-                        params={"team_secret": team_secret},
-                        json={"type": type})
+                         params={"team_secret": team_secret},
+                         json={"type": type})
 
 
 def sell_plant(type):
     return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/plant/sell",
-                        params={"team_secret": team_secret},
-                        json={"type": type})
+                         params={"team_secret": team_secret},
+                         json={"type": type})
 
 
 def turn_on_plant(type):
     return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/plant/on",
-                        params={"team_secret": team_secret},
-                        json={"type": type})
+                         params={"team_secret": team_secret},
+                         json={"type": type})
 
 
 def turn_off_plant(type):
     return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/plant/off",
-                        params={"team_secret": team_secret},
-                        json={"type": type})
+                         params={"team_secret": team_secret},
+                         json={"type": type})
 
 
 def get_dataset(start_tick=None, end_tick=None):
     url = f"{URL}/game/{game_id}/dataset"
     params = {"team_secret": team_secret}
-    if start_tick: params["start_tick"] = start_tick
-    if end_tick: params["end_tick"] = end_tick
+    if start_tick:
+        params["start_tick"] = start_tick
+    if end_tick:
+        params["end_tick"] = end_tick
     return requests.get(url, params=params).json()
