@@ -34,6 +34,7 @@ bots:
   max_price_change: 20
   expiration_ticks: 5
   price_change_coeff: 0.05
+  dataset_price_weight: 0.5
 
 max_energy_per_player: 0.2
 

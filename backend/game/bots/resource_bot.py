@@ -16,6 +16,7 @@ max_price = config['bots']['max_price']
 price_change_coeff = config['bots']['price_change_coeff']
 max_price_change = config['bots']['max_price_change']
 expiration_ticks = config['bots']['expiration_ticks']
+dataset_price_weight = config['bots']['dataset_price_weight']
 
 
 class ResourceBot(Bot):
@@ -49,6 +50,9 @@ class ResourceBot(Bot):
         orders = await self.get_last_orders()
 
         for resource in Resource:
+            if resource == Resource.energy:
+                continue
+
             resource_orders = orders[resource]
             resource_sum = resources_sum[resource]
             buy_price = self.buy_prices[resource]
@@ -79,10 +83,18 @@ class ResourceBot(Bot):
             if buy_price == sell_price:
                 buy_price = sell_price - 1
 
+            buy_price = self.mix_dataset_price(
+                tick_data.dataset_row, buy_price, resource)
+            sell_price = self.mix_dataset_price(
+                tick_data.dataset_row, sell_price, resource)
+
             await self.create_orders(tick_data.game.current_tick,
                                      resource, buy_price, sell_price, buy_volume, sell_volume)
             self.buy_prices[resource] = buy_price
             self.sell_prices[resource] = sell_price
+
+    def mix_dataset_price(self, dataset_row, price, resource):
+        return dataset_price_weight * dataset_row[resource.name.lower() + "_price"] + (1 - dataset_price_weight) * price
 
     def get_filled_perc(self, orders: List[Order]):
         size = {side: 0 for side in OrderSide}

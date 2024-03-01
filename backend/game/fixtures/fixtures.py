@@ -28,7 +28,12 @@ def dataset_row():
         solar=8,
         hydro=9,
         energy_demand=100,
-        max_energy_price=1000
+        max_energy_price=1000,
+        coal_price=1,
+        uranium_price=2,
+        biomass_price=3,
+        gas_price=4,
+        oil_price=5,
     )
 
 
@@ -96,6 +101,11 @@ def get_tick_data(game_id):
                 biomass=3,
                 gas=4,
                 oil=5,
+                coal_price=coal,
+                uranium_price=2,
+                biomass_price=3,
+                gas_price=4,
+                oil_price=5,
                 geothermal=6,
                 wind=7,
                 solar=8,
