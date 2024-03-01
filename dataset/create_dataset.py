@@ -76,6 +76,15 @@ df = df.rename(columns={"river_level": "River"})
 
 df = df.dropna()
 
+futures_df = pd.read_csv("data/futures.csv", index_col=0)
+# datetime index
+futures_df.index = pd.to_datetime(
+    futures_df.index) + pd.Timedelta("30 minutes")
+
+# join
+df = df.join(futures_df)
+df = df.dropna()
+
 # assert time delta is 60 minutes
 
 
@@ -91,6 +100,7 @@ df["split"] = df["delta"] != pd.Timedelta("60 minutes")
 
 # cumsum split
 df["split"] = df["split"].cumsum()
+
 
 # group by split
 groups = df.groupby("split")
@@ -141,6 +151,12 @@ def prepare_chunk(df):
 
     new_df["ENERGY_DEMAND"] = 3000 * 1000 + 5000 * 1000 * df["Energy"]
     new_df["MAX_ENERGY_PRICE"] = 1000 - 500 * df["Energy"]
+
+    new_df["COAL_PRICE"] = df["COAL_PRICE"] * 1000 * 1000
+    new_df["URANIUM_PRICE"] = df["URANIUM_PRICE"] * 100000 * 1000
+    new_df["BIOMASS_PRICE"] = df["BIOMASS_PRICE"] * 1000 * 1000
+    new_df["GAS_PRICE"] = df["GAS_PRICE"] * 2000 * 1000
+    new_df["OIL_PRICE"] = df["OIL_PRICE"] * 3000 * 1000
 
     for col in new_df.columns:
         # make int
