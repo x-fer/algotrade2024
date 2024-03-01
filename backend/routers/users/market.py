@@ -84,7 +84,7 @@ async def order_list(game: Game = Depends(game_dep)) -> List[OrderResponse]:
 
 
 @router.get("/game/{game_id}/player/{player_id}/orders")
-async def order_list_player(game: Game = Depends(game_dep), 
+async def order_list_player(game: Game = Depends(game_dep),
                             player: Player = Depends(player_dep)) -> List[OrderResponse]:
     return await Order.list(
         game_id=game.game_id,
@@ -105,6 +105,26 @@ class UserOrder(BaseModel):
 async def order_create_player(order: UserOrder,
                               game: Game = Depends(game_dep),
                               player: Player = Depends(player_dep)) -> SuccessfulResponse:
+
+    # max 10 orders at a time of type ACTIVE, PENDING, IN_QUEUE
+    total_orders_not_processed = await Order.count(
+        game_id=game.game_id,
+        player_id=player.player_id,
+        order_status=OrderStatus.ACTIVE.value
+    ) + await Order.count(
+        game_id=game.game_id,
+        player_id=player.player_id,
+        order_status=OrderStatus.PENDING.value
+    ) + await Order.count(
+        game_id=game.game_id,
+        player_id=player.player_id,
+        order_status=OrderStatus.IN_QUEUE.value
+    )
+
+    if total_orders_not_processed >= 10:
+        raise HTTPException(
+            status_code=400, detail="Maximum 10 orders can be active at a time")
+
     if order.resource == Resource.ENERGY:
         raise HTTPException(
             status_code=400,
