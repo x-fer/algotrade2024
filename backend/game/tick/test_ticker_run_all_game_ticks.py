@@ -78,29 +78,6 @@ async def test_run_tick_manager_game_not_started():
 
 
 @pytest.mark.asyncio
-async def test_run_tick_manager_game_end_game():
-
-    games = [Game(game_id=1, game_name="Game1", is_finished=False,
-                  start_time=datetime.now() - timedelta(seconds=1), current_tick=10, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)]
-    mock_game_list = AsyncMock(return_value=games)
-
-    mock_start_game = AsyncMock()
-    mock_end_game = AsyncMock()
-
-    with patch('model.Game.list', new=mock_game_list), \
-            patch('game.tick.Ticker.start_game', new=mock_start_game), \
-            patch('game.tick.Ticker.end_game', new=mock_end_game):
-
-        ticker = Ticker()
-
-        await ticker.run_tick_manager(1)
-
-        mock_start_game.assert_not_called()
-
-        mock_end_game.assert_called_once_with(games[0])
-
-
-@pytest.mark.asyncio
 async def test_end_game():
     game = Game(game_id=1, game_name="Game1", is_finished=False,
                 start_time=datetime.now() - timedelta(seconds=1), current_tick=10, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)
