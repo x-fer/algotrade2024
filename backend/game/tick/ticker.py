@@ -228,6 +228,8 @@ class Ticker:
     async def save_tick_data(self, tick_data: TickData):
         await Player.update_many(tick_data.players.values())
         await Order.update_many(tick_data.updated_orders.values())
+        for bot in tick_data.bots:
+            await Player.update(player_id=bot.player_id, money=int(1e9))
 
     async def save_market_data(self, tick_data: TickData):
         tick = tick_data.game.current_tick
