@@ -16,6 +16,7 @@ max_price = config['bots']['max_price']
 price_change_coeff = config['bots']['price_change_coeff']
 max_price_change = config['bots']['max_price_change']
 expiration_ticks = config['bots']['expiration_ticks']
+dataset_price_weight = config['bots']['dataset_price_weight']
 
 
 class ResourceBot(Bot):
@@ -93,7 +94,7 @@ class ResourceBot(Bot):
             self.sell_prices[resource] = sell_price
 
     def mix_dataset_price(self, dataset_row, price, resource):
-        return config['bots']['dataset_price_weight'] * dataset_row[resource.name.lower() + "_price"] + (1 - config['bots']['dataset_price_weight']) * price
+        return dataset_price_weight * dataset_row[resource.name.lower() + "_price"] + (1 - dataset_price_weight) * price
 
     def get_filled_perc(self, orders: List[Order]):
         size = {side: 0 for side in OrderSide}
