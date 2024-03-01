@@ -174,6 +174,11 @@ async def run_migrations():
                 biomass INT NOT NULL,
                 gas INT NOT NULL,
                 oil INT NOT NULL,
+                coal_price INT NOT NULL,
+                uranium_price INT NOT NULL,
+                biomass_price INT NOT NULL,
+                gas_price INT NOT NULL,
+                oil_price INT NOT NULL,
                 geothermal INT NOT NULL,
                 wind INT NOT NULL,
                 solar INT NOT NULL,
@@ -230,7 +235,12 @@ async def run_migrations():
                                      solar=row["SOLAR"],
                                      hydro=row["HYDRO"],
                                      energy_demand=row["ENERGY_DEMAND"],
-                                     max_energy_price=row["MAX_ENERGY_PRICE"]
+                                     max_energy_price=row["MAX_ENERGY_PRICE"],
+                                     coal_price=row["COAL_PRICE"],
+                                     uranium_price=row["URANIUM_PRICE"],
+                                     biomass_price=row["BIOMASS_PRICE"],
+                                     gas_price=row["GAS_PRICE"],
+                                     oil_price=row["OIL_PRICE"]
                                      )
             i += 1
         logger.info(f"Added dataset {x}")

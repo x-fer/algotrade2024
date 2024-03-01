@@ -22,6 +22,11 @@ class DatasetData(Table):
     wind: int
     solar: int
     hydro: int
+    coal_price: int
+    uranium_price: int
+    biomass_price: int
+    gas_price: int
+    oil_price: int
     energy_demand: int
     max_energy_price: int
 
