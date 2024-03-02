@@ -45,6 +45,12 @@ class ResourceMarket:
         can_buy = self._players[buyer_id].money >= trade.filled_money
         can_sell = self._players[seller_id][self.resource.name] >= trade.filled_size
 
+        if self._players[buyer_id].is_bot:
+            can_buy = True
+
+        if self._players[seller_id].is_bot:
+            can_sell = True
+
         if not can_buy or not can_sell:
             return {"can_buy": can_buy, "can_sell": can_sell}
         return {"can_buy": True, "can_sell": True}
@@ -53,8 +59,10 @@ class ResourceMarket:
         buyer_id = trade.buy_order.player_id
         seller_id = trade.sell_order.player_id
 
-        self._players[buyer_id].money -= trade.filled_money
-        self._players[buyer_id][self.resource.name] += trade.filled_size
+        if not self._players[buyer_id].is_bot:
+            self._players[buyer_id].money -= trade.filled_money
+            self._players[buyer_id][self.resource.name] += trade.filled_size
 
-        self._players[seller_id].money += trade.filled_money
-        self._players[seller_id][self.resource.name] -= trade.filled_size
+        if not self._players[seller_id].is_bot:
+            self._players[seller_id].money += trade.filled_money
+            self._players[seller_id][self.resource.name] -= trade.filled_size
