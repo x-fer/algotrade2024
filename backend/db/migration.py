@@ -89,15 +89,15 @@ async def run_migrations():
               is_active BOOLEAN NOT NULL DEFAULT true,
               is_bot BOOLEAN NOT NULL DEFAULT false,
                            
-              energy_price INT NOT NULL DEFAULT 1e9,
+              energy_price BIGINT NOT NULL DEFAULT 1e9,
               
-              money INT NOT NULL DEFAULT 0,
-              energy INT NOT NULL DEFAULT 0,
-              coal INT NOT NULL DEFAULT 0,
-              uranium INT NOT NULL DEFAULT 0,
-              biomass INT NOT NULL DEFAULT 0,
-              gas INT NOT NULL DEFAULT 0,
-              oil INT NOT NULL DEFAULT 0,
+              money BIGINT NOT NULL DEFAULT 0,
+              energy BIGINT NOT NULL DEFAULT 0,
+              coal BIGINT NOT NULL DEFAULT 0,
+              uranium BIGINT NOT NULL DEFAULT 0,
+              biomass BIGINT NOT NULL DEFAULT 0,
+              gas BIGINT NOT NULL DEFAULT 0,
+              oil BIGINT NOT NULL DEFAULT 0,
                            
               coal_plants_owned INT NOT NULL DEFAULT 0,
               uranium_plants_owned INT NOT NULL DEFAULT 0,
@@ -131,16 +131,16 @@ async def run_migrations():
                 order_type TEXT NOT NULL,
                 order_side TEXT NOT NULL,
                 order_status TEXT NOT NULL,
-                price INT NOT NULL,
-                size INT NOT NULL,
+                price BIGINT NOT NULL,
+                size BIGINT NOT NULL,
                 tick INT NOT NULL,
                 timestamp TIMESTAMP NOT NULL,
                 expiration_tick INT NOT NULL,
                 resource TEXT NOT NULL,
                            
-                filled_size INT NOT NULL DEFAULT 0,
-                filled_money INT NOT NULL DEFAULT 0,
-                filled_price INT NOT NULL DEFAULT 0,
+                filled_size BIGINT NOT NULL DEFAULT 0,
+                filled_money BIGINT NOT NULL DEFAULT 0,
+                filled_price DOUBLE PRECISION NOT NULL DEFAULT 0,
                 
                 FOREIGN KEY (player_id) REFERENCES players(player_id),
                 FOREIGN KEY (game_id) REFERENCES games(game_id)
@@ -152,12 +152,12 @@ async def run_migrations():
               game_id INT,
               tick INT,
               resource TEXT,
-              low INT,
-              high INT,
-              open INT,
-              close INT,
-              market INT,
-              volume INT,
+              low BIGINT,
+              high BIGINT,
+              open BIGINT,
+              close BIGINT,
+              market BIGINT,
+              volume BIGINT,
               PRIMARY KEY (game_id, tick, resource)
               )''')
 
@@ -169,22 +169,22 @@ async def run_migrations():
                 dataset_id INT NOT NULL,
                 date TIMESTAMP NOT NULL,
                 tick INT NOT NULL,
-                coal INT NOT NULL,
-                uranium INT NOT NULL,
-                biomass INT NOT NULL,
-                gas INT NOT NULL,
-                oil INT NOT NULL,
-                coal_price INT NOT NULL,
-                uranium_price INT NOT NULL,
-                biomass_price INT NOT NULL,
-                gas_price INT NOT NULL,
-                oil_price INT NOT NULL,
-                geothermal INT NOT NULL,
-                wind INT NOT NULL,
-                solar INT NOT NULL,
-                hydro INT NOT NULL,
-                energy_demand INT NOT NULL,
-                max_energy_price INT NOT NULL,
+                coal BIGINT NOT NULL,
+                uranium BIGINT NOT NULL,
+                biomass BIGINT NOT NULL,
+                gas BIGINT NOT NULL,
+                oil BIGINT NOT NULL,
+                coal_price BIGINT NOT NULL,
+                uranium_price BIGINT NOT NULL,
+                biomass_price BIGINT NOT NULL,
+                gas_price BIGINT NOT NULL,
+                oil_price BIGINT NOT NULL,
+                geothermal BIGINT NOT NULL,
+                wind BIGINT NOT NULL,
+                solar BIGINT NOT NULL,
+                hydro BIGINT NOT NULL,
+                energy_demand BIGINT NOT NULL,
+                max_energy_price BIGINT NOT NULL,
                 FOREIGN KEY (dataset_id) REFERENCES datasets(dataset_id)
                 )''')
 
@@ -202,7 +202,7 @@ async def run_migrations():
         )
 
     logger.info("Filling datasets")
-    datasets_path = config["datasets_path"]
+    datasets_path = config["dataset"]["datasets_path"]
     for x in os.listdir(datasets_path):
         if not x.endswith(".csv"):
             continue
@@ -218,6 +218,10 @@ async def run_migrations():
         # TODO: asserts, async transaction - ne zelimo da se dataset kreira ako faila kreiranje redaka
         dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
 
+        price_multipliers = config["dataset"]["price_multiplier"]
+        energy_output_multipliers = config["dataset"]["energy_output_multiplier"]
+        energy_demand_multiplier = config["dataset"]["energy_demand_multiplier"]
+
         # date,COAL,URANIUM,BIOMASS,GAS,OIL,GEOTHERMAL,WIND,SOLAR,HYDRO,ENERGY_DEMAND,MAX_ENERGY_PRICE
         i = 0
         for index, row in df.iterrows():
@@ -225,22 +229,54 @@ async def run_migrations():
                                      tick=i,
                                      date=datetime.strptime(
                                          row["date"], "%Y-%m-%d %H:%M:%S"),
-                                     coal=row["COAL"],
-                                     uranium=row["URANIUM"],
-                                     biomass=row["BIOMASS"],
-                                     gas=row["GAS"],
-                                     oil=row["OIL"],
-                                     geothermal=row["GEOTHERMAL"],
-                                     wind=row["WIND"],
-                                     solar=row["SOLAR"],
-                                     hydro=row["HYDRO"],
-                                     energy_demand=row["ENERGY_DEMAND"],
-                                     max_energy_price=row["MAX_ENERGY_PRICE"],
-                                     coal_price=row["COAL_PRICE"],
-                                     uranium_price=row["URANIUM_PRICE"],
-                                     biomass_price=row["BIOMASS_PRICE"],
-                                     gas_price=row["GAS_PRICE"],
-                                     oil_price=row["OIL_PRICE"]
+                                     coal=(
+                                         energy_output_multipliers["coal"] *
+                                         row["COAL"] // 1_000_000),
+                                     uranium=(
+                                         energy_output_multipliers["uranium"] *
+                                         row["URANIUM"] // 1_000_000),
+                                     biomass=(
+                                         energy_output_multipliers["biomass"] *
+                                         row["BIOMASS"] // 1_000_000),
+                                     gas=(
+                                         energy_output_multipliers["gas"] *
+                                         row["GAS"] // 1_000_000),
+                                     oil=(
+                                         energy_output_multipliers["oil"] *
+                                         row["OIL"] // 1_000_000),
+                                     geothermal=(
+                                         energy_output_multipliers["geothermal"] *
+                                         row["GEOTHERMAL"] // 1_000_000),
+                                     wind=(
+                                         energy_output_multipliers["wind"] *
+                                         row["WIND"] // 1_000_000),
+                                     solar=(
+                                         energy_output_multipliers["solar"] *
+                                         row["SOLAR"] // 1_000_000),
+                                     hydro=(
+                                         energy_output_multipliers["hydro"] *
+                                         row["HYDRO"] // 1_000_000),
+                                     energy_demand=(
+                                         energy_demand_multiplier *
+                                         row["ENERGY_DEMAND"] // 1_000_000),
+                                     max_energy_price=(
+                                         price_multipliers["energy"] *
+                                         row["MAX_ENERGY_PRICE"] // 1_000_000),
+                                     coal_price=(
+                                         price_multipliers["coal"] *
+                                         row["COAL_PRICE"] // 1_000_000),
+                                     uranium_price=(
+                                         price_multipliers["uranium"] *
+                                         row["URANIUM_PRICE"] // 1_000_000),
+                                     biomass_price=(
+                                         price_multipliers["biomass"] *
+                                         row["BIOMASS_PRICE"] // 1_000_000),
+                                     gas_price=(
+                                         price_multipliers["gas"] *
+                                         row["GAS_PRICE"] // 1_000_000),
+                                     oil_price=(
+                                         price_multipliers["oil"] *
+                                         row["OIL_PRICE"] // 1_000_000),
                                      )
             i += 1
         logger.info(f"Added dataset {x}")
