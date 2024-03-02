@@ -32,8 +32,6 @@ def input_player_id():
         print("Player id not set")
 
 
-
-
 def create_player():
     player_name = input("Enter player name: ")
     return algotrade_api.create_player(player_name)
@@ -71,9 +69,15 @@ def create_order():
     #     print("Invalid order type")
     #     return
 
-    return algotrade_api.create_order(price=price, side=side, size=size, 
-                               expiration_tick=expiration_tick, 
-                               resource=resource)
+    return algotrade_api.create_order(price=price, side=side, size=size,
+                                      expiration_tick=expiration_tick,
+                                      resource=resource)
+
+
+def list_orders():
+    restriction = input(
+        "Restriction on order (all/bot/best): ")
+    return algotrade_api.get_orders(restriction=restriction)
 
 
 def list_player_orders():
@@ -164,7 +168,7 @@ def main():
             "6": create_player,
             "7": algotrade_api.get_player,
             "8": algotrade_api.delete_player,
-            "9": algotrade_api.get_orders,
+            "9": list_orders,
             "10": list_prices,
             "11": set_energy_price,
             "12": create_order,

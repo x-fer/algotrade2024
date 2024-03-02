@@ -2,7 +2,30 @@ server:
   port: 8000
   host: 0.0.0.0
 
-datasets_path: ./data
+dataset:
+  datasets_path: ./data
+  max_ticks_in_request: 100
+  
+  price_multiplier:
+    coal: 1450
+    uranium: 15000
+    biomass: 2900
+    gas: 2870
+    oil: 2900
+    energy: 500
+
+  energy_output_multiplier:
+    coal: 15
+    uranium: 160
+    biomass: 30
+    gas: 30
+    oil: 30
+    geothermal: 3
+    wind: 1
+    solar: 1
+    hydro: 2
+
+  energy_demand_multiplier: 55100
 
 redis:
   port: 6379
@@ -16,11 +39,8 @@ test_database:
 admin:
   secret: mojkljuc
 
-game:
-  tick_interval: 1
-
 player:
-  starting_money: 15000
+  starting_money: 350000
 
 bots:
   team_name: bots
@@ -44,45 +64,12 @@ power_plant:
   sell_coeff: 0.7
 
   base_prices:
-    coal: 3000
-    uranium: 250000
-    biomass: 5000
-    gas: 7000
-    oil: 10000
-    geothermal: 25000
-    wind: 10000
-    solar: 10000
-    hydro: 100000
-
-  warmup_coeff:
-    coal: 1.06
-    uranium: 1.04
-    biomass: 1.12
-    gas: 1.07
-    oil: 1.47
-    geothermal: 1.07
-    wind: 3
-    solar: 3
-    hydro: 1.31
-
-  cooldown_coeff:
-    coal: 0.84
-    uranium: 0.66
-    biomass: 0.78
-    gas: 0.55
-    oil: 0.45
-    geothermal: 0.7
-    wind: 0.1
-    solar: 0.05
-    hydro: 0.3
-
-  dataset_rows:
-    coal: null
-    uranium: null
-    biomass: null
-    gas: null
-    oil: null
-    geothermal: geo
-    wind: wind
-    solar: solar
-    hydro: hydro
+    coal: 302500
+    uranium: 9750000
+    biomass: 968000
+    gas: 970400
+    oil: 968000
+    geothermal: 450000
+    wind: 150000
+    solar: 150000
+    hydro: 300000

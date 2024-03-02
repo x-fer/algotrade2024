@@ -2,6 +2,7 @@ from datetime import datetime
 from fastapi import HTTPException, Query, Depends
 from model import Team, Player, Game
 from typing import Tuple
+from config import config
 
 
 async def team_dep(team_secret: str = Query(description="Team secret", default=None)) -> Team:
@@ -75,5 +76,10 @@ async def start_end_tick_dep(game: Game = Depends(game_dep),
     if end_tick >= game.current_tick:
         raise HTTPException(
             status_code=400, detail=f"End tick must be less than current tick (current_tick={game.current_tick})")
+
+    max_ticks_in_request = config["dataset"]["max_ticks_in_request"]
+    if end_tick - start_tick > max_ticks_in_request:
+        raise HTTPException(
+            status_code=400, detail=f"Cannot request more than {max_ticks_in_request} ticks at once")
 
     return start_tick, end_tick

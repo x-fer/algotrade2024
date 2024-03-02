@@ -21,12 +21,6 @@ class PowerPlantType(str, Enum):
     def get_base_price(self):
         return config["power_plant"]["base_prices"][self.get_name()]
 
-    def get_warmup_coeff(self):
-        return config["power_plant"]["warmup_coeff"][self.get_name()]
-
-    def get_cooldown_coeff(self):
-        return config["power_plant"]["cooldown_coeff"][self.get_name()]
-
     def get_plant_price(self, power_plant_count: int):
         return int(self.get_base_price() * (1 + config["power_plant"]["price_coeff"] * power_plant_count))
 

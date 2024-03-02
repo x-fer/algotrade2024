@@ -1,4 +1,5 @@
 from collections import defaultdict
+from enum import Enum
 from typing import List, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
 import pandas as pd
@@ -48,7 +49,9 @@ class EnergyPrice(BaseModel):
 
 
 @router.post("/game/{game_id}/player/{player_id}/energy/set_price")
-async def energy_set_price_player(price: EnergyPrice, game: Game = Depends(game_dep), player: int = Depends(player_dep)) -> SuccessfulResponse:
+async def energy_set_price_player(price: EnergyPrice,
+                                  game: Game = Depends(game_dep),
+                                  player: int = Depends(player_dep)) -> SuccessfulResponse:
     if price <= 0:
         raise HTTPException(
             status_code=400, detail="Price must be greater than 0")
@@ -75,12 +78,37 @@ class OrderResponse(BaseModel):
     resource: Resource
 
 
+class OrderRestriction(Enum):
+    bot_orders = "bot"
+    best_orders = "best"
+    all_orders = "all"
+
+
 @router.get("/game/{game_id}/orders")
-async def order_list(game: Game = Depends(game_dep)) -> List[OrderResponse]:
-    return await Order.list(
-        game_id=game.game_id,
-        order_status=OrderStatus.ACTIVE.value
-    )
+async def order_list(game: Game = Depends(game_dep),
+                     restriction: OrderRestriction = Query(
+                         default=OrderRestriction.all_orders),
+                     ) -> List[OrderResponse]:
+    if restriction == OrderRestriction.all_orders:
+        return await Order.list(
+            game_id=game.game_id,
+            order_status=OrderStatus.ACTIVE.value
+        )
+    elif restriction == OrderRestriction.bot_orders:
+        return await Order.list_bot_orders_by_game_id(
+            game_id=game.game_id,
+        )
+    elif restriction == OrderRestriction.best_orders:
+        best_buy_order = await Order.list_best_orders_by_game_id(
+            game_id=game.game_id, order_side=OrderSide.BUY
+        )
+        best_sell_order = await Order.list_best_orders_by_game_id(
+            game_id=game.game_id, order_side=OrderSide.SELL
+        )
+        return best_buy_order + best_sell_order
+
+    raise HTTPException(
+        status_code=500, detail="Invalid restriction")
 
 
 @router.get("/game/{game_id}/player/{player_id}/orders")

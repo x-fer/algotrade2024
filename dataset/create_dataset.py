@@ -1,4 +1,5 @@
 from matplotlib import pyplot as plt
+import numpy as np
 import pandas as pd
 import os
 
@@ -125,10 +126,10 @@ groups = df.groupby("split")
 #                 )''')
 
 
-def prepare_chunk(df):
+def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
 
     # scale to 0 1
-    df = (df - df.min()) / (df.max() - df.min())
+    df = df * (1 / df.mean())
 
     new_df = pd.DataFrame(columns=["date", "COAL", "URANIUM", "BIOMASS", "GAS", "OIL",
                                    "GEOTHERMAL", "WIND", "SOLAR", "HYDRO", "ENERGY_DEMAND", "MAX_ENERGY_PRICE"])
@@ -138,25 +139,31 @@ def prepare_chunk(df):
     # all in kW
     # COAL:
 
-    new_df["COAL"] = 300 * 1000 + 100 * df["Temp"]
-    new_df["URANIUM"] = 500 * 1000 + 100 * df["Temp"]
-    new_df["BIOMASS"] = 100 * 1000 + 100 * df["Temp"]
-    new_df["GAS"] = 200 * 1000 + 100 * df["Temp"]
-    new_df["OIL"] = 50 * 1000 + 100 * df["Temp"]
+    def mavg_noise(box_size, size):
+        return np.convolve(np.ones(box_size) / box_size,
+                           np.random.normal(
+            0, 1, size + box_size-1),
+            mode="valid")
 
-    new_df["GEOTHERMAL"] = 300 * 1000 * df["Rain"]
-    new_df["WIND"] = 50 * 1000 * df["Wind"]
-    new_df["SOLAR"] = 100 * 1000 * df["UV"]
-    new_df["HYDRO"] = 300 * 1000 * df["River"]
+    new_df["COAL"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
+    new_df["URANIUM"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
+    new_df["BIOMASS"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
+    new_df["GAS"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
+    new_df["OIL"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
 
-    new_df["ENERGY_DEMAND"] = 3000 * 1000 + 5000 * 1000 * df["Energy"]
-    new_df["MAX_ENERGY_PRICE"] = 1000 - 500 * df["Energy"]
+    new_df["GEOTHERMAL"] = 1_000_000 * df["Rain"]
+    new_df["WIND"] = 1_000_000 * df["Wind"]
+    new_df["SOLAR"] = 1_000_000 * df["UV"]
+    new_df["HYDRO"] = 1_000_000 * df["River"]
 
-    new_df["COAL_PRICE"] = df["COAL_PRICE"] * 1000 * 1000
-    new_df["URANIUM_PRICE"] = df["URANIUM_PRICE"] * 100000 * 1000
-    new_df["BIOMASS_PRICE"] = df["BIOMASS_PRICE"] * 1000 * 1000
-    new_df["GAS_PRICE"] = df["GAS_PRICE"] * 2000 * 1000
-    new_df["OIL_PRICE"] = df["OIL_PRICE"] * 3000 * 1000
+    new_df["ENERGY_DEMAND"] = 1_000_000 * df["Energy"]
+    new_df["MAX_ENERGY_PRICE"] = 1_000_000 * df["Energy"]
+
+    new_df["COAL_PRICE"] = df["COAL_PRICE"] * 1_000_000
+    new_df["URANIUM_PRICE"] = df["URANIUM_PRICE"] * 1_000_000
+    new_df["BIOMASS_PRICE"] = df["BIOMASS_PRICE"] * 1_000_000
+    new_df["GAS_PRICE"] = df["GAS_PRICE"] * 1_000_000
+    new_df["OIL_PRICE"] = df["OIL_PRICE"] * 1_000_000
 
     for col in new_df.columns:
         # make int

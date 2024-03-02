@@ -202,7 +202,7 @@ async def run_migrations():
         )
 
     logger.info("Filling datasets")
-    datasets_path = config["datasets_path"]
+    datasets_path = config["dataset"]["datasets_path"]
     for x in os.listdir(datasets_path):
         if not x.endswith(".csv"):
             continue
@@ -218,6 +218,10 @@ async def run_migrations():
         # TODO: asserts, async transaction - ne zelimo da se dataset kreira ako faila kreiranje redaka
         dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
 
+        price_multipliers = config["dataset"]["price_multiplier"]
+        energy_output_multipliers = config["dataset"]["energy_output_multiplier"]
+        energy_demand_multiplier = config["dataset"]["energy_demand_multiplier"]
+
         # date,COAL,URANIUM,BIOMASS,GAS,OIL,GEOTHERMAL,WIND,SOLAR,HYDRO,ENERGY_DEMAND,MAX_ENERGY_PRICE
         i = 0
         for index, row in df.iterrows():
@@ -225,22 +229,54 @@ async def run_migrations():
                                      tick=i,
                                      date=datetime.strptime(
                                          row["date"], "%Y-%m-%d %H:%M:%S"),
-                                     coal=row["COAL"],
-                                     uranium=row["URANIUM"],
-                                     biomass=row["BIOMASS"],
-                                     gas=row["GAS"],
-                                     oil=row["OIL"],
-                                     geothermal=row["GEOTHERMAL"],
-                                     wind=row["WIND"],
-                                     solar=row["SOLAR"],
-                                     hydro=row["HYDRO"],
-                                     energy_demand=row["ENERGY_DEMAND"],
-                                     max_energy_price=row["MAX_ENERGY_PRICE"],
-                                     coal_price=row["COAL_PRICE"],
-                                     uranium_price=row["URANIUM_PRICE"],
-                                     biomass_price=row["BIOMASS_PRICE"],
-                                     gas_price=row["GAS_PRICE"],
-                                     oil_price=row["OIL_PRICE"]
+                                     coal=(
+                                         energy_output_multipliers["coal"] *
+                                         row["COAL"] // 1_000_000),
+                                     uranium=(
+                                         energy_output_multipliers["uranium"] *
+                                         row["URANIUM"] // 1_000_000),
+                                     biomass=(
+                                         energy_output_multipliers["biomass"] *
+                                         row["BIOMASS"] // 1_000_000),
+                                     gas=(
+                                         energy_output_multipliers["gas"] *
+                                         row["GAS"] // 1_000_000),
+                                     oil=(
+                                         energy_output_multipliers["oil"] *
+                                         row["OIL"] // 1_000_000),
+                                     geothermal=(
+                                         energy_output_multipliers["geothermal"] *
+                                         row["GEOTHERMAL"] // 1_000_000),
+                                     wind=(
+                                         energy_output_multipliers["wind"] *
+                                         row["WIND"] // 1_000_000),
+                                     solar=(
+                                         energy_output_multipliers["solar"] *
+                                         row["SOLAR"] // 1_000_000),
+                                     hydro=(
+                                         energy_output_multipliers["hydro"] *
+                                         row["HYDRO"] // 1_000_000),
+                                     energy_demand=(
+                                         energy_demand_multiplier *
+                                         row["ENERGY_DEMAND"] // 1_000_000),
+                                     max_energy_price=(
+                                         price_multipliers["energy"] *
+                                         row["MAX_ENERGY_PRICE"] // 1_000_000),
+                                     coal_price=(
+                                         price_multipliers["coal"] *
+                                         row["COAL_PRICE"] // 1_000_000),
+                                     uranium_price=(
+                                         price_multipliers["uranium"] *
+                                         row["URANIUM_PRICE"] // 1_000_000),
+                                     biomass_price=(
+                                         price_multipliers["biomass"] *
+                                         row["BIOMASS_PRICE"] // 1_000_000),
+                                     gas_price=(
+                                         price_multipliers["gas"] *
+                                         row["GAS_PRICE"] // 1_000_000),
+                                     oil_price=(
+                                         price_multipliers["oil"] *
+                                         row["OIL_PRICE"] // 1_000_000),
                                      )
             i += 1
         logger.info(f"Added dataset {x}")

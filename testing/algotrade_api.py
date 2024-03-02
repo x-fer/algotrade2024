@@ -87,9 +87,10 @@ def delete_player():
                         params={"team_secret": team_secret})
 
 
-def get_orders():
+def get_orders(restriction=None):
     return requests.get(f"http://{URL}/game/{game_id}/orders",
-                        params={"team_secret": team_secret})
+                        params={"team_secret": team_secret,
+                                "restriction": restriction})
 
 
 def get_player_orders():
