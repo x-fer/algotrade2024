@@ -43,7 +43,7 @@ class Order(Table):
 
     filled_size: int = field(default=0)
     filled_money: int = field(default=0)
-    filled_price: int = field(default=0)
+    filled_price: float = field(default=0)
 
     expiration_tick: int = field(default=1)
 
