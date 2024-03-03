@@ -3,8 +3,8 @@ import React from "react";
 const SelectPowerPlant = ({ type, active, setSelectedType }) => {
   return (
     <button
-      className={`bg-dark-gray hover:bg-gray text-white text-xl w-60 h-24 rounded-3xl ${
-        active ? "border-2 border-red" : ""
+      className={` hover:bg-dark-gray focus:bg-black text-white text-xl w-60 h-24 rounded-3xl ${
+        active ? "border-2 border-red bg-black" : "bg-gray"
       }`}
       onClick={() => setSelectedType(type)}
     >
