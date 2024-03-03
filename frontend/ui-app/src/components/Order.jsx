@@ -18,8 +18,6 @@ const Order = () => {
       price: data.price,
     };
 
-    //TODO: Add the team_secret to the request, and correct api endpoint
-
     instance
       .post(`/game/${gameId}/player/${playerId}/orders/create`, order, {
         params: { team_secret: teamSecret },
