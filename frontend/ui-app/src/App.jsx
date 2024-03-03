@@ -3,16 +3,30 @@ import "./App.css";
 import LeftBar from "./components/LeftBar";
 import MiddleScreen from "./components/MiddleScreen";
 import RightBar from "./components/RightBar";
+import { Context } from "./Context";
 
 const App = () => {
-  const [count, setCount] = useState(0);
+  const [gameId, setGameId] = useState(0);
+  const [playerId, setPlayerId] = useState(0);
+  const [teamSecret, setTeamSecret] = useState("");
 
   return (
-    <div className="flex justify-between h-screen bg-black w-screen">
-      <LeftBar />
-      <MiddleScreen />
-      <RightBar />
-    </div>
+    <Context.Provider
+      value={{
+        gameId,
+        setGameId,
+        playerId,
+        setPlayerId,
+        teamSecret,
+        setTeamSecret,
+      }}
+    >
+      <div className="flex justify-between h-screen bg-black w-screen">
+        <LeftBar />
+        <MiddleScreen />
+        <RightBar />
+      </div>
+    </Context.Provider>
   );
 };
 
