@@ -13,7 +13,7 @@ console_formatter = logging.Formatter('%(levelname)s:     %(message)s')
 
 console_handler = logging.StreamHandler()
 
-if config['testing']:
+if config['debug']:
     console_handler.setLevel(logging.DEBUG)
 else:
     console_handler.setLevel(logging.INFO)

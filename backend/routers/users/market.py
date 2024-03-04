@@ -11,6 +11,7 @@ from model.player import Player
 from .dependencies import game_dep, player_dep, check_game_active_dep, start_end_tick_dep
 from db.db import database
 from routers.model import SuccessfulResponse
+from config import config
 
 
 router = APIRouter(dependencies=[Depends(check_game_active_dep)])
@@ -75,7 +76,6 @@ class OrderResponse(BaseModel):
     order_status: OrderStatus
     filled_size: int
     expiration_tick: int
-    resource: Resource
 
 
 class OrderRestriction(Enum):
@@ -88,14 +88,14 @@ class OrderRestriction(Enum):
 async def order_list(game: Game = Depends(game_dep),
                      restriction: OrderRestriction = Query(
                          default=OrderRestriction.all_orders),
-                     ) -> List[OrderResponse]:
+                     ) -> Dict[Resource, List[OrderResponse]]:
     if restriction == OrderRestriction.all_orders:
-        return await Order.list(
+        orders = await Order.list(
             game_id=game.game_id,
             order_status=OrderStatus.ACTIVE.value
         )
     elif restriction == OrderRestriction.bot_orders:
-        return await Order.list_bot_orders_by_game_id(
+        orders = await Order.list_bot_orders_by_game_id(
             game_id=game.game_id,
         )
     elif restriction == OrderRestriction.best_orders:
@@ -105,20 +105,27 @@ async def order_list(game: Game = Depends(game_dep),
         best_sell_order = await Order.list_best_orders_by_game_id(
             game_id=game.game_id, order_side=OrderSide.SELL
         )
-        return best_buy_order + best_sell_order
+        orders = best_buy_order + best_sell_order
+    return orders_to_dict(orders)
 
-    raise HTTPException(
-        status_code=500, detail="Invalid restriction")
+
+def orders_to_dict(orders: List[Order]) -> Dict[Resource, List[Order]]:
+    orders_dict = defaultdict(list)
+    for order in orders:
+        orders_dict[order.resource].append(order)
+    return orders_dict
 
 
 @router.get("/game/{game_id}/player/{player_id}/orders")
 async def order_list_player(game: Game = Depends(game_dep),
-                            player: Player = Depends(player_dep)) -> List[OrderResponse]:
-    return await Order.list(
+                            player: Player = Depends(player_dep)
+                            ) -> Dict[Resource, List[OrderResponse]]:
+    orders = await Order.list(
         game_id=game.game_id,
         player_id=player.player_id,
-        order_status=OrderStatus.ACTIVE.value
+        order_status=OrderStatus.ACTIVE.value,
     )
+    return orders_to_dict(orders)
 
 
 class UserOrder(BaseModel):
@@ -133,23 +140,12 @@ class UserOrder(BaseModel):
 async def order_create_player(order: UserOrder,
                               game: Game = Depends(game_dep),
                               player: Player = Depends(player_dep)) -> SuccessfulResponse:
+    total_orders_not_processed = await Order.count_player_orders(
+        game_id=game.game_id, 
+        player_id=player.player_id,
+        resource=order.resource)
 
-    # max 10 orders at a time of type ACTIVE, PENDING, IN_QUEUE
-    total_orders_not_processed = await Order.count(
-        game_id=game.game_id,
-        player_id=player.player_id,
-        order_status=OrderStatus.ACTIVE.value
-    ) + await Order.count(
-        game_id=game.game_id,
-        player_id=player.player_id,
-        order_status=OrderStatus.PENDING.value
-    ) + await Order.count(
-        game_id=game.game_id,
-        player_id=player.player_id,
-        order_status=OrderStatus.IN_QUEUE.value
-    )
-
-    if total_orders_not_processed >= 10:
+    if total_orders_not_processed >= config["player"]["max_orders"]:
         raise HTTPException(
             status_code=400, detail="Maximum 10 orders can be active at a time")
 
@@ -179,7 +175,9 @@ class OrderCancel(BaseModel):
 
 
 @router.post("/game/{game_id}/player/{player_id}/orders/cancel")
-async def order_cancel_player(body: OrderCancel, game: Game = Depends(game_dep), player: Player = Depends(player_dep)) -> SuccessfulResponse:
+async def order_cancel_player(body: OrderCancel, 
+                              game: Game = Depends(game_dep), 
+                              player: Player = Depends(player_dep)) -> SuccessfulResponse:
     async with database.transaction():
         for order_id in body.ids:
             if (await Order.get(order_id=order_id)).player_id != player.player_id:

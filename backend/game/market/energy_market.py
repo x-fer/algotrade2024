@@ -26,7 +26,7 @@ class EnergyMarket:
         for player in players_sorted:
             to_sell = min(player.energy, demand, max_per_player)
 
-            if to_sell == 0:
+            if to_sell <= 0:
                 continue
 
             # player.energy -= to_sell # ne trebamo, zelimo da im se prikaze koliko proizvode

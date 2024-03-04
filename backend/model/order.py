@@ -61,6 +61,27 @@ class Order(Table):
     def __lt__(self, other):  # pragma: no cover
         return self.timestamp < other.timestamp  # pragma: no cover
 
+
+    @classmethod
+    async def count_player_orders(cls, game_id, player_id, resource: Resource):
+        query = f"""
+        SELECT COUNT(*) FROM {cls.table_name}
+        WHERE game_id=:game_id
+        AND player_id=:player_id
+        AND (order_status=:order_active
+        OR order_status=:order_pending
+        OR order_status=:order_inqueue)
+        AND resource=:resource
+        """
+        values = {"game_id": game_id,
+                  "player_id": player_id,
+                  "order_active": OrderStatus.ACTIVE.value,
+                  "order_inqueue": OrderStatus.IN_QUEUE.value,
+                  "order_pending": OrderStatus.PENDING.value,
+                  "resource": resource.value}
+        result = await database.execute(query, values)
+        return result
+
     @classmethod
     async def list_bot_orders_by_game_id(cls, game_id):
         query = f"""
@@ -70,7 +91,8 @@ class Order(Table):
         AND players.is_bot IS TRUE
         AND orders.order_status=:order_status
         """
-        values = {"game_id": game_id, "order_status": OrderStatus.ACTIVE.value}
+        values = {"game_id": game_id, 
+                  "order_status": OrderStatus.ACTIVE.value}
         result = await database.fetch_all(query, values)
         return [cls(**x) for x in result]
 

@@ -23,34 +23,26 @@ class ResourceMarket:
         for callback_type, callback in callbacks.items():
             self.orderbook.register_callback(callback_type, callback)
 
-        self.logger = logger
+        self.players: Dict[int, Player] = None
+        self._updated: Dict[int, Order] = {}
 
-        def _get_player(player_id):
-            raise NotImplementedError(
-                "ResourceMarket._get_player must be set before using the market")
+    def set_players(self, players: Dict[int, Player]):
+        self.players = players
 
-        self._get_player = _get_player
-        self._updated = {}
-
-    def set_get_player(self, get_player):
-        self._get_player = get_player
-
-    def cancel(self, orders: List[Order]):
+    def cancel(self, orders: List[Order]) -> Dict[int, Order]:
         self._updated = {}
         for order in orders:
-
             try:
                 self.orderbook.cancel_order(order.order_id)
             except ValueError as e:
-                logger.error(
+                logger.warn(
                     f"Error cancelling order for id {order.order_id}: {e}, updating **only** in db, not orderbook.")
-
                 order.order_status = OrderStatus.CANCELLED
                 self._update_order(order)
 
         return self._updated
 
-    def match(self, orders: Order, tick: int):
+    def match(self, orders: List[Order], tick: int) -> Dict[int, Order]:
         self._updated = {}
         for order in orders:
             self.orderbook.add_order(order)
@@ -59,7 +51,6 @@ class ResourceMarket:
         logger.debug(f"Matching:\n"
                      + self.resource.name + " " + str(tick) + "\n"
                      + self.orderbook.__str__() + "\n")
-
         return self._updated
 
     def _update_order(self, order: Order):
@@ -72,19 +63,21 @@ class ResourceMarket:
         buyer = self._get_player(buyer_id)
         seller = self._get_player(seller_id)
 
-        can_buy = buyer.money >= trade.filled_money
-        can_sell = seller[self.resource.name] >= trade.filled_size
-
-        if buyer.is_bot:
+        if buyer is None:
+            can_buy = False
+        elif buyer.is_bot:
             can_buy = True
+        else:
+            can_buy = buyer.money >= trade.filled_money
 
-        if seller.is_bot:
+        if seller is None:
+            can_buy = False
+        elif seller.is_bot:
             can_sell = True
+        else:
+            can_sell = seller[self.resource.name] >= trade.filled_size
 
-        if not can_buy or not can_sell:
-            return {"can_buy": can_buy, "can_sell": can_sell}
-
-        return {"can_buy": True, "can_sell": True}
+        return {"can_buy": can_buy, "can_sell": can_sell}
 
     def _on_trade(self, trade: Trade):
         buyer_id = trade.buy_order.player_id
@@ -100,3 +93,11 @@ class ResourceMarket:
         if not seller.is_bot:
             seller.money += trade.filled_money
             seller[self.resource.name] -= trade.filled_size
+    
+    def _get_player(self, player_id: int) -> Player:
+        if self.players is None: 
+            raise ValueError("Players dictionary not set")
+        if player_id not in self.players:
+            logger.warn(f"Player with id {player_id} not in dictionary")
+            return None
+        return self.players[player_id]

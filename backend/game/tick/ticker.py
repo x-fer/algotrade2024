@@ -3,8 +3,9 @@ import sys
 import traceback
 from datetime import datetime, timedelta
 from pprint import pprint
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 import pandas as pd
+from game.bots.bot import Bot
 from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType
 from game.market import ResourceMarket, EnergyMarket
 from game.bots import Bots
@@ -15,13 +16,13 @@ from db import database
 
 
 class GameData:
-    def __init__(self, game: Game, players: Dict[int, Player]):
+    def __init__(self, game: Game):
         self.markets: Dict[int, ResourceMarket] = {
             resource.value: ResourceMarket(resource)
             for resource in Resource if resource != Resource.energy
         }
         self.energy_market = EnergyMarket()
-        self.bots = Bots.create_bots("resource_bot:1")
+        self.bots: List[Bot] = Bots.create_bots("resource_bot:1")
 
 
 class Ticker:
@@ -66,7 +67,7 @@ class Ticker:
 
             await self.delete_all_running_bots(game.game_id)
 
-            self.game_data[game.game_id] = GameData(game, {})
+            self.game_data[game.game_id] = GameData(game)
 
             await self.load_previous_oderbook(game.game_id)
 
@@ -93,7 +94,7 @@ class Ticker:
                 to_wait = max(
                     0, (should_start - datetime.now()).total_seconds())
 
-                if to_wait < 0.1:
+                if to_wait < 0.1 and game.current_tick > 0:
                     logger.warning(
                         f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}, catching up or possible overload")
 
@@ -175,11 +176,10 @@ class Ticker:
 
         return tick_data
 
-    def run_markets(self, tick_data: TickData):
+    def run_markets(self, tick_data: TickData) -> TickData:
         for resource in tick_data.markets.keys():
             market = tick_data.markets[resource]
-            market.set_get_player(
-                lambda player_id: tick_data.players[player_id])
+            market.set_players(tick_data.players)
 
         for resource in tick_data.markets.keys():
             market = tick_data.markets[resource]
@@ -203,8 +203,7 @@ class Ticker:
 
         return tick_data
 
-    def run_power_plants(self, tick_data: TickData):
-
+    def run_power_plants(self, tick_data: TickData) -> TickData:
         for player_id in tick_data.players.keys():
             player = tick_data.players[player_id]
 
@@ -222,13 +221,17 @@ class Ticker:
 
         return tick_data
 
-    def run_electricity_market(self, tick_data: TickData, energy_market: EnergyMarket) -> Tuple[TickData, Dict[int, int]]:
+    def run_electricity_market(self, tick_data: TickData,
+                               energy_market: EnergyMarket
+                               ) -> Tuple[TickData, Dict[int, int]]:
         energy_sold = energy_market.match(
-            tick_data.players, tick_data.dataset_row.energy_demand, tick_data.dataset_row.max_energy_price)
+            tick_data.players, tick_data.dataset_row.energy_demand,
+            tick_data.dataset_row.max_energy_price)
 
         return tick_data, energy_sold
 
-    async def save_electricity_orders(self, game: Game, players: Dict[int, Player], energy_sold: Dict[int, int], tick: int):
+    async def save_electricity_orders(self, game: Game, players: Dict[int, Player], 
+                                      energy_sold: Dict[int, int], tick: int):
         for player_id, energy in energy_sold.items():
             await Order.create(
                 game_id=game.game_id,
@@ -282,7 +285,7 @@ class Ticker:
         )
 
     async def run_bots(self, tick_data: TickData):
-        bots = self.game_data[tick_data.game.game_id].bots
+        bots: List[Bot] = self.game_data[tick_data.game.game_id].bots
 
         for bot in bots:
             await bot.run(tick_data)

@@ -7,11 +7,16 @@ from dataclasses import asdict
 from model import Game
 from model.dataset_data import DatasetData
 from routers.users.dependencies import game_dep, start_end_tick_dep
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 
 
 router = APIRouter()
+
+
+@router.get("/game/time")
+async def server_time() -> datetime:
+    return pd.Timestamp.now()
 
 
 class GameData(BaseModel):
@@ -33,12 +38,18 @@ async def game_list() -> List[GameData]:
 
 class GameTimeData(GameData):
     current_time: datetime
+    next_tick_time: datetime
 
 
 @router.get("/game/{game_id}")
 async def get_game(game_id: int) -> GameTimeData:
     game = await Game.get(game_id=game_id)
-    return GameTimeData(**asdict(game), current_time=pd.Timestamp.now())
+    next_tick_time = game.start_time + \
+        timedelta(milliseconds=game.current_tick * 
+                  game.tick_time)
+    return GameTimeData(**asdict(game), 
+                        current_time=pd.Timestamp.now(),
+                        next_tick_time=next_tick_time)
 
 
 class DatasetListResponseItem(BaseModel):
