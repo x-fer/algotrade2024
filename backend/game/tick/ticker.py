@@ -67,6 +67,9 @@ class Ticker:
             await self.delete_all_running_bots(game.game_id)
 
             self.game_data[game.game_id] = GameData(game, {})
+
+            await self.load_previous_oderbook(game.game_id)
+
             self.game_futures[game.game_id] = asyncio.create_task(
                 self.run_game(game), name=f"game_{game.game_id}")
 
@@ -106,6 +109,19 @@ class Ticker:
             except Exception as e:
                 logger.critical(
                     f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
+
+    async def load_previous_oderbook(self, game_id: int):
+        # in case of restart these need to be reloaded
+        # IN_QUEUE = "IN_QUEUE"
+        # ACTIVE = "ACTIVE"
+        orders = await Order.list(game_id=game_id,
+                                  order_status=OrderStatus.IN_QUEUE.value)
+        orders += await Order.list(game_id=game_id,
+                                   order_status=OrderStatus.ACTIVE.value)
+
+        for order in orders:
+            markets = self.game_data[game_id].markets
+            markets[order.resource.value].orderbook.add_order(order)
 
     async def delete_all_running_bots(self, game_id: int):
         bots = await Player.list(game_id=game_id, is_bot=True)

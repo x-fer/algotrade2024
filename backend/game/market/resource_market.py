@@ -30,6 +30,7 @@ class ResourceMarket:
                 "ResourceMarket._get_player must be set before using the market")
 
         self._get_player = _get_player
+        self._updated = {}
 
     def set_get_player(self, get_player):
         self._get_player = get_player
@@ -55,8 +56,9 @@ class ResourceMarket:
             self.orderbook.add_order(order)
         self.orderbook.match(tick)
 
-        print(self.resource)
-        print(self.orderbook)
+        logger.debug(f"Matching:\n"
+                     + self.resource.name + " " + str(tick) + "\n"
+                     + self.orderbook.__str__() + "\n")
 
         return self._updated
 

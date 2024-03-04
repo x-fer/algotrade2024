@@ -216,9 +216,9 @@ class OrderBook():
     def __str__(self):
         s = "BUY:"
         for order in self.buy_side:
-            s += f"({order.price}, {order.size}), "
+            s += f"(price: {order.price}, size: {order.size}, filled: {order.filled_size}), "
         s += "\nSELL:"
         for order in self.sell_side:
-            s += f"({order.price}, {order.size}), "
+            s += f"(price: {order.price}, size: {order.size}, filled: {order.filled_size}), "
 
         return s
