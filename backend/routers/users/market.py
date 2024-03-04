@@ -52,7 +52,7 @@ class EnergyPrice(BaseModel):
 async def energy_set_price_player(price: EnergyPrice,
                                   game: Game = Depends(game_dep),
                                   player: int = Depends(player_dep)) -> SuccessfulResponse:
-    if price <= 0:
+    if price.price <= 0:
         raise HTTPException(
             status_code=400, detail="Price must be greater than 0")
 

@@ -12,23 +12,54 @@ from routers.model import SuccessfulResponse
 router = APIRouter(dependencies=[])
 
 
-class PlayerCreateResponse(BaseModel):
+class PlayerData(BaseModel):
     player_id: int
     player_name: str
+    game_id: int
+    energy_price: int
+    money: int
+
+    coal: int
+    uranium: int
+    biomass: int
+    gas: int
+    oil: int
+
+    coal_plants_owned: int
+    uranium_plants_owned: int
+    biomass_plants_owned: int
+    gas_plants_owned: int
+    oil_plants_owned: int
+    geothermal_plants_owned: int
+    wind_plants_owned: int
+    solar_plants_owned: int
+    hydro_plants_owned: int
+
+    coal_plants_powered: int
+    uranium_plants_powered: int
+    biomass_plants_powered: int
+    gas_plants_powered: int
+    oil_plants_powered: int
+    geothermal_plants_powered: int
+    wind_plants_powered: int
+    solar_plants_powered: int
+    hydro_plants_powered: int
 
 
 @router.get("/game/{game_id}/player/list")
 async def player_list(game: Game = Depends(game_dep),
-                      team: Team = Depends(team_dep)) -> List[PlayerCreateResponse]:
+                      team: Team = Depends(team_dep)) -> List[PlayerData]:
     players = await Player.list(game_id=game.game_id, team_id=team.team_id, is_active=True)
-    return [PlayerCreateResponse(
-        player_id=x.player_id,
-        player_name=x.player_name
-    ) for x in players]
+    return players
 
 
 class PlayerCreate(BaseModel):
     player_name: str = None
+
+
+class PlayerCreateResponse(BaseModel):
+    player_id: int
+    player_name: str
 
 
 @router.post("/game/{game_id}/player/create")
@@ -60,20 +91,6 @@ async def player_create(game: Game = Depends(game_dep),
             money=starting_money)
 
     return PlayerCreateResponse(player_id=player_id, player_name=player_name)
-
-
-class PlayerData(BaseModel):
-    player_id: int
-    player_name: str
-    game_id: int
-    energy_price: int
-    money: int
-
-    coal: int
-    uranium: int
-    biomass: int
-    gas: int
-    oil: int
 
 
 @router.get("/game/{game_id}/player/{player_id}", dependencies=[Depends(check_game_active_dep)])

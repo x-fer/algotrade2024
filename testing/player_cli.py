@@ -102,7 +102,8 @@ def sell_plant():
 
 def turn_on_plant():
     type = input("Enter plant type: ")
-    return algotrade_api.turn_on_plant(type)
+    number = input("Enter number of plants to be on: ")
+    return algotrade_api.turn_on_plant(type, number)
 
 
 def turn_off_plant():
@@ -113,7 +114,7 @@ def turn_off_plant():
 def get_dataset():
     start_tick = input("Enter start tick: ")
     end_tick = input("Enter end tick: ")
-    return get_dataset(start_tick, end_tick)
+    return algotrade_api.get_dataset(start_tick, end_tick)
 
 
 def main():
@@ -125,6 +126,7 @@ def main():
             if response.status_code != 200:
                 raise Exception(
                     f"Player fetching code: {response.status_code}\n{response.json()}")
+            pprint(response.json())
         except Exception as e:
             print("Error when fetching player")
             print("Please set game id, team secret and player id")
@@ -178,18 +180,26 @@ def main():
             "16": buy_plant,
             "17": sell_plant,
             "18": turn_on_plant,
-            "29": get_dataset,
+            "19": get_dataset,
             "20": lambda: exit()
         }
 
         try:
             response = case[action]()
 
-            if response.status_code != 200:
-                print("Error " + response.status_code)
-            pprint(response.json())
+            if response is not None and response.status_code != 200:
+                print(f"Error {response.status_code}")
+
+            if response is not None:
+                print(response.url)
+                print("=" * 20)
+                pprint(response.json())
+                print("=" * 20)
+            else:
+                print("No response")
         except Exception as e:
             print("Error: ", e)
+            raise e
 
         print()
 

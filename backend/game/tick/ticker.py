@@ -18,7 +18,7 @@ class GameData:
     def __init__(self, game: Game, players: Dict[int, Player]):
         self.markets: Dict[int, ResourceMarket] = {
             resource.value: ResourceMarket(resource, players)
-            for resource in Resource
+            for resource in Resource if resource != Resource.energy
         }
         self.energy_market = EnergyMarket()
         self.bots = Bots.create_bots("resource_bot:1")
@@ -150,6 +150,7 @@ class Ticker:
             game=game,
             players=players,
             markets=markets,
+            energy_market=self.game_data[game.game_id].energy_market,
             bots=self.game_data[game.game_id].bots,
             pending_orders=pending_orders,
             user_cancelled_orders=user_cancelled_orders,
@@ -159,20 +160,20 @@ class Ticker:
         return tick_data
 
     def run_markets(self, tick_data: TickData):
-        for resource in Resource:
-            market = tick_data.markets[resource.value]
+        for resource in tick_data.markets.keys():
+            market = tick_data.markets[resource]
             filtered_orders = list(filter(
-                lambda order: order.resource.value == resource.value, tick_data.user_cancelled_orders))
+                lambda order: order.resource.value == resource, tick_data.user_cancelled_orders))
 
             updated = market.cancel(
                 filtered_orders)
 
             tick_data.updated_orders.update(updated)
 
-        for resource in Resource:
-            market = tick_data.markets[resource.value]
+        for resource in tick_data.markets.keys():
+            market = tick_data.markets[resource]
             filtered_orders = list(filter(
-                lambda order: order.resource.value == resource.value, tick_data.pending_orders))
+                lambda order: order.resource.value == resource, tick_data.pending_orders))
 
             updated = market.match(
                 filtered_orders, tick_data.game.current_tick)
@@ -206,7 +207,7 @@ class Ticker:
 
         return tick_data, energy_sold
 
-    async def save_electricity_orders(self, players: Dict[int, Player], game: Game, energy_sold: Dict[int, int], tick: int):
+    async def save_electricity_orders(self, game: Game, players: Dict[int, Player], energy_sold: Dict[int, int], tick: int):
         for player_id, energy in energy_sold.items():
             await Order.create(
                 game_id=game.game_id,
@@ -233,12 +234,12 @@ class Ticker:
         tick = tick_data.game.current_tick
         game_id = tick_data.game.game_id
 
-        for resource in Resource:
-            price_tracker = tick_data.markets[resource.value].price_tracker
+        for resource in tick_data.markets.keys():
+            price_tracker = tick_data.markets[resource].price_tracker
             await Market.create(
                 game_id=game_id,
                 tick=tick,
-                resource=resource.value,
+                resource=resource,
                 low=price_tracker.get_low(),
                 high=price_tracker.get_high(),
                 open=price_tracker.get_open(),
@@ -246,6 +247,18 @@ class Ticker:
                 market=price_tracker.get_average(),
                 volume=price_tracker.get_volume()
             )
+        energy_price_tracker = tick_data.energy_market.price_tracker
+        await Market.create(
+            game_id=game_id,
+            tick=tick,
+            resource=Resource.energy.value,
+            low=energy_price_tracker.get_low(),
+            high=energy_price_tracker.get_high(),
+            open=energy_price_tracker.get_open(),
+            close=energy_price_tracker.get_close(),
+            market=energy_price_tracker.get_average(),
+            volume=energy_price_tracker.get_volume()
+        )
 
     async def run_bots(self, tick_data: TickData):
         bots = self.game_data[tick_data.game.game_id].bots
