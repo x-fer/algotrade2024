@@ -153,7 +153,7 @@ async def order_create_player(order: UserOrder,
         raise HTTPException(
             status_code=400, detail="Maximum 10 orders can be active at a time")
 
-    if order.resource == Resource.ENERGY:
+    if order.resource == Resource.energy:
         raise HTTPException(
             status_code=400,
             detail="Use /game/{game_id}/player/{player_id}/energy/set_price to set energy price")
@@ -162,7 +162,7 @@ async def order_create_player(order: UserOrder,
         game_id=game.game_id,
         player_id=player.player_id,
         order_type=OrderType.LIMIT,
-        order_side=order.side,
+        order_side=order.side.value,
         order_status=OrderStatus.PENDING,
         timestamp=pd.Timestamp.now(),
         price=order.price,
@@ -188,6 +188,6 @@ async def order_cancel_player(body: OrderCancel, game: Game = Depends(game_dep),
 
             await Order.update(
                 order_id=order_id,
-                order_status=OrderStatus.CANCELED.value
+                order_status=OrderStatus.USER_CANCELLED.value
             )
     return SuccessfulResponse()

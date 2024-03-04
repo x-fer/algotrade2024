@@ -17,7 +17,7 @@ from db import database
 class GameData:
     def __init__(self, game: Game, players: Dict[int, Player]):
         self.markets: Dict[int, ResourceMarket] = {
-            resource.value: ResourceMarket(resource, players)
+            resource.value: ResourceMarket(resource)
             for resource in Resource if resource != Resource.energy
         }
         self.energy_market = EnergyMarket()
@@ -160,6 +160,11 @@ class Ticker:
         return tick_data
 
     def run_markets(self, tick_data: TickData):
+        for resource in tick_data.markets.keys():
+            market = tick_data.markets[resource]
+            market.set_get_player(
+                lambda player_id: tick_data.players[player_id])
+
         for resource in tick_data.markets.keys():
             market = tick_data.markets[resource]
             filtered_orders = list(filter(

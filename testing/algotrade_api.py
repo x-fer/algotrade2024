@@ -129,7 +129,7 @@ def create_order(resource, price, size, expiration_tick, side):
 
 
 def cancel_orders(ids):
-    return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/market/order/cancel",
+    return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/orders/cancel",
                          params={"team_secret": team_secret},
                          json={"ids": ids})
 

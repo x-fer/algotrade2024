@@ -90,7 +90,7 @@ class OrderBook():
 
         self.expire_heap.remove(order)
 
-        if order.order_side == OrderSide.BUY:
+        if order.order_side == OrderSide.BUY.value:
             self.buy_side.remove(order)
         else:
             self.sell_side.remove(order)
@@ -130,7 +130,7 @@ class OrderBook():
 
         order.order_status = OrderStatus.ACTIVE
 
-        if order.order_side == OrderSide.BUY:
+        if order.order_side == OrderSide.BUY.value:
             self.buy_side.push(order)
         else:
             self.sell_side.push(order)
@@ -212,3 +212,13 @@ class OrderBook():
             self._invoke_callbacks('on_order_update', order)
             self._invoke_callbacks('on_complete', order)
             self._remove_order(order_id)
+
+    def __str__(self):
+        s = "BUY:"
+        for order in self.buy_side:
+            s += f"({order.price}, {order.size}), "
+        s += "\nSELL:"
+        for order in self.sell_side:
+            s += f"({order.price}, {order.size}), "
+
+        return s

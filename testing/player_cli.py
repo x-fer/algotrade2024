@@ -1,5 +1,13 @@
+import os
 from pprint import pprint
 import algotrade_api
+
+
+def save_creds():
+    with open("creds.txt", "w") as f:
+        f.write(f"{algotrade_api.game_id}\n")
+        f.write(f"{algotrade_api.team_secret}\n")
+        f.write(f"{algotrade_api.player_id}\n")
 
 
 def input_team_secret():
@@ -11,6 +19,8 @@ def input_team_secret():
     else:
         print("Team secret not set")
 
+    save_creds()
+
 
 def input_game_id():
     new_game_id = input("Enter new game id: ")
@@ -21,6 +31,8 @@ def input_game_id():
     else:
         print("Game id not set")
 
+    save_creds()
+
 
 def input_player_id():
     new_player_id = input("Enter new player id: ")
@@ -30,6 +42,8 @@ def input_player_id():
         print(f"Player id set to: {new_player_id}")
     else:
         print("Player id not set")
+
+    save_creds()
 
 
 def create_player():
@@ -117,8 +131,24 @@ def get_dataset():
     return algotrade_api.get_dataset(start_tick, end_tick)
 
 
+def load_creds():
+    if os.path.exists("creds.txt"):
+        with open("creds.txt", "r") as f:
+            creds = f.read().split("\n")
+
+            game_id = creds[0]
+            team_secret = creds[1]
+            player_id = creds[2]
+
+            algotrade_api.set_game_id(game_id)
+            algotrade_api.set_team_secret(team_secret)
+            algotrade_api.set_player_id(player_id)
+    else:
+        print("No creds file found")
+
+
 def main():
-    global team_secret, game_id, player_id
+    load_creds()
 
     while True:
         try:
