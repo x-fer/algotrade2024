@@ -21,12 +21,12 @@ const StatusBar = () => {
 
   return (
     <div className="flex justify-around p-4 rounded-3xl bg-primary text-white gap-4">
-      <StatusBarItem ammount={status.money} unit="€" />
-      <StatusBarItem ammount={status.biomass} unit="biomass" />
-      <StatusBarItem ammount={status.coal} unit="coal" />
-      <StatusBarItem ammount={status.gas} unit="gas" />
-      <StatusBarItem ammount={status.oil} unit="oil" />
-      <StatusBarItem ammount={status.uranium} unit="uranium" />
+      <StatusBarItem ammount={10230} unit="€" />
+      <StatusBarItem ammount={230} unit="biomass" />
+      <StatusBarItem ammount={870} unit="coal" />
+      <StatusBarItem ammount={433} unit="gas" />
+      <StatusBarItem ammount={40} unit="oil" />
+      <StatusBarItem ammount={2} unit="uranium" />
     </div>
   );
 };

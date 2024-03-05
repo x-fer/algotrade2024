@@ -34,55 +34,56 @@ const Order = () => {
 
   return (
     <form className="text-white">
-      <div className="flex flex-col my-2 mt-4 p-4 rounded-3xl bg-primary">
+      <div className="flex flex-col p-4 rounded-3xl bg-primary">
         <SelectResourceBar
           selectedResource={selectedResource}
           setSelectedResource={setSelectedResource}
         />
+        <div className="flex justify-between">
+          <div className="flex flex-col justify-between items-end mt-8 gap-4">
+            <div>
+              <label className="font-l">Quantity:</label>
+              <input
+                className="bg-secondary  p-2 rounded-2xl w-16 ml-2"
+                type="number"
+                id="size"
+                name="size"
+                {...register("size", { required: true, min: 1 })}
+              />
+            </div>
 
-        <div className="flex justify-between items-center mt-8">
-          <div>
-            <label className="font-l">Quantity:</label>
-            <input
-              className="bg-secondary  p-2 rounded-2xl w-16 ml-2"
-              type="number"
-              id="size"
-              name="size"
-              {...register("size", { required: true, min: 1 })}
-            />
+            <div>
+              <label className="font-l">Price:</label>
+              <input
+                className="bg-secondary  p-2 rounded-2xl w-16 ml-2"
+                type="number"
+                id="price"
+                name="price"
+                {...register("price", { required: true, min: 1 })}
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="font-l">Price:</label>
-            <input
-              className="bg-secondary  p-2 rounded-2xl w-16 ml-2"
-              type="number"
-              id="price"
-              name="price"
-              {...register("price", { required: true, min: 1 })}
-            />
-          </div>
-        </div>
+          <div className="flex flex-col justify-around mt-8 gap-4">
+            <div className="flex justify-around font-bold">
+              <button
+                className="bg-green py-2 px-4 rounded-2xl"
+                type="button"
+                onClick={() => handleButtonClick("buy")}
+              >
+                BUY
+              </button>
+            </div>
 
-        <div className="flex justify-around mt-8">
-          <div className="flex justify-around font-bold">
-            <button
-              className="bg-green py-2 px-4 rounded-2xl"
-              type="button"
-              onClick={() => handleButtonClick("buy")}
-            >
-              BUY
-            </button>
-          </div>
-
-          <div className="flex justify-around font-bold">
-            <button
-              className="bg-red py-2 px-4 rounded-2xl"
-              type="button"
-              onClick={() => handleButtonClick("sell")}
-            >
-              SELL
-            </button>
+            <div className="flex justify-around font-bold">
+              <button
+                className="bg-red py-2 px-4 rounded-2xl"
+                type="button"
+                onClick={() => handleButtonClick("sell")}
+              >
+                SELL
+              </button>
+            </div>
           </div>
         </div>
       </div>
