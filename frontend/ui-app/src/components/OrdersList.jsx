@@ -29,7 +29,7 @@ const OrdersListItem = ({ order }) => {
       </div>
       <div className="flex justify-around font-bold h-[5vh]">
         <button
-          className="bg-red py-2 px-4 rounded-2xl"
+          className="bg-red py-2 px-4 rounded-2xl active:bg-darkred"
           type="button"
           onClick={() => handleCancel(order.id)}
         >

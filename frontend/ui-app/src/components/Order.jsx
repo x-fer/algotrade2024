@@ -67,7 +67,7 @@ const Order = () => {
           <div className="flex flex-col justify-around mt-8 gap-4">
             <div className="flex justify-around font-bold">
               <button
-                className="bg-green py-2 px-4 rounded-2xl"
+                className="bg-green py-2 px-4 rounded-2xl active:bg-darkgreen"
                 type="button"
                 onClick={() => handleButtonClick("buy")}
               >
@@ -77,7 +77,7 @@ const Order = () => {
 
             <div className="flex justify-around font-bold">
               <button
-                className="bg-red py-2 px-4 rounded-2xl"
+                className="bg-red py-2 px-4 rounded-2xl active:bg-darkred"
                 type="button"
                 onClick={() => handleButtonClick("sell")}
               >
