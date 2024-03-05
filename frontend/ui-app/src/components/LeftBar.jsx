@@ -17,7 +17,7 @@ const LeftBar = () => {
   const [selectedType, setSelectedType] = useState("");
 
   return (
-    <div className="flex flex-col justify-around bg-black-gray h-full p-4 border-white border-r-2">
+    <div className="flex flex-col justify-around h-full p-4 gap-4 bg-primary rounded-3xl ">
       {PowerPlantTypes.map((type) => (
         <SelectPowerPlant
           key={type}

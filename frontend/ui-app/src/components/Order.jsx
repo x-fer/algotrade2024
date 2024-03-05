@@ -34,7 +34,7 @@ const Order = () => {
 
   return (
     <form className="text-white">
-      <div className="flex flex-col bg-gray my-2 p-4 rounded-xl mt-4">
+      <div className="flex flex-col my-2 mt-4 p-4 rounded-3xl bg-primary">
         <SelectResourceBar
           selectedResource={selectedResource}
           setSelectedResource={setSelectedResource}
@@ -44,7 +44,7 @@ const Order = () => {
           <div>
             <label className="font-l">Quantity:</label>
             <input
-              className="bg-dark-gray  p-2 rounded-xl w-16 ml-2"
+              className="bg-secondary  p-2 rounded-2xl w-16 ml-2"
               type="number"
               id="size"
               name="size"
@@ -55,7 +55,7 @@ const Order = () => {
           <div>
             <label className="font-l">Price:</label>
             <input
-              className="bg-dark-gray  p-2 rounded-xl w-16 ml-2"
+              className="bg-secondary  p-2 rounded-2xl w-16 ml-2"
               type="number"
               id="price"
               name="price"
@@ -67,7 +67,7 @@ const Order = () => {
         <div className="flex justify-around mt-8">
           <div className="flex justify-around font-bold">
             <button
-              className="bg-green py-2 px-4 rounded-xl"
+              className="bg-green py-2 px-4 rounded-2xl"
               type="button"
               onClick={() => handleButtonClick("buy")}
             >
@@ -77,7 +77,7 @@ const Order = () => {
 
           <div className="flex justify-around font-bold">
             <button
-              className="bg-red py-2 px-4 rounded-xl"
+              className="bg-red py-2 px-4 rounded-2xl"
               type="button"
               onClick={() => handleButtonClick("sell")}
             >

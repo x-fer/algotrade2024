@@ -21,8 +21,8 @@ const SelectResourceButton = ({
 }) => {
   return (
     <button
-      className={`bg-dark-gray hover:bg-gray text-white text-xl p-2 rounded-3xl mx-0.5 border-2 ${
-        active ? "border-red" : "border-black-gray"
+      className={`bg-tertiary hover:bg-seconday text-white text-xl p-2 rounded-3xl mx-0.5  ${
+        active ? "border-red border-2" : ""
       }`}
       type="button"
       onClick={() => setSelectedResource(resource)}

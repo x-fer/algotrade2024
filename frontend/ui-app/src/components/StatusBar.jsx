@@ -20,7 +20,7 @@ const StatusBar = () => {
   // TODO add settings if gameId, playerId, teamSecret are not set
 
   return (
-    <div className="flex justify-around w-full bg-dark-gray text-white border-white border-t-2">
+    <div className="flex justify-around p-4 rounded-3xl bg-primary text-white gap-4">
       <StatusBarItem ammount={status.money} unit="€" />
       <StatusBarItem ammount={status.biomass} unit="biomass" />
       <StatusBarItem ammount={status.coal} unit="coal" />

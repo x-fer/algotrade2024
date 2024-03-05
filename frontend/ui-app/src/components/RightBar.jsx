@@ -5,10 +5,8 @@ import OrdersList from "./OrdersList";
 import Settings from "./Settings";
 const RightBar = () => {
   return (
-    <div className="flex flex-col bg-black-gray w-1/3 border-white border-l-2 p-4 justify-between">
+    <div className="flex flex-col justify-between w-1/3 ml-4 bg-background">
       <div>
-        <PriceChart />
-
         <Order />
 
         <OrdersList />

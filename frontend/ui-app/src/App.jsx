@@ -21,7 +21,7 @@ const App = () => {
         setTeamSecret,
       }}
     >
-      <div className="flex justify-between h-screen bg-black w-screen">
+      <div className="flex justify-between h-screen p-4 bg-background w-screen">
         <LeftBar />
         <MiddleScreen />
         <RightBar />

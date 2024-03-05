@@ -21,15 +21,15 @@ const OrdersListItem = ({ order }) => {
   };
 
   return (
-    <div className="flex justify-between items-center bg-gray my-2 p-1.5 rounded-xl">
-      <div className="flex justify-between text-white ml-2">
+    <div className="flex justify-between items-center my-4 p-2 rounded-3xl bg-primary text-white">
+      <div className="flex justify-between  ml-2">
         <p>
           {order.quantity} {order.name} at {order.price}&nbsp; [{order.side[0]}]
         </p>
       </div>
-      <div className="flex justify-around font-bold h-12">
+      <div className="flex justify-around font-bold h-[5vh]">
         <button
-          className="bg-red py-2 px-4 rounded-xl"
+          className="bg-red py-2 px-4 rounded-2xl"
           type="button"
           onClick={() => handleCancel(order.id)}
         >
