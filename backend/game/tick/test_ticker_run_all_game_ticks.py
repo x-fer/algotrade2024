@@ -1,18 +1,35 @@
-from collections import defaultdict
-from databases import Database
 import pytest
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
-from game.tick import Ticker, GameData
+from game.tick import Ticker
 from model import Game
 from unittest.mock import Mock
+from game.fixtures.fixtures import *
+import tracemalloc
+
+
+tracemalloc.start()
+
+
+@pytest.fixture
+def ticker():
+    return Ticker()
+
+
+
+def get_game(start_time, current_tick, total_ticks, is_finished):
+    return Game(game_id=1, game_name="Game1", 
+                is_finished=is_finished,
+                start_time=start_time, 
+                current_tick=current_tick, 
+                total_ticks=total_ticks, 
+                dataset_id=1, 
+                tick_time=1000, is_contest=True)
 
 
 @pytest.mark.asyncio
-async def test_run_tick_manager():
-
-    games = [Game(game_id=1, game_name="Game1", is_finished=False,
-                  start_time=datetime.now(), current_tick=0, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)]
+async def test_run_tick_manager(ticker):
+    games = [get_game(start_time=datetime.now(), current_tick=0, total_ticks=10, is_finished=False)]
     mock_game_list = AsyncMock(return_value=games)
 
     mock_start_game = AsyncMock()
@@ -21,8 +38,6 @@ async def test_run_tick_manager():
     with patch('model.Game.list', new=mock_game_list), \
             patch('game.tick.Ticker.start_game', new=mock_start_game), \
             patch('game.tick.Ticker.end_game', new=mock_end_game):
-
-        ticker = Ticker()
 
         await ticker.run_tick_manager(1)
 
@@ -32,10 +47,8 @@ async def test_run_tick_manager():
 
 
 @pytest.mark.asyncio
-async def test_run_tick_manager_game_finished():
-
-    games = [Game(game_id=1, game_name="Game1", is_finished=True,
-                  start_time=datetime.now(), current_tick=0, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)]
+async def test_run_tick_manager_game_finished(ticker):
+    games = [get_game(start_time=datetime.now(), current_tick=0, total_ticks=10, is_finished=True)]
     mock_game_list = AsyncMock(return_value=games)
 
     mock_start_game = AsyncMock()
@@ -44,9 +57,6 @@ async def test_run_tick_manager_game_finished():
     with patch('model.Game.list', new=mock_game_list), \
             patch('game.tick.Ticker.start_game', new=mock_start_game), \
             patch('game.tick.Ticker.end_game', new=mock_end_game):
-
-        ticker = Ticker()
-
         await ticker.run_tick_manager(1)
 
         mock_start_game.assert_not_called()
@@ -55,10 +65,9 @@ async def test_run_tick_manager_game_finished():
 
 
 @pytest.mark.asyncio
-async def test_run_tick_manager_game_not_started():
-
-    games = [Game(game_id=1, game_name="Game1", is_finished=False,
-                  start_time=datetime.now() + timedelta(seconds=10), current_tick=0, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)]
+async def test_run_tick_manager_game_not_started(ticker):
+    games = [get_game(start_time=datetime.now() + timedelta(seconds=10),
+                      current_tick=0, total_ticks=10, is_finished=False)]
     mock_game_list = AsyncMock(return_value=games)
 
     mock_start_game = AsyncMock()
@@ -67,9 +76,6 @@ async def test_run_tick_manager_game_not_started():
     with patch('model.Game.list', new=mock_game_list), \
             patch('game.tick.Ticker.start_game', new=mock_start_game), \
             patch('game.tick.Ticker.end_game', new=mock_end_game):
-
-        ticker = Ticker()
-
         await ticker.run_tick_manager(1)
 
         mock_start_game.assert_not_called()
@@ -78,11 +84,9 @@ async def test_run_tick_manager_game_not_started():
 
 
 @pytest.mark.asyncio
-async def test_end_game():
-    game = Game(game_id=1, game_name="Game1", is_finished=False,
-                start_time=datetime.now() - timedelta(seconds=1), current_tick=10, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)
-
-    ticker = Ticker()
+async def test_end_game(ticker):
+    game = get_game(start_time=datetime.now() - timedelta(seconds=1),
+                    current_tick=10, total_ticks=10, is_finished=False)
 
     ticker.game_data[1] = Mock()
     ticker.game_futures[1] = Mock()
@@ -102,38 +106,27 @@ async def test_end_game():
 
 
 @pytest.mark.asyncio
-async def test_start_game():
-    game = Game(game_id=1, game_name="Game1", is_finished=False,
-                start_time=datetime.now() - timedelta(seconds=1), current_tick=10, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)
+async def test_start_game(ticker):
+    game = get_game(start_time=datetime.now() - timedelta(seconds=1),
+                    current_tick=10, total_ticks=10, is_finished=False)
 
-    ticker = Ticker()
-
-    ticker.game_data[1] = Mock()
-    ticker.game_futures[1] = Mock()
-
-    mock_game_update = AsyncMock()
-
-    with patch('model.Game.update', new=mock_game_update) as mock_game_update, \
-            patch('game.tick.Ticker.delete_all_running_bots') as mock_delete_all_running_bots, \
-            patch('game.tick.Ticker.run_game') as mock_run_game:
-
+    with patch('game.tick.Ticker.delete_all_running_bots') as delete_all_running_bots_mock, \
+            patch('game.tick.Ticker.load_previous_oderbook') as load_previous_oderbook_mock, \
+            patch('game.tick.Ticker.run_game') as run_game_mock:
         await ticker.start_game(game)
 
-        mock_delete_all_running_bots.assert_called_once_with(1)
+        delete_all_running_bots_mock.assert_called_once_with(1)
+        run_game_mock.assert_called_once()
+        load_previous_oderbook_mock.assert_called_once()
 
-        assert 1 in ticker.game_data
-        assert 1 in ticker.game_futures
-
-        await ticker.game_futures[1]
+        assert game.game_id in ticker.game_data
+        assert game.game_id in ticker.game_futures
 
 
 @pytest.mark.asyncio
-async def test_run_game():
-
-    game = Game(game_id=1, game_name="Game1", is_finished=False,
-                start_time=datetime.now() - timedelta(seconds=1), current_tick=9, total_ticks=10, dataset_id=1, tick_time=1000, is_contest=True)
-
-    ticker = Ticker()
+async def test_run_game(ticker):
+    game = get_game(start_time=datetime.now() - timedelta(seconds=1),
+                    current_tick=9, total_ticks=10, is_finished=False)
 
     with patch('model.Game.get') as mock_get, \
             patch('databases.Database.transaction') as mock_transaction, \

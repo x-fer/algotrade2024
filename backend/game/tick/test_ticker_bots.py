@@ -5,7 +5,6 @@ from game.tick import Ticker, GameData
 from model import Game
 from game.bots import DummyBot, ResourceBot
 from game.fixtures.fixtures import *
-from model.team import Team
 
 
 @pytest.mark.asyncio
@@ -32,8 +31,8 @@ async def test_run_bots(get_tick_data):
         with patch.object(ResourceBot, 'run') as mock_run:
             ticker = Ticker()
 
-            ticker.game_data[game.game_id] = GameData(game, players)
-            tick_data = get_tick_data(markets={}, players={})
+            ticker.game_data[game.game_id] = GameData(game)
+            tick_data = get_tick_data(markets={}, players=players)
 
             await ticker.run_bots(tick_data)
 

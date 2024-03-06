@@ -9,7 +9,7 @@ from game.bots.bot import Bot
 class TickData:
     game: Game
     players: Dict[int, Player]
-    markets: Dict[int, ResourceMarket]
+    markets: Dict[str, ResourceMarket]
     energy_market: EnergyMarket
     bots: List[Bot]
 

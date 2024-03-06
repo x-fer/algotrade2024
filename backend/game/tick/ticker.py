@@ -1,4 +1,5 @@
 import asyncio
+from itertools import chain
 import sys
 import traceback
 from datetime import datetime, timedelta
@@ -258,8 +259,10 @@ class Ticker:
         tick = tick_data.game.current_tick
         game_id = tick_data.game.game_id
 
-        for resource in tick_data.markets.keys():
-            price_tracker = tick_data.markets[resource].price_tracker
+        for resource, market in chain(
+            tick_data.markets.items(),
+            [(Energy.energy.value, tick_data.energy_market)]):
+            price_tracker = market.price_tracker
             await Market.create(
                 game_id=game_id,
                 tick=tick,
@@ -271,18 +274,6 @@ class Ticker:
                 market=price_tracker.get_average(),
                 volume=price_tracker.get_volume()
             )
-        energy_price_tracker = tick_data.energy_market.price_tracker
-        await Market.create(
-            game_id=game_id,
-            tick=tick,
-            resource=Energy.energy.value,
-            low=energy_price_tracker.get_low(),
-            high=energy_price_tracker.get_high(),
-            open=energy_price_tracker.get_open(),
-            close=energy_price_tracker.get_close(),
-            market=energy_price_tracker.get_average(),
-            volume=energy_price_tracker.get_volume()
-        )
 
     async def run_bots(self, tick_data: TickData):
         bots: List[Bot] = self.game_data[tick_data.game.game_id].bots

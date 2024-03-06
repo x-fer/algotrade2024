@@ -32,15 +32,8 @@ def game():
 
 
 @pytest.fixture
-def get_game_data(game):
-    game_id = 1
-
-    def get_game_data(**kwargs) -> Game:
-        nonlocal game_id
-        game_data = GameData(game, **kwargs)
-        return game_data
-
-    return get_game_data
+def game_data(game):
+    return GameData(game)
 
 
 @pytest.fixture
@@ -66,32 +59,21 @@ def dataset_row():
 
 
 @pytest.fixture
-def get_ticker(game, get_game_data):
-    def get_ticker(players) -> Ticker:
-        ticker = Ticker()
-        ticker.game_data = {1: get_game_data(players=players)}
-        return ticker
-    return get_ticker
+def ticker(game_data):
+    ticker = Ticker()
+    ticker.game_data = {1: game_data}
+    return ticker
 
 
 @pytest.fixture
-def get_tick_data(game_id):
+def get_tick_data(game, energy_market):
     def get_tick_data(markets, players, 
                       user_cancelled_orders=[], 
                       pending_orders=[], updated_orders=[], 
                       coal=100, energy_demand=100, 
                       max_energy_price=100) -> TickData:
         tick_data = TickData(
-            game=Game(
-                game_id=game_id,
-                game_name=f"game_{game_id}",
-                is_contest=False,
-                bots="",
-                dataset_id=1,
-                start_time=pd.Timestamp.now(),
-                total_ticks=1000,
-                tick_time=1000,
-            ),
+            game=game,
             bots=[],
             dataset_row=DatasetData(
                 dataset_data_id=1,
@@ -119,7 +101,8 @@ def get_tick_data(game_id):
             players=players,
             user_cancelled_orders=user_cancelled_orders,
             pending_orders=pending_orders,
-            updated_orders=updated_orders
+            updated_orders=updated_orders,
+            energy_market=energy_market
         )
 
         return tick_data

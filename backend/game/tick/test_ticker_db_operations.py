@@ -8,14 +8,15 @@ from game.market.resource_market import ResourceMarket
 from model import Order, OrderStatus, Resource, OrderSide, OrderType
 from game.tick import Ticker, TickData
 from model.resource import Energy
-from tick.test_tick_fixtures import *
+from game.tick.tick_fixtures import *
 
 
 @pytest.mark.asyncio
-async def test_get_tick_data(sample_game, sample_players, sample_pending_orders, sample_user_cancelled_orders, sample_dataset_row):
+async def test_get_tick_data(sample_game, sample_players, 
+                             sample_pending_orders, sample_user_cancelled_orders, 
+                             sample_dataset_row, sample_game_data):
     ticker = Ticker()
-    ticker.game_data[sample_game.game_id] = GameData(
-        sample_game, sample_players)
+    ticker.game_data[sample_game.game_id] = sample_game_data
 
     async def mock_list_players(*args, **kwargs):
         return [sample_players[1], sample_players[2]]
@@ -46,7 +47,8 @@ async def test_save_tick_data(mock_order_update_many,
                               mock_player_update_many, 
                               ticker: Ticker, sample_game, sample_players, 
                               sample_pending_orders, sample_user_cancelled_orders, 
-                              sample_dataset_row):
+                              sample_dataset_row, 
+                              sample_energy_market):
     sample_update_orders = {
         1: Order(order_id=1, game_id=1, player_id=1,
                  order_type=OrderType.LIMIT,
@@ -71,7 +73,8 @@ async def test_save_tick_data(mock_order_update_many,
         dataset_row=sample_dataset_row,
         markets=[],
         bots="",
-        updated_orders=sample_update_orders
+        updated_orders=sample_update_orders,
+        energy_market=sample_energy_market
     )
 
     await ticker.save_tick_data(tick_data)
@@ -88,7 +91,8 @@ async def test_save_electricity_orders(sample_game, sample_players):
     with patch('model.Order.create') as mock_order_create:
         ticker = Ticker()
 
-        await ticker.save_electricity_orders(players, game, energy_sold, 1)
+        await ticker.save_electricity_orders(
+            players=players, game=game, energy_sold=energy_sold, tick=1)
 
         assert mock_order_create.call_count == 2
 
@@ -110,7 +114,7 @@ async def test_save_electricity_orders(sample_game, sample_players):
 
 
 @pytest.mark.asyncio
-async def test_save_market_data(ticker: Ticker, sample_game, tick_data, sample_players):
+async def test_save_market_data(ticker: Ticker, sample_game, tick_data):
     for resource in Resource:
         price_tracker_mock: PriceTracker = MagicMock()
         price_tracker_mock.get_low.return_value = 50
@@ -126,7 +130,7 @@ async def test_save_market_data(ticker: Ticker, sample_game, tick_data, sample_p
     with patch('model.market.Market.create') as mock_create:
         await ticker.save_market_data(tick_data)
 
-        assert mock_create.call_count == len(Resource) - 1
+        assert mock_create.call_count == len(Resource) + 1
 
         expected_calls = [
             call(game_id=sample_game.game_id, tick=1, resource=resource.value,

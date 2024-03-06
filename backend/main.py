@@ -1,6 +1,6 @@
 import asyncio
 import time
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
@@ -11,11 +11,7 @@ from routers import admin_router, users_router
 import psutil
 import os
 from logger import logger
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.middleware import SlowAPIMiddleware
-from slowapi.errors import RateLimitExceeded
 from docs import tags_metadata, description
-from db import limiter
 
 
 async def background_tasks():
