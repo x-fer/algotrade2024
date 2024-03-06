@@ -1,5 +1,13 @@
+import os
 from pprint import pprint
 import algotrade_api
+
+
+def save_creds():
+    with open("creds.txt", "w") as f:
+        f.write(f"{algotrade_api.game_id}\n")
+        f.write(f"{algotrade_api.team_secret}\n")
+        f.write(f"{algotrade_api.player_id}\n")
 
 
 def input_team_secret():
@@ -11,6 +19,8 @@ def input_team_secret():
     else:
         print("Team secret not set")
 
+    save_creds()
+
 
 def input_game_id():
     new_game_id = input("Enter new game id: ")
@@ -21,6 +31,8 @@ def input_game_id():
     else:
         print("Game id not set")
 
+    save_creds()
+
 
 def input_player_id():
     new_player_id = input("Enter new player id: ")
@@ -30,6 +42,8 @@ def input_player_id():
         print(f"Player id set to: {new_player_id}")
     else:
         print("Player id not set")
+
+    save_creds()
 
 
 def create_player():
@@ -102,7 +116,8 @@ def sell_plant():
 
 def turn_on_plant():
     type = input("Enter plant type: ")
-    return algotrade_api.turn_on_plant(type)
+    number = input("Enter number of plants to be on: ")
+    return algotrade_api.turn_on_plant(type, number)
 
 
 def turn_off_plant():
@@ -113,11 +128,27 @@ def turn_off_plant():
 def get_dataset():
     start_tick = input("Enter start tick: ")
     end_tick = input("Enter end tick: ")
-    return get_dataset(start_tick, end_tick)
+    return algotrade_api.get_dataset(start_tick, end_tick)
+
+
+def load_creds():
+    if os.path.exists("creds.txt"):
+        with open("creds.txt", "r") as f:
+            creds = f.read().split("\n")
+
+            game_id = creds[0]
+            team_secret = creds[1]
+            player_id = creds[2]
+
+            algotrade_api.set_game_id(game_id)
+            algotrade_api.set_team_secret(team_secret)
+            algotrade_api.set_player_id(player_id)
+    else:
+        print("No creds file found")
 
 
 def main():
-    global team_secret, game_id, player_id
+    load_creds()
 
     while True:
         try:
@@ -125,6 +156,7 @@ def main():
             if response.status_code != 200:
                 raise Exception(
                     f"Player fetching code: {response.status_code}\n{response.json()}")
+            pprint(response.json())
         except Exception as e:
             print("Error when fetching player")
             print("Please set game id, team secret and player id")
@@ -178,18 +210,26 @@ def main():
             "16": buy_plant,
             "17": sell_plant,
             "18": turn_on_plant,
-            "29": get_dataset,
+            "19": get_dataset,
             "20": lambda: exit()
         }
 
         try:
             response = case[action]()
 
-            if response.status_code != 200:
-                print("Error " + response.status_code)
-            pprint(response.json())
+            if response is not None and response.status_code != 200:
+                print(f"Error {response.status_code}")
+
+            if response is not None:
+                print(response.url)
+                print("=" * 20)
+                pprint(response.json())
+                print("=" * 20)
+            else:
+                print("No response")
         except Exception as e:
             print("Error: ", e)
+            raise e
 
         print()
 

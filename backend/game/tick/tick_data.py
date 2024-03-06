@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List
-from model import Player, Game, Order
-from game.market import ResourceMarket
+from model import Player, Game, Order, DatasetData
+from game.market import ResourceMarket, EnergyMarket
 from game.bots.bot import Bot
 
 
@@ -9,10 +9,11 @@ from game.bots.bot import Bot
 class TickData:
     game: Game
     players: Dict[int, Player]
-    markets: Dict[int, ResourceMarket]
+    markets: Dict[str, ResourceMarket]
+    energy_market: EnergyMarket
     bots: List[Bot]
 
-    dataset_row: dict = field(default_factory=dict)
+    dataset_row: DatasetData
 
     pending_orders: List[Order] = field(default_factory=list)
     user_cancelled_orders: List[Order] = field(default_factory=list)

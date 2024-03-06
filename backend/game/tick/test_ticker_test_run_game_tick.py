@@ -1,19 +1,13 @@
-from pprint import pprint
 import pytest
 from model import Game
 from game.tick import Ticker
 from unittest.mock import patch
-from tick.test_tick_fixtures import *
-
-import tracemalloc
-tracemalloc.start()
+from game.tick.tick_fixtures import *
 
 
 @pytest.mark.asyncio
 async def test_run_game_tick(
-    sample_game, sample_players, tick_data,
-    sample_pending_orders,
-    sample_user_cancelled_orders, sample_dataset_row
+    sample_game, sample_game_data, tick_data,
 ):
     with patch.object(Ticker, 'get_tick_data', return_value=tick_data), \
             patch.object(Ticker, 'run_markets'), \
@@ -26,12 +20,10 @@ async def test_run_game_tick(
             patch.object(Ticker, 'run_bots'):
 
         ticker = Ticker()
-        ticker.game_data[sample_game.game_id] = GameData(
-            sample_game, sample_players)
+        ticker.game_data[sample_game.game_id] = sample_game_data
 
         await ticker.run_game_tick(sample_game)
 
-        # Assertions
         Ticker.get_tick_data.assert_called_once_with(sample_game)
         Ticker.run_markets.assert_called_once()
         Ticker.run_power_plants.assert_called_once()

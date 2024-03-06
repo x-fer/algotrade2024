@@ -50,9 +50,6 @@ class ResourceBot(Bot):
         orders = await self.get_last_orders()
 
         for resource in Resource:
-            if resource == Resource.energy:
-                continue
-
             resource_orders = orders[resource]
             resource_sum = resources_sum[resource]
             buy_price = self.buy_prices[resource]
@@ -93,7 +90,7 @@ class ResourceBot(Bot):
             self.buy_prices[resource] = buy_price
             self.sell_prices[resource] = sell_price
 
-    def mix_dataset_price(self, dataset_row, price, resource):
+    def mix_dataset_price(self, dataset_row, price, resource: Resource):
         return dataset_price_weight * dataset_row[resource.name.lower() + "_price"] + (1 - dataset_price_weight) * price
 
     def get_filled_perc(self, orders: List[Order]):

@@ -25,8 +25,10 @@ async def list_plants(player: Player = Depends(player_dep)) -> Dict[str, PowerPl
         x.name: PowerPlantData(
             plants_powered=player[x.name.lower() + "_plants_powered"],
             plants_owned=player[x.name.lower() + "_plants_owned"],
-            next_price=x.get_plant_price(player[x.name.lower() + "_plants_owned"]),
-            sell_price=round(x.get_plant_price(player[x.name.lower() + "_plants_owned"]) * config["power_plant"]["sell_coeff"]),
+            next_price=x.get_plant_price(
+                player[x.name.lower() + "_plants_owned"]),
+            sell_price=round(x.get_plant_price(
+                player[x.name.lower() + "_plants_owned"]) * config["power_plant"]["sell_coeff"]),
         )
         for x in PowerPlantType
     }
@@ -70,6 +72,7 @@ async def sell_plant(plant: PowerPlantTypeData, player: Player = Depends(player_
 
 
 class PowerOn(BaseModel):
+    type: PowerPlantType
     number: int
 
 
@@ -78,6 +81,7 @@ async def turn_on(plant: PowerOn, player: Player = Depends(player_dep)) -> Succe
     async with database.transaction():
         player_id = player.player_id
         player = await Player.get(player_id=player_id)
+        type = PowerPlantType(plant.type)
         plant_count = player[type.name.lower() + "_plants_owned"]
 
         if plant_count < plant.number or plant.number < 0:

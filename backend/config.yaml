@@ -2,6 +2,21 @@ server:
   port: 8000
   host: 0.0.0.0
 
+redis:
+  port: 6379
+
+database:
+  url: postgresql://postgres:postgres@localhost:5432/mydatabase
+
+test_database:
+  url: postgresql://postgres:postgres@localhost:5432/test_database
+
+admin:
+  secret: mojkljuc
+
+testing: ${TESTING}
+debug: ${DEBUG}
+
 dataset:
   datasets_path: ./data
   max_ticks_in_request: 100
@@ -27,20 +42,9 @@ dataset:
 
   energy_demand_multiplier: 55100
 
-redis:
-  port: 6379
-
-database:
-  url: postgresql://postgres:postgres@localhost:5432/mydatabase
-
-test_database:
-  url: postgresql://postgres:postgres@localhost:5432/test_database
-
-admin:
-  secret: mojkljuc
-
 player:
   starting_money: 350000
+  max_orders: 10
 
 bots:
   team_name: bots

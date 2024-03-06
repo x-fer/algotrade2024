@@ -212,3 +212,13 @@ class OrderBook():
             self._invoke_callbacks('on_order_update', order)
             self._invoke_callbacks('on_complete', order)
             self._remove_order(order_id)
+
+    def __str__(self):
+        s = "BUY:"
+        for order in self.buy_side:
+            s += f"(price: {order.price}, size: {order.size}, filled: {order.filled_size}), "
+        s += "\nSELL:"
+        for order in self.sell_side:
+            s += f"(price: {order.price}, size: {order.size}, filled: {order.filled_size}), "
+
+        return s

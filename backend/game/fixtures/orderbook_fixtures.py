@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 import random
-from model import Order, OrderSide, Trade
+from model import Order, OrderSide, Trade, Resource
 
 
 @pytest.fixture(autouse=True)
@@ -60,7 +60,8 @@ def get_order(get_timestamp, get_order_id):
                      price=price,
                      size=size,
                      order_side=order_side,
-                     tick=tick)
+                     tick=tick,
+                     resource=Resource.coal)
     return get_order
 
 

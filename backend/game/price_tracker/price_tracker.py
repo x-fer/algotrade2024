@@ -4,7 +4,7 @@ from model import Trade
 
 
 class PriceTracker:
-    def __init__(self, orderbook: OrderBook):
+    def __init__(self, orderbook: OrderBook = None):
         self.last_high = 0
         self.last_low = 0
         self.last_open = 0
@@ -17,7 +17,13 @@ class PriceTracker:
         self.open = None
         self.close = None
         self.average = None
-        orderbook.register_callback('on_end_match', self._calculate_low_high)
+
+        if orderbook is not None:
+            orderbook.register_callback(
+                'on_end_match', self._calculate_low_high)
+
+    def on_end_match(self, trades: List[Trade]):
+        self._calculate_low_high(trades)
 
     def _calculate_low_high(self, trades: List[Trade]):
         self.high = None

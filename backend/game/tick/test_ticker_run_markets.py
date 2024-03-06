@@ -1,22 +1,23 @@
 from copy import deepcopy
 import pytest
-from game.tick import TickData
 from game.fixtures.fixtures import *
 from model.order_types import OrderSide, OrderStatus
-from model.player import Player
 
 
 @pytest.fixture
 def get_markets():
-    def _get_markets(player_dict):
-        return {
-            x.value: ResourceMarket(x, player_dict)
+    def get_markets(player_dict):
+        markets = {
+            x.value: ResourceMarket(x)
             for x in Resource
         }
-    return _get_markets
+        for market in markets.values():
+            market.set_players(player_dict)
+        return markets
+    return get_markets
 
 
-def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
+def test_run_markets_no_match(get_tick_data, get_order, ticker, get_player, coal_market, get_markets):
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
     order2 = get_order(player_id=2, price=5, size=50,
@@ -30,7 +31,7 @@ def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, 
 
     player_dict = get_player_dict([player1, player2])
 
-    ticker = get_ticker(player_dict)
+    
     markets = get_markets(player_dict)
 
     tick_data = get_tick_data(
@@ -50,7 +51,7 @@ def test_run_markets_no_match(get_tick_data, get_order, get_ticker, get_player, 
     assert len(tick_data.updated_orders) == 2
 
 
-def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
+def test_run_markets_match(get_tick_data, get_order, ticker, get_player, coal_market, get_markets):
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
     order2 = get_order(player_id=2, price=5, size=25,
@@ -60,8 +61,6 @@ def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, coa
     player2 = get_player(money=0, coal=100)
 
     player_dict = get_player_dict([player1, player2])
-
-    ticker = get_ticker(player_dict)
 
     tick_data = get_tick_data(
         user_cancelled_orders=[],
@@ -89,7 +88,7 @@ def test_run_markets_match(get_tick_data, get_order, get_ticker, get_player, coa
     assert len(tick_data.updated_orders) == 2
 
 
-def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
+def test_run_markets_match_insufficient_funds(get_tick_data, get_order, ticker, get_player, coal_market, get_markets):
 
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
@@ -100,8 +99,6 @@ def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_tick
     player2 = get_player(money=0, coal=100)
 
     player_dict = get_player_dict([player1, player2])
-
-    ticker = get_ticker(player_dict)
 
     tick_data = get_tick_data(
         user_cancelled_orders=[],
@@ -129,7 +126,7 @@ def test_run_markets_match_insufficient_funds(get_tick_data, get_order, get_tick
     assert len(tick_data.updated_orders) == 2
 
 
-def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
+def test_run_markets_match_insufficient_resources(get_tick_data, get_order, ticker, get_player, coal_market, get_markets):
 
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
@@ -140,8 +137,6 @@ def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_
     player2 = get_player(money=0, coal=24)  # needs 25
 
     player_dict = get_player_dict([player1, player2])
-
-    ticker = get_ticker(player_dict)
 
     tick_data = get_tick_data(
         user_cancelled_orders=[],
@@ -170,7 +165,7 @@ def test_run_markets_match_insufficient_resources(get_tick_data, get_order, get_
     assert len(tick_data.updated_orders) == 2
 
 
-def test_run_markets_cancel(get_tick_data, get_order, get_ticker, get_player, coal_market, get_markets):
+def test_run_markets_cancel(get_tick_data, get_order, ticker, get_player, coal_market, get_markets):
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
     order1_cancelled = deepcopy(order1)
@@ -182,8 +177,6 @@ def test_run_markets_cancel(get_tick_data, get_order, get_ticker, get_player, co
     player2 = get_player(money=0, coal=100)
 
     player_dict = get_player_dict([player1, player2])
-
-    ticker = get_ticker(player_dict)
 
     tick_data = get_tick_data(
         user_cancelled_orders=[],

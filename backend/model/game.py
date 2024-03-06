@@ -12,6 +12,6 @@ class Game(Table):
     dataset_id: int
     start_time: datetime
     total_ticks: int
-    tick_time: int  # TODO??
+    tick_time: int
     current_tick: int = field(default=0)
     is_finished: bool = field(default=False)

@@ -1,7 +1,9 @@
 from datetime import datetime
 import pytest
+from game.market import EnergyMarket
 from game.tick import TickData, Ticker, GameData
 from model import Game, Player, Order, OrderStatus, Resource
+from model.order_types import OrderSide
 
 
 @pytest.fixture
@@ -21,6 +23,11 @@ def sample_game():
 
 
 @pytest.fixture
+def sample_game_data(sample_game):
+    return GameData(sample_game)
+
+
+@pytest.fixture
 def sample_players():
     return {
         1: Player(player_id=1, game_id=1, player_name="Player 1", energy=0, team_id=1, wind_plants_owned=2, wind_plants_powered=2),
@@ -29,29 +36,33 @@ def sample_players():
 
 
 @pytest.fixture
-def ticker(sample_game, sample_players):
-    t = Ticker()
-    t.game_data[sample_game.game_id] = GameData(sample_game, sample_players)
+def sample_energy_market():
+    return EnergyMarket()
 
+
+@pytest.fixture
+def ticker(sample_game, sample_game_data):
+    t = Ticker()
+    t.game_data[sample_game.game_id] = sample_game_data
     return t
 
 
 @pytest.fixture
 def sample_pending_orders():
     return [
-        Order(order_id=1, game_id=1, player_id=1, order_type="BUY", order_side="SELL",
+        Order(order_id=1, game_id=1, player_id=1, order_side=OrderSide.SELL,
               order_status=OrderStatus.PENDING, resource=Resource.coal, price=50, size=100, tick=1, timestamp=datetime.now()),
-        Order(order_id=2, game_id=1, player_id=2, order_type="BUY",
-              order_side="SELL", order_status=OrderStatus.PENDING, resource=Resource.oil, price=50, size=100, tick=1, timestamp=datetime.now())
+        Order(order_id=2, game_id=1, player_id=2, order_side=OrderSide.SELL, 
+              order_status=OrderStatus.PENDING, resource=Resource.oil, price=50, size=100, tick=1, timestamp=datetime.now())
     ]
 
 
 @pytest.fixture
 def sample_user_cancelled_orders():
     return [
-        Order(order_id=3, game_id=1, player_id=1, order_type="BUY", order_side="SELL",
+        Order(order_id=3, game_id=1, player_id=1, order_side=OrderSide.SELL,
               order_status=OrderStatus.USER_CANCELLED, resource=Resource.coal, price=50, size=100, tick=1, timestamp=datetime.now()),
-        Order(order_id=4, game_id=1, player_id=2, order_type="BUY", order_side="SELL",
+        Order(order_id=4, game_id=1, player_id=2, order_side=OrderSide.SELL,
               order_status=OrderStatus.USER_CANCELLED, resource=Resource.oil, price=50, size=100, tick=1, timestamp=datetime.now())
     ]
 
@@ -62,11 +73,12 @@ def sample_dataset_row():
 
 
 @pytest.fixture
-def tick_data(sample_game, sample_players):
+def tick_data(sample_game, sample_players, sample_energy_market):
     return TickData(
         game=sample_game,
         players=sample_players,
         markets={},
+        energy_market=sample_energy_market,
         bots=[],
         dataset_row={},
         pending_orders=[],

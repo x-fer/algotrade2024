@@ -1,7 +1,7 @@
-from enum import Enum
 import pytest
-from dataclasses import dataclass
-from model.enum_type import EnumType
+from enum import Enum
+
+from model.enum_type import get_enum
 
 
 class ExampleEnum(Enum):
@@ -14,22 +14,21 @@ class AnotherEnum(Enum):
     OPTION2 = 'Option 2'
 
 
-class ExampleField(EnumType):
-    cls = ExampleEnum
-
-
-class AnotherField(EnumType):
-    cls = AnotherEnum
-
-
-@dataclass
-class ExampleClass():
-    example_field: ExampleField
-    another_field: AnotherField
-
-
 def test_enum_type_default():
-    instance = ExampleClass(example_field='VALUE2', another_field='Option 2')
+    instance = get_enum("VALUE1", ExampleEnum)
 
-    assert instance.example_field == 'VALUE2'
-    assert instance.another_field == 'Option 2'
+    assert instance == ExampleEnum.VALUE1
+
+    instance = get_enum("Option 1", ExampleEnum, AnotherEnum)
+
+    assert instance == AnotherEnum.OPTION1
+
+    instance = get_enum(ExampleEnum.VALUE1, ExampleEnum)
+
+    assert instance == ExampleEnum.VALUE1
+
+    with pytest.raises(ValueError):
+        instance = get_enum(AnotherEnum.OPTION1, ExampleEnum)
+    
+    with pytest.raises(ValueError):
+        instance = get_enum("blabla", ExampleEnum)
