@@ -2,7 +2,6 @@ import asyncio
 import sys
 import traceback
 from datetime import datetime, timedelta
-from pprint import pprint
 from typing import Dict, List, Tuple
 import pandas as pd
 from game.bots.bot import Bot
@@ -10,6 +9,7 @@ from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, Da
 from game.market import ResourceMarket, EnergyMarket
 from game.bots import Bots
 from model.market import Market
+from model.resource import Energy
 from .tick_data import TickData
 from logger import logger
 from db import database
@@ -19,7 +19,7 @@ class GameData:
     def __init__(self, game: Game):
         self.markets: Dict[int, ResourceMarket] = {
             resource.value: ResourceMarket(resource)
-            for resource in Resource if resource != Resource.energy
+            for resource in Resource
         }
         self.energy_market = EnergyMarket()
         self.bots: List[Bot] = Bots.create_bots("resource_bot:1")
@@ -41,7 +41,7 @@ class Ticker:
                 if datetime.now() < game.start_time:
                     continue
 
-                if not game.game_id in self.game_data:
+                if game.game_id not in self.game_data:
                     await self.start_game(game)
                     continue
 
@@ -56,7 +56,7 @@ class Ticker:
                 del self.game_data[game.game_id]
                 self.game_futures[game.game_id].cancel()
 
-        except Exception as e:
+        except Exception:
             logger.critical(
                 f"Failed ending game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
 
@@ -74,7 +74,7 @@ class Ticker:
             self.game_futures[game.game_id] = asyncio.create_task(
                 self.run_game(game), name=f"game_{game.game_id}")
 
-        except Exception as e:
+        except Exception:
             logger.critical(
                 f"Failed creating game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
 
@@ -103,11 +103,11 @@ class Ticker:
                 # run the tick
                 async with database.transaction():
                     await database.execute(
-                        f"LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
+                        "LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
 
                     await self.run_game_tick(game)
 
-            except Exception as e:
+            except Exception:
                 logger.critical(
                     f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
 
@@ -247,7 +247,7 @@ class Ticker:
                 filled_money=players[player_id].energy_price * energy,
                 filled_price=players[player_id].energy_price,
                 expiration_tick=tick,
-                resource=Resource.energy.value
+                resource=Energy.energy.value
             )
 
     async def save_tick_data(self, tick_data: TickData):
@@ -275,7 +275,7 @@ class Ticker:
         await Market.create(
             game_id=game_id,
             tick=tick,
-            resource=Resource.energy.value,
+            resource=Energy.energy.value,
             low=energy_price_tracker.get_low(),
             high=energy_price_tracker.get_high(),
             open=energy_price_tracker.get_open(),

@@ -1,12 +1,8 @@
 from dataclasses import dataclass
 from db.table import Table
-from .resource import Resource
-from .enum_type import EnumType
+from model.enum_type import get_enum
+from .resource import Resource, Energy
 from db import database
-
-
-class ResourceField(EnumType):
-    cls = Resource
 
 
 @dataclass
@@ -14,13 +10,16 @@ class Market(Table):
     table_name = "market"
     game_id: int
     tick: int
-    resource: ResourceField
+    resource: Resource | Energy
     low: int
     high: int
     open: int
     close: int
     market: int
     volume: int
+
+    def __post_init__(self):
+        self.resource = get_enum(self.resource, Resource, Energy)
 
     @classmethod
     async def create(cls, *args, **kwargs) -> int:
@@ -41,7 +40,7 @@ class Market(Table):
         values = {"game_id": game_id,
                   "min_tick": min_tick,
                   "max_tick": max_tick}
-        if not resource is None:
+        if resource is not None:
             values["resource"] = resource.value
         result = await database.fetch_all(query, values)
         return [cls(**game) for game in result]

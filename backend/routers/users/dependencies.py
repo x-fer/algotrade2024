@@ -10,14 +10,14 @@ async def team_dep(team_secret: str = Query(description="Team secret", default=N
         raise HTTPException(status_code=403, detail="Missing team_secret")
     try:
         return await Team.get(team_secret=team_secret)
-    except:
+    except Exception:
         raise HTTPException(status_code=403, detail="Invalid team_secret")
 
 
 async def game_dep(game_id: int) -> Game:
     try:
         return await Game.get(game_id=game_id)
-    except:
+    except Exception:
         raise HTTPException(status_code=403, detail="Invalid game_id")
 
 
@@ -33,15 +33,15 @@ async def player_dep(player_id: int,
                      team: Team = Depends(team_dep)) -> Player:
     try:
         player = await Player.get(player_id=player_id)
-    except:
+    except Exception:
         raise HTTPException(status_code=403, detail="Invalid player_id")
     if player.team_id != team.team_id:
         raise HTTPException(403, "This player doesn't belong to your team")
     if player.game_id != game.game_id:
         raise HTTPException(400, f"This player is in game {player.game_id}")
-    if player.is_active == False:
+    if player.is_active is False:
         raise HTTPException(
-            400, f"This player is inactive or already has been deleted")
+            400, "This player is inactive or already has been deleted")
     return player
 
 

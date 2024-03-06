@@ -149,11 +149,6 @@ async def order_create_player(order: UserOrder,
         raise HTTPException(
             status_code=400, detail="Maximum 10 orders can be active at a time")
 
-    if order.resource == Resource.energy:
-        raise HTTPException(
-            status_code=400,
-            detail="Use /game/{game_id}/player/{player_id}/energy/set_price to set energy price")
-
     await Order.create(
         game_id=game.game_id,
         player_id=player.player_id,

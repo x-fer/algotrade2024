@@ -1,22 +1,9 @@
-from enum import Enum
-
-
-class EnumType():
-    cls = None
-
-    def __init__(self, *, default=None):
-        self._default = default
-
-    def __set_name__(self, owner, name):
-        self._name = "_" + name
-
-    def __get__(self, obj, type):
-        if obj is None:
-            return self._default
-        return self.cls(getattr(obj, self._name))
-
-    def __set__(self, obj, value):
-        if isinstance(value, Enum):
-            setattr(obj, self._name, value.value)
-        else:
-            setattr(obj, self._name, value)
+def get_enum(value, *args):
+    for cls in args:
+        if isinstance(value, cls):
+            return value
+        try:
+            return cls(value)
+        except ValueError:
+            pass
+    raise ValueError("Expected string that is enum in ", args)

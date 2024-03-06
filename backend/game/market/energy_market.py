@@ -1,9 +1,7 @@
 from typing import Dict
-
 import pandas as pd
 from game.price_tracker.price_tracker import PriceTracker
-from model import Trade, Resource
-from model.order import Order
+from model import Trade
 from config import config
 from model.player import Player
 

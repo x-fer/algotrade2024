@@ -1,6 +1,4 @@
-from config import config
 from unittest.mock import Mock
-
 from model.order_types import OrderType
 from .orderbook import OrderBook
 from model import OrderSide, OrderStatus, Trade
@@ -253,20 +251,18 @@ def test_prev_price(get_order):
     assert len(trades) == 1
     assert trades[0].filled_price == 10
 
-# test invalid callback types
-
 
 def test_invalid_callback_type():
     orderbook = OrderBook()
     try:
         orderbook.register_callback('invalid', lambda *kwargs: True)
-        assert False  # pragma: no cover
+        assert False
     except ValueError as e:
         assert str(e) == "Invalid callback type"
 
     orderbook = OrderBook()
     try:
         orderbook.register_callback('on_trade', 42)
-        assert False  # pragma: no cover
+        assert False
     except ValueError as e:
         assert str(e) == "Callback is not callable"

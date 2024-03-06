@@ -90,7 +90,7 @@ class OrderBook():
 
         self.expire_heap.remove(order)
 
-        if order.order_side == OrderSide.BUY.value:
+        if order.order_side == OrderSide.BUY:
             self.buy_side.remove(order)
         else:
             self.sell_side.remove(order)
@@ -130,7 +130,7 @@ class OrderBook():
 
         order.order_status = OrderStatus.ACTIVE
 
-        if order.order_side == OrderSide.BUY.value:
+        if order.order_side == OrderSide.BUY:
             self.buy_side.push(order)
         else:
             self.sell_side.push(order)

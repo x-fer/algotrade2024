@@ -1,26 +1,11 @@
 from dataclasses import dataclass, field
 from db.table import Table
 import pandas as pd
+
+from model.enum_type import get_enum
 from .order_types import OrderSide, OrderStatus, OrderType
-from .enum_type import EnumType
-from .resource import Resource
+from .resource import Energy, Resource
 from db.db import database
-
-
-class ResourceField(EnumType):
-    cls = Resource
-
-
-class OrderSideField(EnumType):
-    cls = OrderSide
-
-
-class OrderStatusField(EnumType):
-    cls = OrderStatus
-
-
-class OrderTypeField(EnumType):
-    cls = OrderType
 
 
 @dataclass
@@ -37,9 +22,9 @@ class Order(Table):
 
     timestamp: pd.Timestamp
 
-    order_side: OrderSideField
-    order_type: OrderTypeField = OrderTypeField(default=OrderType.LIMIT)
-    order_status: OrderStatusField = OrderStatusField(
+    order_side: OrderSide
+    order_type: OrderType = field(default=OrderType.LIMIT)
+    order_status: OrderStatus = field(
         default=OrderStatus.PENDING)
 
     filled_size: int = field(default=0)
@@ -48,7 +33,13 @@ class Order(Table):
 
     expiration_tick: int = field(default=1)
 
-    resource: ResourceField = ResourceField(default=0)
+    resource: Resource | Energy = field(default=Resource.coal)
+
+    def __post_init__(self):
+        self.order_side = get_enum(self.order_side, OrderSide)
+        self.order_type = get_enum(self.order_type, OrderType)
+        self.order_status = get_enum(self.order_status, OrderStatus)
+        self.resource = get_enum(self.resource, Resource, Energy)
 
     def __hash__(self) -> int:
         return hash(self.order_id)
@@ -100,9 +91,6 @@ class Order(Table):
     async def list_best_orders_by_game_id(cls, game_id, order_side: OrderSide):
         best_orders = []
         for resource in Resource:
-            if resource == Resource.energy:
-                continue
-
             asc_desc = "ASC" if order_side == OrderSide.BUY else "DESC"
             query = f"""
             SELECT * FROM {cls.table_name}
