@@ -120,11 +120,6 @@ def turn_on_plant():
     return algotrade_api.turn_on_plant(type, number)
 
 
-def turn_off_plant():
-    type = input("Enter plant type: ")
-    return algotrade_api.turn_off_plant(type)
-
-
 def get_dataset():
     start_tick = input("Enter start tick: ")
     end_tick = input("Enter end tick: ")

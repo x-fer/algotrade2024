@@ -169,12 +169,6 @@ def turn_on_plant(type, number):
                          json={"type": type, "number": number})
 
 
-def turn_off_plant(type):
-    return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/plant/off",
-                         params={"team_secret": team_secret},
-                         json={"type": type})
-
-
 def get_dataset(start_tick=None, end_tick=None):
     url = f"http://{URL}/game/{game_id}/dataset"
     params = {"team_secret": team_secret}

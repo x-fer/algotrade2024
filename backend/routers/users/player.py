@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from db import database
-from model import Player, Team
+from model import Player, Team, PowerPlantType, DatasetData, Resource
 from config import config
 from model.game import Game
 from .dependencies import game_dep, player_dep, check_game_active_dep, team_dep
@@ -107,3 +107,56 @@ async def player_delete(game: Game = Depends(game_dep),
 
     await Player.update(player_id=player.player_id, is_active=False)
     return SuccessfulResponse()
+
+
+class PlayerNetWorth(BaseModel):
+    plants_owned: dict[str, dict[str, int]]
+    money: int
+    resources: dict[str, dict[str, int]]
+    total: int
+
+
+@router.get("/game/{game_id}/player/{player_id}/net_worth")
+async def player_net_worth(player: Player = Depends(player_dep), game: Game = Depends(game_dep)) -> PlayerNetWorth:
+    net_worth = {
+        "plants_owned": {},
+        "money": player.money,
+        "resources": {},
+        "total": 0
+    }
+
+    for type in PowerPlantType:
+        value = 0
+
+        for i in range(1, getattr(player, f"{type.lower()}_plants_owned") + 1):
+            value += round(type.get_plant_price(i) *
+                           config["power_plant"]["sell_coeff"])
+
+        net_worth["plants_owned"][type.lower()] = {
+            "owned": getattr(player, f"{type.lower()}_plants_owned"),
+            "value_if_sold": value
+        }
+
+    data = (await DatasetData.list_by_game_id_where_tick(
+        game.dataset_id, game.game_id, game.total_ticks - 1, game.total_ticks - 1))[0]
+
+    for resource in Resource:
+        final_price = data[f"{resource.name.lower()}_price"]
+        has = getattr(player, resource.name.lower())
+
+        net_worth["resources"][resource.name.lower()] = {
+            "final_price": final_price,
+            "player_has": has,
+            "value": final_price * has
+        }
+
+    net_worth["total"] += player.money
+    for type in PowerPlantType:
+        net_worth["total"] += net_worth["plants_owned"][type.lower()
+                                                        ]["value_if_sold"]
+
+    for resource in Resource:
+        net_worth["total"] += net_worth["resources"][resource.name.lower()
+                                                     ]["value"]
+
+    return net_worth
