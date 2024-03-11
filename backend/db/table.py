@@ -38,6 +38,24 @@ class Table:
         return await database.fetch_val(query, kwargs)
 
     @classmethod
+    async def create_many(cls, l: list, col_nums: int=1) -> int:
+        if len(l) == 0:
+            return 0
+
+        cols = [field.name for field in fields(cls)]
+        values = [_transform_kwargs(asdict(obj)) for obj in l]
+        for val in values:
+            for col in cols[:col_nums]:
+                val.pop(col, None)
+
+        query = f"""INSERT INTO {cls.table_name}
+            ({', '.join(cols[col_nums:])}) 
+            VALUES ({', '.join(f':{col}' for col in cols[col_nums:])})
+            RETURNING {cols[0]}"""
+
+        return await database.execute_many(query, values)
+
+    @classmethod
     async def update_many(cls, l: list) -> int:
         if len(l) == 0:
             return 0

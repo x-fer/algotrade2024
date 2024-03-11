@@ -18,3 +18,4 @@ class TickData:
     pending_orders: List[Order] = field(default_factory=list)
     user_cancelled_orders: List[Order] = field(default_factory=list)
     updated_orders: Dict[int, Order] = field(default_factory=dict)
+    tick_trades: Dict[int, Order] = field(default_factory=list)

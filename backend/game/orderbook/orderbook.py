@@ -1,4 +1,5 @@
 from collections import deque
+from typing import List
 import pandas as pd
 from xheap import XHeap
 from functools import reduce
@@ -102,9 +103,9 @@ class OrderBook():
             return None
         return self.expire_heap.peek()
 
-    def match(self, timestamp: int):
+    def match(self, tick: int):
         self._invoke_callbacks('on_begin_match')
-        self._remove_expired(timestamp)
+        self._remove_expired(tick)
         self.match_trades = []
         while len(self.queue) > 0:
             order: Order = self.queue.popleft()
@@ -112,11 +113,11 @@ class OrderBook():
             order.order_status = OrderStatus.ACTIVE
             self._invoke_callbacks('on_order_update', order)
             self._add_order(order)
-            self._match(timestamp)
+            self._match(tick)
         self._invoke_callbacks('on_end_match', self.match_trades)
 
-    def _remove_expired(self, timestamp: pd.Timestamp):
-        while self._min_expire_time() is not None and self._min_expire_time().expiration_tick < timestamp:
+    def _remove_expired(self, tick: int):
+        while self._min_expire_time() is not None and self._min_expire_time().expiration_tick < tick:
             order: Order = self.expire_heap.peek()
             order.order_status = OrderStatus.EXPIRED
             self._invoke_callbacks('on_order_update', order)
@@ -139,23 +140,23 @@ class OrderBook():
         self.map_to_heaps[order.order_id] = order
         self._invoke_callbacks('on_order_update', order)
 
-    def _match(self, timestamp: pd.Timestamp):
+    def _match(self, tick: int):
         while self._match_condition():
             buy_order = self.buy_side.peek()
             sell_order = self.sell_side.peek()
-            self._match_one(buy_order, sell_order, timestamp)
+            self._match_one(buy_order, sell_order, tick)
 
     def _match_condition(self):
         if len(self.sell_side) == 0 or len(self.buy_side) == 0:
             return False
         return self.buy_side.peek().price >= self.sell_side.peek().price
 
-    def _match_one(self, buy_order: Order, sell_order: Order, timestamp: pd.Timestamp):
+    def _match_one(self, buy_order: Order, sell_order: Order, tick: int):
         trade_price = self._get_trade_price(buy_order, sell_order)
         trade_size = self._get_trade_size(buy_order, sell_order)
         filled_money = trade_price * trade_size
 
-        trade_before = Trade(buy_order, sell_order, timestamp,
+        trade_before = Trade(buy_order, sell_order, tick,
                              filled_money, trade_size, trade_price)
 
         status = self._invoke_callbacks('check_trade', trade_before)
@@ -182,7 +183,7 @@ class OrderBook():
             self._remove_if_filled(buy_order.order_id)
             self._remove_if_filled(sell_order.order_id)
 
-            trade = Trade(buy_order, sell_order, timestamp,
+            trade = Trade(buy_order, sell_order, tick,
                           filled_money, trade_size, trade_price)
             self._invoke_callbacks('on_trade', trade)
             self.match_trades.append(trade)
