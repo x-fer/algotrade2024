@@ -66,6 +66,10 @@ async def start_end_tick_dep(game: Game = Depends(game_dep),
         raise HTTPException(
             status_code=400, detail="Game just started (it is tick=0), no data to return")
 
+    if start_tick < 0 or end_tick < 0:
+        raise HTTPException(
+            status_code=400, detail=f"Start ({start_tick}) and end ({end_tick}) tick must both be greater than 0")
+
     if end_tick < start_tick:
         raise HTTPException(
             status_code=400, detail="End tick must be greater than start tick")
