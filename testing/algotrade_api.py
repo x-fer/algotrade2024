@@ -111,20 +111,21 @@ def get_prices(start_tick=None, end_tick=None, resource=None):
 
 
 def set_energy_price(price):
-    requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/energy/set_price",
+    return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/energy/set_price",
                   params={"team_secret": team_secret},
                   json={"price": price})
 
 
-def create_order(resource, price, size, expiration_tick, side):
+def create_order(resource, price, size, side, expiration_tick=None, expiration_length=None):
     body = {
         "resource": resource,
         "price": price,
         "size": size,
         "expiration_tick": expiration_tick,
+        "expiration_length": expiration_length,
         "side": side
     }
-    requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/orders/create",
+    return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/orders/create",
                   params={"team_secret": team_secret}, json=body)
 
 
@@ -132,6 +133,17 @@ def cancel_orders(ids):
     return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/orders/cancel",
                          params={"team_secret": team_secret},
                          json={"ids": ids})
+
+
+def get_trades(start_tick=None, end_tick=None, resource=None):
+    url = f"http://{URL}/game/{game_id}/player/{player_id}/trades"
+    params = {"team_secret": team_secret}
+    if start_tick:
+        params["start_tick"] = start_tick
+    if end_tick:
+        params["end_tick"] = end_tick
+    params["resource"] = resource
+    return requests.get(url, params=params)
 
 
 def get_plants():

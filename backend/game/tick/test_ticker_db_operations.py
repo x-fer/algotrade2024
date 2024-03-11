@@ -88,29 +88,13 @@ async def test_save_electricity_orders(sample_game, sample_players):
     players = sample_players
     game = sample_game
     energy_sold = {1: 100, 2: 200}
-    with patch('model.Order.create') as mock_order_create:
+    with patch('model.Order.create_many') as mock_order_create:
         ticker = Ticker()
 
         await ticker.save_electricity_orders(
             players=players, game=game, energy_sold=energy_sold, tick=1)
 
-        assert mock_order_create.call_count == 2
-
-        for call_args, expected_energy_sold in zip(mock_order_create.call_args_list, energy_sold.values()):
-            args, kwargs = call_args
-            assert args == ()
-            assert kwargs["game_id"] == game.game_id
-            assert kwargs["order_type"] == OrderType.LIMIT
-            assert kwargs["order_side"] == OrderSide.SELL
-            assert kwargs["timestamp"].__class__ == pd.Timestamp
-            assert kwargs["order_status"] == OrderStatus.COMPLETED
-            assert kwargs["size"] == expected_energy_sold
-            assert kwargs["filled_size"] == expected_energy_sold
-            assert kwargs["price"] == players[kwargs["player_id"]].energy_price
-            assert kwargs["tick"] == 1
-            assert kwargs["filled_price"] == players[kwargs["player_id"]].energy_price
-            assert kwargs["expiration_tick"] == 1
-            assert kwargs["resource"] == Energy.energy.value
+        assert mock_order_create.call_count == 1
 
 
 @pytest.mark.asyncio

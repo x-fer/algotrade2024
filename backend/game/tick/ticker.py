@@ -11,6 +11,7 @@ from game.market import ResourceMarket, EnergyMarket
 from game.bots import Bots
 from model.market import Market
 from model.resource import Energy
+from model.trade import TradeDb
 from .tick_data import TickData
 from logger import logger
 from db import database
@@ -97,7 +98,7 @@ class Ticker:
 
                 if to_wait < 0.1 and game.current_tick > 0:
                     logger.warning(
-                        f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}, catching up or possible overload")
+                        f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}s in tick ({game.current_tick}), catching up or possible overload")
 
                 await asyncio.sleep(to_wait)
 
@@ -184,24 +185,31 @@ class Ticker:
 
         for resource in tick_data.markets.keys():
             market = tick_data.markets[resource]
-            filtered_orders = list(filter(
+            canceled_resource_orders = list(filter(
                 lambda order: order.resource.value == resource, tick_data.user_cancelled_orders))
 
             updated = market.cancel(
-                filtered_orders)
+                canceled_resource_orders)
 
             tick_data.updated_orders.update(updated)
 
         for resource in tick_data.markets.keys():
             market = tick_data.markets[resource]
-            filtered_orders = list(filter(
+            pending_resource_orders = list(filter(
                 lambda order: order.resource.value == resource, tick_data.pending_orders))
 
             updated = market.match(
-                filtered_orders, tick_data.game.current_tick)
+                pending_resource_orders, tick_data.game.current_tick)
 
             tick_data.updated_orders.update(updated)
-
+        
+        tick_data.tick_trades = []
+        for market in tick_data.markets.values():
+            tick_data.tick_trades.extend(
+                market.get_last_tick_trades())
+        tick_data.tick_trades = list(map(
+            TradeDb.from_trade, tick_data.tick_trades))
+        
         return tick_data
 
     def run_power_plants(self, tick_data: TickData) -> TickData:
@@ -233,8 +241,10 @@ class Ticker:
 
     async def save_electricity_orders(self, game: Game, players: Dict[int, Player], 
                                       energy_sold: Dict[int, int], tick: int):
+        electricity_orders = []
         for player_id, energy in energy_sold.items():
-            await Order.create(
+            electricity_orders.append(Order(
+                order_id=0,
                 game_id=game.game_id,
                 player_id=player_id,
                 order_type=OrderType.LIMIT,
@@ -249,11 +259,13 @@ class Ticker:
                 filled_price=players[player_id].energy_price,
                 expiration_tick=tick,
                 resource=Energy.energy.value
-            )
+            ))
+        await Order.create_many(electricity_orders)
 
     async def save_tick_data(self, tick_data: TickData):
         await Player.update_many(tick_data.players.values())
         await Order.update_many(tick_data.updated_orders.values())
+        await TradeDb.create_many(tick_data.tick_trades)
 
     async def save_market_data(self, tick_data: TickData):
         tick = tick_data.game.current_tick

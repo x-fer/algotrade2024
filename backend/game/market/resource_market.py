@@ -18,6 +18,7 @@ class ResourceMarket:
             'check_trade': self._check_trade,
             'on_trade': self._on_trade,
             'on_order_update': self._update_order,
+            'on_end_match': self._on_end_match,
         }
 
         for callback_type, callback in callbacks.items():
@@ -25,6 +26,7 @@ class ResourceMarket:
 
         self.players: Dict[int, Player] = None
         self._updated: Dict[int, Order] = {}
+        self.tick_trades: List[Trade] = None
 
     def set_players(self, players: Dict[int, Player]):
         self.players = players
@@ -36,7 +38,7 @@ class ResourceMarket:
                 self.orderbook.cancel_order(order.order_id)
             except ValueError as e:
                 logger.warn(
-                    f"Error cancelling order for id {order.order_id}: {e}, updating **only** in db, not orderbook.")
+                    f"Error cancelling order for order_id {order.order_id}: {e}")
                 order.order_status = OrderStatus.CANCELLED
                 self._update_order(order)
 
@@ -45,7 +47,11 @@ class ResourceMarket:
     def match(self, orders: List[Order], tick: int) -> Dict[int, Order]:
         self._updated = {}
         for order in orders:
-            self.orderbook.add_order(order)
+            try:
+                self.orderbook.add_order(order)
+            except ValueError as e:
+                logger.warn(
+                    f"Error adding order for order_id {order.order_id}: {e}")
         self.orderbook.match(tick)
 
         logger.debug(f"Matching:\n"
@@ -101,3 +107,9 @@ class ResourceMarket:
             logger.warn(f"Player with id {player_id} not in dictionary")
             return None
         return self.players[player_id]
+
+    def _on_end_match(self, match_trades: List[Order]):
+        self.tick_trades = match_trades
+
+    def get_last_tick_trades(self):
+        return self.tick_trades

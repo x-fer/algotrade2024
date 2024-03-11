@@ -38,7 +38,7 @@ class EnergyMarket:
                 filled_price=player.energy_price,
                 filled_size=to_sell,
                 filled_money=to_sell * player.energy_price,
-                timestamp=pd.Timestamp.now(),
+                tick=pd.Timestamp.now(),
             ))
 
             orders[player.player_id] = to_sell
