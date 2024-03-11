@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
 from itertools import chain
-from typing import List, Dict
+from typing import List, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 import pandas as pd
 from model.trade import TradeDb
@@ -122,12 +122,17 @@ def orders_to_dict(orders: List[Order]) -> Dict[Resource, List[Order]]:
 async def order_list_player(game: Game = Depends(game_dep),
                             player: Player = Depends(player_dep)
                             ) -> Dict[Resource, List[OrderResponse]]:
-    orders = await Order.list(
+    active_orders = await Order.list(
         game_id=game.game_id,
         player_id=player.player_id,
         order_status=OrderStatus.ACTIVE.value,
     )
-    return orders_to_dict(orders)
+    pending_orders = await Order.list(
+        game_id=game.game_id,
+        player_id=player.player_id,
+        order_status=OrderStatus.PENDING.value,
+    )
+    return orders_to_dict(active_orders + pending_orders)
 
 
 @router.get("/game/{game_id}/player/{player_id}/orders/{order_id}")
@@ -138,8 +143,7 @@ async def order_get_player(order_id: int,
     order = await Order.get(
         order_id=order_id,
         game_id=game.game_id,
-        player_id=player.player_id,
-        order_status=OrderStatus.ACTIVE.value,
+        player_id=player.player_id
     )
     return order
 
@@ -148,14 +152,27 @@ class UserOrder(BaseModel):
     resource: Resource
     price: int
     size: int
-    expiration_tick: int
+    expiration_tick: Optional[int]
+    expiration_length: Optional[int]
     side: OrderSide
 
 
 @router.post("/game/{game_id}/player/{player_id}/orders/create")
 async def order_create_player(order: UserOrder,
                               game: Game = Depends(game_dep),
-                              player: Player = Depends(player_dep)) -> SuccessfulResponse:
+                              player: Player = Depends(player_dep)) -> int:
+    if order.expiration_tick is None == order.expiration_length is None:
+        raise HTTPException(
+            status_code=400, detail="Exactly one of expiration_tick and expiration_length must not be None")
+    if order.expiration_length is not None:
+        if order.expiration_length <= 0:
+            raise HTTPException(
+                status_code=400, detail=f"Expiration length ({order.expiration_length}) must be greater than 0")
+        order.expiration_tick = game.current_tick + order.expiration_length
+    if order.expiration_tick <= game.current_tick:
+        raise HTTPException(
+            status_code=400, detail=f"Expiration tick ({order.expiration_tick}) must be in the future, current_tick ({game.current_tick})")
+
     total_orders_not_processed = await Order.count_player_orders(
         game_id=game.game_id, 
         player_id=player.player_id,
@@ -164,8 +181,17 @@ async def order_create_player(order: UserOrder,
     if total_orders_not_processed >= config["player"]["max_orders"]:
         raise HTTPException(
             status_code=400, detail="Maximum 10 orders can be active at a time")
-
-    await Order.create(
+    
+    resources = player[order.resource]
+    cost = order.price * order.size
+    if order.side is OrderSide.SELL and resources < order.size:
+        raise HTTPException(
+            status_code=400, detail=f"Not enough resources: has ({resources}), sells ({order.size})")
+    elif order.side is OrderSide.BUY and player.money < cost:
+        raise HTTPException(
+            status_code=400, detail=f"Not enough money: has ({player.money}), order_cost({cost}) = size({order.size})*price({order.price})")
+    
+    return await Order.create(
         game_id=game.game_id,
         player_id=player.player_id,
         order_type=OrderType.LIMIT,
@@ -178,7 +204,6 @@ async def order_create_player(order: UserOrder,
         expiration_tick=order.expiration_tick,
         resource=order.resource
     )
-    return SuccessfulResponse()
 
 
 class OrderCancel(BaseModel):
@@ -214,8 +239,7 @@ class UserTrade(BaseModel):
 
 
 @router.get("/game/{game_id}/player/{player_id}/trades")
-async def get_trades_player(game: Game = Depends(game_dep),
-                            start_end=Depends(start_end_tick_dep),
+async def get_trades_player(start_end=Depends(start_end_tick_dep),
                             player: Player = Depends(player_dep),
                             resource: Resource = Query(default=None),
                             ) -> Dict[OrderSide, List[UserTrade]]:

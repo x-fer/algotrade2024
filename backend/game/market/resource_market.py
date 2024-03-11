@@ -38,7 +38,7 @@ class ResourceMarket:
                 self.orderbook.cancel_order(order.order_id)
             except ValueError as e:
                 logger.warn(
-                    f"Error cancelling order for id {order.order_id}: {e}, updating **only** in db, not orderbook.")
+                    f"Error cancelling order for order_id {order.order_id}: {e}")
                 order.order_status = OrderStatus.CANCELLED
                 self._update_order(order)
 
@@ -47,7 +47,11 @@ class ResourceMarket:
     def match(self, orders: List[Order], tick: int) -> Dict[int, Order]:
         self._updated = {}
         for order in orders:
-            self.orderbook.add_order(order)
+            try:
+                self.orderbook.add_order(order)
+            except ValueError as e:
+                logger.warn(
+                    f"Error adding order for order_id {order.order_id}: {e}")
         self.orderbook.match(tick)
 
         logger.debug(f"Matching:\n"

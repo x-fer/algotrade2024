@@ -4,6 +4,7 @@ import pandas as pd
 from db import Table, database
 
 from .order import Order
+from logger import logger
 
 
 @dataclass
@@ -41,14 +42,15 @@ class TradeDb(Table):
             filled_size=trade.filled_size
         )
 
+    @classmethod
     async def _list_trades_by_player_id(
             cls, player_id, min_tick, max_tick, side_col, resource=None):
         resource_query = "" if resource is None else " AND trades.resource=:resource"
         query = f"""
         SELECT trades.* FROM trades 
-        JOIN orders ON orders.order_id = trades.{side_col}
+        JOIN orders ON trades.{side_col}=orders.order_id
         WHERE orders.player_id=:player_id
-        trades.tick BETWEEN :min_tick AND :max_tick
+        AND trades.tick BETWEEN :min_tick AND :max_tick
         {resource_query}
         ORDER BY trades.tick
         """
@@ -58,18 +60,19 @@ class TradeDb(Table):
         if resource is not None:
             values["resource"] = resource.value
         result = await database.fetch_all(query, values)
-        return [cls(**game) for game in result]
+        return [cls(**trade) for trade in result]
 
-
+    @staticmethod
     async def list_buy_trades_by_player_id(
-            cls, player_id, min_tick, max_tick, resource=None):
-        return await cls._list_trades_by_player_id(
+            player_id, min_tick, max_tick, resource=None):
+        return await TradeDb._list_trades_by_player_id(
             player_id=player_id, min_tick=min_tick, max_tick=max_tick,
             side_col="buy_order_id", resource=resource)
 
+    @staticmethod
     async def list_sell_trades_by_player_id(
-            cls, player_id, min_tick, max_tick, resource=None):
-        return await cls._list_trades_by_player_id(
+            player_id, min_tick, max_tick, resource=None):
+        return await TradeDb._list_trades_by_player_id(
             player_id=player_id, min_tick=min_tick, max_tick=max_tick,
             side_col="sell_order_id", resource=resource)
 

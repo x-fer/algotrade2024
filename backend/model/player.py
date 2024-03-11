@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from db.table import Table
 from enum import Enum
 from config import config
+from model.resource import Resource
 
 
 class PowerPlantType(str, Enum):
@@ -74,6 +75,8 @@ class Player(Table):
     hydro_plants_powered: int = field(default=0)
 
     def __getitem__(self, key):
+        if isinstance(key, Resource):
+            return self.__getattribute__(key.value.lower())
         return self.__getattribute__(key)
 
     def __setitem__(self, key, value):
