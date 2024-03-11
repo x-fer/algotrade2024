@@ -111,7 +111,7 @@ def get_prices(start_tick=None, end_tick=None, resource=None):
 
 
 def set_energy_price(price):
-    requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/energy/set_price",
+    return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/energy/set_price",
                   params={"team_secret": team_secret},
                   json={"price": price})
 
@@ -124,7 +124,7 @@ def create_order(resource, price, size, expiration_tick, side):
         "expiration_tick": expiration_tick,
         "side": side
     }
-    requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/orders/create",
+    return requests.post(f"http://{URL}/game/{game_id}/player/{player_id}/orders/create",
                   params={"team_secret": team_secret}, json=body)
 
 

@@ -1,8 +1,10 @@
 from collections import defaultdict
 from enum import Enum
+from itertools import chain
 from typing import List, Dict
 from fastapi import APIRouter, Depends, HTTPException, Query
 import pandas as pd
+from model.trade import TradeDb
 from pydantic import BaseModel
 from model import Order, OrderSide, OrderType, OrderStatus, Resource
 from model.game import Game
@@ -128,6 +130,20 @@ async def order_list_player(game: Game = Depends(game_dep),
     return orders_to_dict(orders)
 
 
+@router.get("/game/{game_id}/player/{player_id}/orders/{order_id}")
+async def order_get_player(order_id: int,
+                           game: Game = Depends(game_dep),
+                           player: Player = Depends(player_dep)
+                           ) -> OrderResponse:
+    order = await Order.get(
+        order_id=order_id,
+        game_id=game.game_id,
+        player_id=player.player_id,
+        order_status=OrderStatus.ACTIVE.value,
+    )
+    return order
+
+
 class UserOrder(BaseModel):
     resource: Resource
     price: int
@@ -184,3 +200,40 @@ async def order_cancel_player(body: OrderCancel,
                 order_status=OrderStatus.USER_CANCELLED.value
             )
     return SuccessfulResponse()
+
+
+class UserTrade(BaseModel):
+    trade_id: int
+    buy_order_id: int
+    sell_order_id: int
+    tick: int
+
+    filled_money: int
+    filled_size: int
+    filled_price: int
+
+
+@router.get("/game/{game_id}/player/{player_id}/trades")
+async def get_trades_player(game: Game = Depends(game_dep),
+                            start_end=Depends(start_end_tick_dep),
+                            player: Player = Depends(player_dep),
+                            resource: Resource = Query(default=None),
+                            ) -> Dict[OrderSide, List[UserTrade]]:
+    start_tick, end_tick = start_end
+
+    buy_trades = await TradeDb.list_buy_trades_by_player_id(
+        player_id=player.player_id,
+        min_tick=start_tick,
+        max_tick=end_tick,
+        resource=resource,
+    )
+    sell_trades = await TradeDb.list_sell_trades_by_player_id(
+        player_id=player.player_id,
+        min_tick=start_tick,
+        max_tick=end_tick,
+        resource=resource,
+    )
+    return {
+        OrderSide.BUY: buy_trades,
+        OrderSide.SELL: sell_trades,
+    }

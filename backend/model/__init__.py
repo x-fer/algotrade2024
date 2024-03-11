@@ -7,4 +7,4 @@ from .order_types import *
 from .resource import Resource, Energy
 from .datasets import Datasets
 from .dataset_data import DatasetData
-from .trade import Trade
+from .trade import Trade, TradeDb
