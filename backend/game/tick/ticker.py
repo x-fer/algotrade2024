@@ -98,6 +98,7 @@ class Ticker:
                 if to_wait < 0.1 and game.current_tick > 0:
                     logger.warning(
                         f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}s in tick ({game.current_tick}), catching up or possible overload")
+                    await asyncio.sleep(0.1)
 
                 await asyncio.sleep(to_wait)
 

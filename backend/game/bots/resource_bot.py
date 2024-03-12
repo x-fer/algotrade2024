@@ -44,7 +44,7 @@ class ResourceBot(Bot):
 
     async def run(self, tick_data: TickData):
         if self.player_id is None:
-            await self.create_player()
+            await self.create_player(tick_data)
 
         if (
             self.last_tick is not None
@@ -61,12 +61,8 @@ class ResourceBot(Bot):
             resource_sum = resources_sum[resource]
 
             filled_buy_perc, filled_sell_perc = self.get_filled_perc(resource_orders)
-            volume = self.get_volume(
-                resource, resource_sum
-            )
-            price = self.get_price(
-                resource, volume, filled_buy_perc, filled_sell_perc
-            )
+            volume = self.get_volume(resource_sum)
+            price = self.get_price(resource, volume, filled_buy_perc, filled_sell_perc)
             price = self.get_mixed_price(tick_data, resource, price)
             await self.create_orders(
                 tick_data.game.current_tick, resource, price, volume
