@@ -76,8 +76,10 @@ class Player(Table):
 
     def __getitem__(self, key):
         if isinstance(key, Resource):
-            return self.__getattribute__(key.value.lower())
+            return self.__getattribute__(key.name)
         return self.__getattribute__(key)
 
     def __setitem__(self, key, value):
+        if isinstance(key, Resource):
+            return self.__setattr__(key.name, value)
         self.__setattr__(key, value)

@@ -1,10 +1,8 @@
 from dataclasses import dataclass
-import pandas as pd
 
 from db import Table, database
 
 from .order import Order
-from logger import logger
 
 
 @dataclass

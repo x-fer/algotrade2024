@@ -4,19 +4,6 @@ from game.fixtures.fixtures import *
 from model.order_types import OrderSide, OrderStatus
 
 
-@pytest.fixture
-def get_markets():
-    def get_markets(player_dict):
-        markets = {
-            x.value: ResourceMarket(x)
-            for x in Resource
-        }
-        for market in markets.values():
-            market.set_players(player_dict)
-        return markets
-    return get_markets
-
-
 def test_run_markets_no_match(get_tick_data, get_order, ticker, get_player, coal_market, get_markets):
     order1 = get_order(player_id=1, price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)

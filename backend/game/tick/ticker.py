@@ -4,7 +4,6 @@ import sys
 import traceback
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
-import pandas as pd
 from game.bots.bot import Bot
 from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType
 from game.market import ResourceMarket, EnergyMarket
@@ -249,7 +248,7 @@ class Ticker:
                 player_id=player_id,
                 order_type=OrderType.LIMIT,
                 order_side=OrderSide.SELL,
-                timestamp=pd.Timestamp.now(),
+                timestamp=datetime.now(),
                 order_status=OrderStatus.COMPLETED,
                 price=players[player_id].energy_price,
                 size=energy,

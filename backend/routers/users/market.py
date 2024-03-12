@@ -1,9 +1,8 @@
 from collections import defaultdict
+from datetime import datetime
 from enum import Enum
-from itertools import chain
 from typing import List, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-import pandas as pd
 from model.trade import TradeDb
 from pydantic import BaseModel
 from model import Order, OrderSide, OrderType, OrderStatus, Resource
@@ -73,7 +72,7 @@ class OrderResponse(BaseModel):
     price: int
     size: int
     tick: int
-    timestamp: pd.Timestamp
+    timestamp: datetime
     order_side: OrderSide
     order_status: OrderStatus
     filled_size: int
@@ -197,7 +196,7 @@ async def order_create_player(order: UserOrder,
         order_type=OrderType.LIMIT,
         order_side=order.side.value,
         order_status=OrderStatus.PENDING,
-        timestamp=pd.Timestamp.now(),
+        timestamp=datetime.now(),
         price=order.price,
         size=order.size,
         tick=game.current_tick,
