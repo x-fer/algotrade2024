@@ -48,7 +48,7 @@ class ResourceBot(Bot):
 
         if (
             self.last_tick is not None
-            and tick_data.game.current_tick <= self.last_tick + expiration_ticks
+            and tick_data.game.current_tick < self.last_tick + expiration_ticks
         ):
             return
 
