@@ -99,9 +99,9 @@ class ResourceMarket:
         if not seller.is_bot:
             seller.money += trade.filled_money
             seller[self.resource.name] -= trade.filled_size
-    
+
     def _get_player(self, player_id: int) -> Player:
-        if self.players is None: 
+        if self.players is None:
             raise ValueError("Players dictionary not set")
         if player_id not in self.players:
             logger.warn(f"Player with id {player_id} not in dictionary")

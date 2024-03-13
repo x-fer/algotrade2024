@@ -3,6 +3,7 @@ from db.table import Table
 from enum import Enum
 from config import config
 from model.resource import Resource
+from model.dataset_data import DatasetData
 
 
 class PowerPlantType(str, Enum):
@@ -81,3 +82,47 @@ class Player(Table):
 
     def __setitem__(self, key, value):
         self.__setattr__(key, value)
+
+    async def get_networth(self, game):
+        net_worth = {
+            "plants_owned": {},
+            "money": self.money,
+            "resources": {},
+            "total": 0
+        }
+
+        for type in PowerPlantType:
+            value = 0
+
+            for i in range(1, getattr(self, f"{type.lower()}_plants_owned") + 1):
+                value += round(type.get_plant_price(i) *
+                               config["power_plant"]["sell_coeff"])
+
+            net_worth["plants_owned"][type.lower()] = {
+                "owned": getattr(self, f"{type.lower()}_plants_owned"),
+                "value_if_sold": value
+            }
+
+        data = (await DatasetData.list_by_game_id_where_tick(
+            game.dataset_id, game.game_id, game.total_ticks - 1, game.total_ticks - 1))[0]
+
+        for resource in Resource:
+            final_price = data[f"{resource.name.lower()}_price"]
+            has = getattr(self, resource.name.lower())
+
+            net_worth["resources"][resource.name.lower()] = {
+                "final_price": final_price,
+                "player_has": has,
+                "value": final_price * has
+            }
+
+        net_worth["total"] += self.money
+        for type in PowerPlantType:
+            net_worth["total"] += net_worth["plants_owned"][type.lower()
+                                                            ]["value_if_sold"]
+
+        for resource in Resource:
+            net_worth["total"] += net_worth["resources"][resource.name.lower()
+                                                         ]["value"]
+
+        return net_worth

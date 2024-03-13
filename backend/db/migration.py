@@ -295,7 +295,7 @@ async def run_migrations():
                 oil_price=(
                     price_multipliers["oil"] *
                     row["OIL_PRICE"] // 1_000_000),
-                ))
+            ))
             tick += 1
         await DatasetData.create_many(dataset_data)
         logger.info(f"Added dataset {x}")
