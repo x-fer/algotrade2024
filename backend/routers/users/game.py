@@ -45,9 +45,9 @@ class GameTimeData(GameData):
 async def get_game(game_id: int) -> GameTimeData:
     game = await Game.get(game_id=game_id)
     next_tick_time = game.start_time + \
-        timedelta(milliseconds=game.current_tick * 
+        timedelta(milliseconds=game.current_tick *
                   game.tick_time)
-    return GameTimeData(**asdict(game), 
+    return GameTimeData(**asdict(game),
                         current_time=pd.Timestamp.now(),
                         next_tick_time=next_tick_time)
 
