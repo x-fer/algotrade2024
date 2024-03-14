@@ -17,9 +17,13 @@ max_volume = config["bots"]["max_volume"]
 min_price = config["bots"]["min_price"]
 max_price = config["bots"]["max_price"]
 price_change_coeff = config["bots"]["price_change_coeff"]
-max_price_change = config["bots"]["max_price_change"]
 expiration_ticks = config["bots"]["expiration_ticks"]
 dataset_price_weight = config["bots"]["dataset_price_weight"]
+extra_orders = config["bots"]["extra_orders"]
+extra_orders_price_diff = config["bots"]["extra_orders_price_diff"]
+extra_orders_volume_diff = config["bots"]["extra_orders_volume_diff"]
+final_volume_multiplier = config["bots"]["final_volume_multiplier"]
+final_price_multiplier = config["bots"]["final_price_multiplier"]
 
 
 @dataclass
@@ -46,24 +50,24 @@ class ResourceBot(Bot):
         if self.player_id is None:
             await self.create_player(tick_data)
 
-        # order_count = dict()
-        # for resource in Resource:
-        #     order_count[resource] = await Order.count_player_orders(
-        #         game_id=tick_data.game.game_id, 
-        #         player_id=self.player_id, 
-        #         resource=resource)
+        order_count = dict()
+        for resource in Resource:
+            order_count[resource] = await Order.count_player_orders(
+                game_id=tick_data.game.game_id,
+                player_id=self.player_id,
+                resource=resource)
         if (
             self.last_tick is not None
             and tick_data.game.current_tick <= self.last_tick + expiration_ticks
         ):
-            # for resource in Resource:
-            #     if order_count[resource] == 0:
-            #         logger.warn(f"Game ({tick_data.game.game_id}) No orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
+            for resource in Resource:
+                if order_count[resource] == 0:
+                    logger.warn(f"Game ({tick_data.game.game_id}) No orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
             return
 
-        # for resource in Resource:
-        #     if order_count[resource] > 0:
-        #         logger.warn(f"Game ({tick_data.game.game_id}) Duplicate orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
+        for resource in Resource:
+            if order_count[resource] > 0:
+                logger.warn(f"Game ({tick_data.game.game_id}) Duplicate orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
 
         self.last_tick = tick_data.game.current_tick
         resources_sum = self.get_resources_sum(tick_data)
@@ -192,32 +196,49 @@ class ResourceBot(Bot):
     async def create_orders(
         self, tick, resource: Resource, price: BuySellPrice, volume: BuySellVolume
     ) -> None:
-        buy_price = price.buy_price
-        sell_price = price.sell_price
-        buy_volume = volume.buy_volume
-        sell_volume = volume.sell_volume
+        buy_price = int(price.buy_price * final_price_multiplier)
+        sell_price = int(price.sell_price * final_price_multiplier)
+        buy_volume = int(volume.buy_volume * final_volume_multiplier)
+        sell_volume = int(volume.sell_volume * final_volume_multiplier)
+        if buy_price == sell_price:
+            sell_price = buy_price + 1
+
+        for i in range(extra_orders+1):
+            await self.create_order(
+                tick,
+                resource,
+                order_side=OrderSide.BUY,
+                price=int(buy_price * (1 - i* extra_orders_price_diff)),
+                volume=int(buy_volume * (1 - i* extra_orders_volume_diff)),
+            )
+            await self.create_order(
+                tick,
+                resource,
+                order_side=OrderSide.SELL,
+                price=int(sell_price * (1 + i* extra_orders_price_diff)),
+                volume=int(sell_volume * (1 - i* extra_orders_volume_diff)),
+            )
+
+    async def create_order(
+        self, tick, resource: Resource, order_side: OrderSide, price: int, volume: int
+    ):
         logger.debug(
-            f"({self.game_id}) Bot creating orders {tick=}, {resource=}, {buy_price=}, {sell_price=}, {buy_volume=}, {sell_volume=}"
+            f"({self.game_id}) Bot creating orders {tick=}, {order_side.value} {resource=}, {price=}"
         )
+        if price < 0:
+            logger.warn(f"Volume ({volume}) is less than 0!")
+            return
+        if price < 0:
+            logger.warn(f"Price ({price}) is less than 0!")
+            return
         await Order.create(
             game_id=self.game_id,
             player_id=self.player_id,
-            price=buy_price,
+            price=price,
             tick=tick,
             timestamp=datetime.now(),
-            size=buy_volume,
-            order_side=OrderSide.BUY,
-            resource=resource,
-            expiration_tick=tick + expiration_ticks,
-        )
-        await Order.create(
-            game_id=self.game_id,
-            player_id=self.player_id,
-            price=sell_price,
-            tick=tick,
-            timestamp=datetime.now(),
-            size=sell_volume,
-            order_side=OrderSide.SELL,
+            size=volume,
+            order_side=order_side,
             resource=resource,
             expiration_tick=tick + expiration_ticks,
         )

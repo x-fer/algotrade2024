@@ -151,7 +151,7 @@ class Ticker:
         await self.save_tick_data(tick_data)
         await self.save_market_data(tick_data)
         await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
-
+        tick_data.game.current_tick += 1
         await self.run_bots(tick_data)
 
     async def get_tick_data(self, game: Game) -> TickData:

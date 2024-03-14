@@ -115,7 +115,7 @@ class OrderBook():
         self._invoke_callbacks('on_end_match', self.match_trades)
 
     def _remove_expired(self, tick: int):
-        while self._min_expire_time() is not None and self._min_expire_time().expiration_tick < tick:
+        while self._min_expire_time() is not None and self._min_expire_time().expiration_tick <= tick:
             order: Order = self.expire_heap.peek()
             order.order_status = OrderStatus.EXPIRED
             self._invoke_callbacks('on_order_update', order)
