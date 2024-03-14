@@ -54,9 +54,9 @@ bots:
   min_volume: 200
   max_volume: 6000
   min_price: 1
-  max_price: 101
+  max_price: 201
   expiration_ticks: 5
-  price_change_coeff: 0.2
+  price_change_coeff: 0.3
   dataset_price_weight: 0.85
   extra_orders: 3
   extra_orders_price_diff: 0.1

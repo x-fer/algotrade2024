@@ -50,24 +50,24 @@ class ResourceBot(Bot):
         if self.player_id is None:
             await self.create_player(tick_data)
 
-        order_count = dict()
-        for resource in Resource:
-            order_count[resource] = await Order.count_player_orders(
-                game_id=tick_data.game.game_id,
-                player_id=self.player_id,
-                resource=resource)
+        # order_count = dict()
+        # for resource in Resource:
+        #     order_count[resource] = await Order.count_player_orders(
+        #         game_id=tick_data.game.game_id,
+        #         player_id=self.player_id,
+        #         resource=resource)
         if (
             self.last_tick is not None
             and tick_data.game.current_tick <= self.last_tick + expiration_ticks
         ):
-            for resource in Resource:
-                if order_count[resource] == 0:
-                    logger.warn(f"Game ({tick_data.game.game_id}) No orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
+            # for resource in Resource:
+            #     if order_count[resource] == 0:
+            #         logger.warn(f"Game ({tick_data.game.game_id}) No orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
             return
 
-        for resource in Resource:
-            if order_count[resource] > 0:
-                logger.warn(f"Game ({tick_data.game.game_id}) Duplicate orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
+        # for resource in Resource:
+        #     if order_count[resource] > 0:
+        #         logger.warn(f"Game ({tick_data.game.game_id}) Duplicate orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
 
         self.last_tick = tick_data.game.current_tick
         resources_sum = self.get_resources_sum(tick_data)
