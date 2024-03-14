@@ -1,6 +1,6 @@
 from model import Order, Player, OrderSide, OrderStatus
-from game.fixtures.fixtures import get_player_dict
-from game.fixtures.fixtures import *
+from fixtures.fixtures import get_player_dict
+from fixtures.fixtures import *
 
 
 def test_when_transaction_successful(get_player, get_order, coal_market):

@@ -2,7 +2,7 @@ from unittest.mock import Mock
 from model.order_types import OrderType
 from .orderbook import OrderBook
 from model import OrderSide, OrderStatus, Trade
-from game.fixtures.orderbook_fixtures import *
+from fixtures.orderbook_fixtures import *
 
 
 class TestCancelTrade():

@@ -1,5 +1,5 @@
-from game.fixtures.fixtures import get_player_dict
-from game.fixtures.fixtures import *
+from fixtures.fixtures import get_player_dict
+from fixtures.fixtures import *
 from config import config
 
 

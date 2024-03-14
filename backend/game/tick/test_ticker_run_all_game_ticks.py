@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from game.tick import Ticker
 from model import Game
 from unittest.mock import Mock
-from game.fixtures.fixtures import *
+from fixtures.fixtures import *
 import tracemalloc
 
 
@@ -16,20 +16,20 @@ def ticker():
     return Ticker()
 
 
-
 def get_game(start_time, current_tick, total_ticks, is_finished):
-    return Game(game_id=1, game_name="Game1", 
+    return Game(game_id=1, game_name="Game1",
                 is_finished=is_finished,
-                start_time=start_time, 
-                current_tick=current_tick, 
-                total_ticks=total_ticks, 
-                dataset_id=1, 
+                start_time=start_time,
+                current_tick=current_tick,
+                total_ticks=total_ticks,
+                dataset_id=1,
                 tick_time=1000, is_contest=True)
 
 
 @pytest.mark.asyncio
 async def test_run_tick_manager(ticker):
-    games = [get_game(start_time=datetime.now(), current_tick=0, total_ticks=10, is_finished=False)]
+    games = [get_game(start_time=datetime.now(), current_tick=0,
+                      total_ticks=10, is_finished=False)]
     mock_game_list = AsyncMock(return_value=games)
 
     mock_start_game = AsyncMock()
@@ -48,7 +48,8 @@ async def test_run_tick_manager(ticker):
 
 @pytest.mark.asyncio
 async def test_run_tick_manager_game_finished(ticker):
-    games = [get_game(start_time=datetime.now(), current_tick=0, total_ticks=10, is_finished=True)]
+    games = [get_game(start_time=datetime.now(), current_tick=0,
+                      total_ticks=10, is_finished=True)]
     mock_game_list = AsyncMock(return_value=games)
 
     mock_start_game = AsyncMock()

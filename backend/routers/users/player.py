@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from db import database
-from model import Player, Team, PowerPlantType, DatasetData, Resource
+from model import Player, Team
 from config import config
 from model.game import Game
 from .dependencies import game_dep, player_dep, check_game_active_dep, team_dep
