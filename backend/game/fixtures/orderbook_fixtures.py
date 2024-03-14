@@ -1,5 +1,5 @@
+from datetime import datetime, timedelta
 import pytest
-import pandas as pd
 import random
 from model import Order, OrderSide, Trade, Resource
 
@@ -30,11 +30,11 @@ def on_add_true(traders):
 
 @pytest.fixture(autouse=True)
 def get_timestamp():
-    tm = pd.Timestamp.now()
+    tm = datetime.now()
 
     def get_timestamp(time: int):
         nonlocal tm
-        return tm + pd.Timedelta(seconds=time)
+        return tm + timedelta(seconds=time)
     return get_timestamp
 
 

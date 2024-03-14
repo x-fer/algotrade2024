@@ -49,16 +49,20 @@ player:
 bots:
   team_name: bots
   team_secret: oiajsdpifjapsndkcapis
-  resource_sum: 1000
-  default_volume: 100
-  min_volume: 20
-  max_volume: 600
+  resource_sum: 20000
+  default_volume: 3000
+  min_volume: 200
+  max_volume: 6000
   min_price: 1
-  max_price: 100
-  max_price_change: 20
+  max_price: 201
   expiration_ticks: 5
-  price_change_coeff: 0.05
-  dataset_price_weight: 0.5
+  price_change_coeff: 0.3
+  dataset_price_weight: 0.85
+  extra_orders: 3
+  extra_orders_price_diff: 0.1
+  extra_orders_volume_diff: 0.2
+  final_volume_multiplier: 1
+  final_price_multiplier: 1
 
 max_energy_per_player: 0.2
 
