@@ -54,7 +54,7 @@ class EnergyPrice(BaseModel):
 @router.post("/game/{game_id}/player/{player_id}/energy/set_price")
 async def energy_set_price_player(price: EnergyPrice,
                                   game: Game = Depends(game_dep),
-                                  player: int = Depends(player_dep)) -> SuccessfulResponse:
+                                  player: Player = Depends(player_dep)) -> SuccessfulResponse:
     if price.price <= 0:
         raise HTTPException(
             status_code=400, detail="Price must be greater than 0")
@@ -174,14 +174,14 @@ async def order_create_player(order: UserOrder,
             status_code=400, detail=f"Expiration tick ({order.expiration_tick}) must be in the future, current_tick ({game.current_tick})")
 
     total_orders_not_processed = await Order.count_player_orders(
-        game_id=game.game_id, 
+        game_id=game.game_id,
         player_id=player.player_id,
         resource=order.resource)
 
     if total_orders_not_processed >= config["player"]["max_orders"]:
         raise HTTPException(
             status_code=400, detail="Maximum 10 orders can be active at a time")
-    
+
     resources = player[order.resource]
     cost = order.price * order.size
     if order.side is OrderSide.SELL and resources < order.size:
@@ -190,7 +190,7 @@ async def order_create_player(order: UserOrder,
     elif order.side is OrderSide.BUY and player.money < cost:
         raise HTTPException(
             status_code=400, detail=f"Not enough money: has ({player.money}), order_cost({cost}) = size({order.size})*price({order.price})")
-    
+
     return await Order.create(
         game_id=game.game_id,
         player_id=player.player_id,
@@ -211,8 +211,8 @@ class OrderCancel(BaseModel):
 
 
 @router.post("/game/{game_id}/player/{player_id}/orders/cancel")
-async def order_cancel_player(body: OrderCancel, 
-                              game: Game = Depends(game_dep), 
+async def order_cancel_player(body: OrderCancel,
+                              game: Game = Depends(game_dep),
                               player: Player = Depends(player_dep)) -> SuccessfulResponse:
     async with database.transaction():
         for order_id in body.ids:

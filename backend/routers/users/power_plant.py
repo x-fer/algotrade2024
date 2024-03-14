@@ -66,6 +66,9 @@ async def sell_plant(plant: PowerPlantTypeData, player: Player = Depends(player_
         plant_count = player[type.name.lower() + "_plants_owned"]
         plant_price = type.get_plant_price(plant_count)
 
+        if plant_count <= 0:
+            raise HTTPException(status_code=400, detail="No plants to sell")
+
         await Player.update(player_id=player_id, money=player.money + round(plant_price * config["power_plant"]["sell_coeff"]))
         await Player.update(player_id=player_id, **{type.name.lower() + "_plants_owned": plant_count - 1})
     return SuccessfulResponse()

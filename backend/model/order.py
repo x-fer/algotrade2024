@@ -21,6 +21,7 @@ class Order(Table):
     tick: int
 
     timestamp: pd.Timestamp
+    resource: Resource | Energy
 
     order_side: OrderSide
     order_type: OrderType = field(default=OrderType.LIMIT)
@@ -32,8 +33,6 @@ class Order(Table):
     filled_price: float = field(default=0)
 
     expiration_tick: int = field(default=1)
-
-    resource: Resource | Energy = field(default=Resource.coal)
 
     def __post_init__(self):
         self.order_side = get_enum(self.order_side, OrderSide)
@@ -51,7 +50,6 @@ class Order(Table):
 
     def __lt__(self, other):  # pragma: no cover
         return self.timestamp < other.timestamp  # pragma: no cover
-
 
     @classmethod
     async def count_player_orders(cls, game_id, player_id, resource: Resource):
@@ -82,7 +80,7 @@ class Order(Table):
         AND players.is_bot IS TRUE
         AND orders.order_status=:order_status
         """
-        values = {"game_id": game_id, 
+        values = {"game_id": game_id,
                   "order_status": OrderStatus.ACTIVE.value}
         result = await database.fetch_all(query, values)
         return [cls(**x) for x in result]
