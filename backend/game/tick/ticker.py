@@ -202,14 +202,14 @@ class Ticker:
                 pending_resource_orders, tick_data.game.current_tick)
 
             tick_data.updated_orders.update(updated)
-        
+
         tick_data.tick_trades = []
         for market in tick_data.markets.values():
             tick_data.tick_trades.extend(
                 market.get_last_tick_trades())
         tick_data.tick_trades = list(map(
             TradeDb.from_trade, tick_data.tick_trades))
-        
+
         return tick_data
 
     def run_power_plants(self, tick_data: TickData) -> TickData:
@@ -239,7 +239,7 @@ class Ticker:
 
         return tick_data, energy_sold
 
-    async def save_electricity_orders(self, game: Game, players: Dict[int, Player], 
+    async def save_electricity_orders(self, game: Game, players: Dict[int, Player],
                                       energy_sold: Dict[int, int], tick: int):
         electricity_orders = []
         for player_id, energy in energy_sold.items():
@@ -272,8 +272,8 @@ class Ticker:
         game_id = tick_data.game.game_id
 
         for resource, market in chain(
-            tick_data.markets.items(),
-            [(Energy.energy.value, tick_data.energy_market)]):
+                tick_data.markets.items(),
+                [(Energy.energy.value, tick_data.energy_market)]):
             price_tracker = market.price_tracker
             await Market.create(
                 game_id=game_id,

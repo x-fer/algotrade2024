@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from db import database
-from model import Player, Team
+from model import Player, Team, PowerPlantType, DatasetData, Resource
 from config import config
 from model.game import Game
 from .dependencies import game_dep, player_dep, check_game_active_dep, team_dep
@@ -107,3 +107,15 @@ async def player_delete(game: Game = Depends(game_dep),
 
     await Player.update(player_id=player.player_id, is_active=False)
     return SuccessfulResponse()
+
+
+class PlayerNetWorth(BaseModel):
+    plants_owned: dict[str, dict[str, int]]
+    money: int
+    resources: dict[str, dict[str, int]]
+    total: int
+
+
+@router.get("/game/{game_id}/player/{player_id}/net_worth")
+async def player_net_worth(player: Player = Depends(player_dep), game: Game = Depends(game_dep)) -> PlayerNetWorth:
+    return await player.get_networth(game)

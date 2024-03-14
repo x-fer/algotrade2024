@@ -38,7 +38,7 @@ class Table:
         return await database.fetch_val(query, kwargs)
 
     @classmethod
-    async def create_many(cls, l: list, col_nums: int=1) -> int:
+    async def create_many(cls, l: list, col_nums: int = 1) -> int:
         if len(l) == 0:
             return 0
 

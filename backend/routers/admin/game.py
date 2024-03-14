@@ -1,3 +1,5 @@
+from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from model import Game, Datasets, Player
@@ -5,6 +7,7 @@ from game.bots import Bots
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List
+from model.team import Team
 from routers.model import SuccessfulResponse
 from db import limiter
 
@@ -98,3 +101,32 @@ async def game_edit(game_id: int, params: EditGameParams) -> SuccessfulResponse:
         **params.dict(exclude_unset=True)
     )
     return SuccessfulResponse()
+
+
+@dataclass
+class NetworthData:
+    team_id: int
+    team_name: str
+    player_id: int
+    player_name: str
+    networth: int
+
+
+@router.get("/game/{game_id}/networth")
+@limiter.exempt
+async def game_networth(game_id: int) -> List[NetworthData]:
+    game = await Game.get(game_id=game_id)
+    players = await Player.list(game_id=game_id)
+
+    team_networths = []
+
+    for player in players:
+        team_networths.append({
+            "team_id": player.team_id,
+            "team_name": (await Team.get(team_id=player.team_id)).team_name,
+            "player_id": player.player_id,
+            "player_name": player.player_name,
+            "networth": (await player.get_networth(game))["total"]
+        })
+
+    return team_networths
