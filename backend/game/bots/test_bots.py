@@ -7,7 +7,7 @@ from .bots import Bots
 import pytest
 from model import Resource, OrderSide
 
-from game.fixtures.fixtures import *
+from fixtures.fixtures import *
 from .resource_bot import BuySellPrice, resource_wanted_sum, min_volume, max_volume, default_volume, min_price, max_price
 
 
@@ -25,6 +25,7 @@ def use_test_bots():
     Bots.bots = {"test": DummyBot_1, "test_2": DummyBot_2}
     yield
     Bots.bots = old_bots
+
 
 @pytest.fixture()
 def use_preset_variables():
@@ -104,7 +105,6 @@ class TestResourceBot:
         for resource in Resource:
             assert resource_sum[resource] == 15
 
-    
     def test_get_volume(self):
         bot = ResourceBot()
 
@@ -121,7 +121,7 @@ class TestResourceBot:
         assert_volumes(volume)
         assert volume.buy_volume < default_volume
         assert volume.sell_volume > default_volume
-        
+
         resource_sum = resource_wanted_sum - 1000000
         volume: BuySellVolume = bot.get_volume(resource_sum)
         assert_volumes(volume)
@@ -129,7 +129,7 @@ class TestResourceBot:
         resource_sum = resource_wanted_sum + 1000000
         volume: BuySellVolume = bot.get_volume(resource_sum)
         assert_volumes(volume)
-    
+
     def test_get_filled_perc(self):
         bot = ResourceBot()
         orders = [get_order(OrderSide.BUY, 10, 100),
@@ -140,7 +140,7 @@ class TestResourceBot:
 
         assert buy_perc == 0.1
         assert sell_perc == 0.2
-        
+
         buy_perc, sell_perc = bot.get_filled_perc([])
 
         assert buy_perc == 0
@@ -159,6 +159,7 @@ def bot():
     bot.last_sell_coeffs[Resource.coal] = 0.5
     return bot
 
+
 @pytest.fixture
 def volume():
     return BuySellVolume(100, 100)
@@ -176,7 +177,7 @@ class TestGetPrice:
     def test_get_price_1_0(self, bot, volume):
         price = bot.get_price(Resource.coal, volume, 1, 0)
         assert_prices(bot, price)
-    
+
     def test_get_price_2(self, bot, volume):
         price = bot.get_price(Resource.coal, volume, 1, 0.2)
         assert_prices(bot, price)
@@ -184,8 +185,9 @@ class TestGetPrice:
         assert_prices(bot, price)
         price = bot.get_price(Resource.coal, volume, 0.3, 0.2)
         assert_prices(bot, price)
-    
-def assert_prices( bot: ResourceBot, price: BuySellPrice):
+
+
+def assert_prices(bot: ResourceBot, price: BuySellPrice):
     assert min_price <= price.buy_price <= max_price
     assert min_price <= price.sell_price <= max_price
     assert 0 < price.buy_price
@@ -194,13 +196,16 @@ def assert_prices( bot: ResourceBot, price: BuySellPrice):
     assert 0 <= bot.last_sell_coeffs[Resource.coal] <= 1
     assert bot.last_sell_coeffs[Resource.coal] >= bot.last_buy_coeffs[Resource.coal]
 
+
 def get_order(order_side, filled_size, size):
     return Order(
         order_id=0, game_id=0, player_id=0, price=0,
-        filled_size=filled_size, size=size, tick=0, 
+        filled_size=filled_size, size=size, tick=0,
         timestamp=datetime.now(),
-        order_side=order_side
+        order_side=order_side,
+        resource=Resource.coal
     )
+
 
 def assert_volumes(volume: BuySellVolume):
     assert min_volume <= volume.buy_volume <= max_volume
