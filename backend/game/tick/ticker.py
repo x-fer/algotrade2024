@@ -4,7 +4,6 @@ import sys
 import traceback
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
-import pandas as pd
 from game.bots.bot import Bot
 from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType
 from game.market import ResourceMarket, EnergyMarket
@@ -99,6 +98,7 @@ class Ticker:
                 if to_wait < 0.1 and game.current_tick > 0:
                     logger.warning(
                         f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}s in tick ({game.current_tick}), catching up or possible overload")
+                    await asyncio.sleep(0.1)
 
                 await asyncio.sleep(to_wait)
 
@@ -151,7 +151,7 @@ class Ticker:
         await self.save_tick_data(tick_data)
         await self.save_market_data(tick_data)
         await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
-
+        tick_data.game.current_tick += 1
         await self.run_bots(tick_data)
 
     async def get_tick_data(self, game: Game) -> TickData:
@@ -249,7 +249,7 @@ class Ticker:
                 player_id=player_id,
                 order_type=OrderType.LIMIT,
                 order_side=OrderSide.SELL,
-                timestamp=pd.Timestamp.now(),
+                timestamp=datetime.now(),
                 order_status=OrderStatus.COMPLETED,
                 price=players[player_id].energy_price,
                 size=energy,

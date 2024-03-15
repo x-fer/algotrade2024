@@ -1,6 +1,4 @@
 from collections import deque
-from typing import List
-import pandas as pd
 from xheap import XHeap
 from functools import reduce
 from model import Order, OrderSide, OrderStatus, OrderType, Trade
@@ -117,7 +115,7 @@ class OrderBook():
         self._invoke_callbacks('on_end_match', self.match_trades)
 
     def _remove_expired(self, tick: int):
-        while self._min_expire_time() is not None and self._min_expire_time().expiration_tick < tick:
+        while self._min_expire_time() is not None and self._min_expire_time().expiration_tick <= tick:
             order: Order = self.expire_heap.peek()
             order.order_status = OrderStatus.EXPIRED
             self._invoke_callbacks('on_order_update', order)

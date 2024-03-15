@@ -1,5 +1,5 @@
+from datetime import datetime
 from typing import Dict
-import pandas as pd
 from game.price_tracker.price_tracker import PriceTracker
 from model import Trade
 from config import config
@@ -38,7 +38,7 @@ class EnergyMarket:
                 filled_price=player.energy_price,
                 filled_size=to_sell,
                 filled_money=to_sell * player.energy_price,
-                tick=pd.Timestamp.now(),
+                tick=datetime.now(),
             ))
 
             orders[player.player_id] = to_sell

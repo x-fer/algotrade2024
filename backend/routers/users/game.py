@@ -1,22 +1,20 @@
-from collections import defaultdict
-from pprint import pprint
+from dataclasses import asdict
+from datetime import datetime, timedelta
 from typing import Dict, List
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from dataclasses import asdict
+
 from model import Game
 from model.dataset_data import DatasetData
 from routers.users.dependencies import game_dep, start_end_tick_dep
-from datetime import datetime, timedelta
-import pandas as pd
-
 
 router = APIRouter()
 
 
 @router.get("/game/time")
 async def server_time() -> datetime:
-    return pd.Timestamp.now()
+    return datetime.now()
 
 
 class GameData(BaseModel):
@@ -47,8 +45,8 @@ async def get_game(game_id: int) -> GameTimeData:
     next_tick_time = game.start_time + \
         timedelta(milliseconds=game.current_tick *
                   game.tick_time)
-    return GameTimeData(**asdict(game),
-                        current_time=pd.Timestamp.now(),
+    return GameTimeData(**asdict(game), 
+                        current_time=datetime.now(),
                         next_tick_time=next_tick_time)
 
 

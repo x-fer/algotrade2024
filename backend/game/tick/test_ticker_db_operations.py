@@ -1,5 +1,3 @@
-from pprint import pprint
-import pandas as pd
 from game.price_tracker.price_tracker import PriceTracker
 import pytest
 from unittest.mock import MagicMock, patch, call
@@ -7,7 +5,6 @@ from datetime import datetime
 from game.market.resource_market import ResourceMarket
 from model import Order, OrderStatus, Resource, OrderSide, OrderType
 from game.tick import Ticker, TickData
-from model.resource import Energy
 from game.tick.tick_fixtures import *
 
 

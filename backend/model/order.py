@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
-from db.table import Table
-import pandas as pd
+from datetime import datetime
 
+from db.db import database
+from db.table import Table
 from model.enum_type import get_enum
+
 from .order_types import OrderSide, OrderStatus, OrderType
 from .resource import Energy, Resource
-from db.db import database
 
 
 @dataclass
@@ -20,13 +21,12 @@ class Order(Table):
     size: int
     tick: int
 
-    timestamp: pd.Timestamp
+    timestamp: datetime
     resource: Resource | Energy
 
     order_side: OrderSide
     order_type: OrderType = field(default=OrderType.LIMIT)
-    order_status: OrderStatus = field(
-        default=OrderStatus.PENDING)
+    order_status: OrderStatus = field(default=OrderStatus.PENDING)
 
     filled_size: int = field(default=0)
     filled_money: int = field(default=0)
@@ -62,12 +62,14 @@ class Order(Table):
         OR order_status=:order_inqueue)
         AND resource=:resource
         """
-        values = {"game_id": game_id,
-                  "player_id": player_id,
-                  "order_active": OrderStatus.ACTIVE.value,
-                  "order_inqueue": OrderStatus.IN_QUEUE.value,
-                  "order_pending": OrderStatus.PENDING.value,
-                  "resource": resource.value}
+        values = {
+            "game_id": game_id,
+            "player_id": player_id,
+            "order_active": OrderStatus.ACTIVE.value,
+            "order_inqueue": OrderStatus.IN_QUEUE.value,
+            "order_pending": OrderStatus.PENDING.value,
+            "resource": resource.value,
+        }
         result = await database.execute(query, values)
         return result
 
@@ -82,6 +84,7 @@ class Order(Table):
         """
         values = {"game_id": game_id,
                   "order_status": OrderStatus.ACTIVE.value}
+        values = {"game_id": game_id, "order_status": OrderStatus.ACTIVE.value}
         result = await database.fetch_all(query, values)
         return [cls(**x) for x in result]
 
@@ -99,10 +102,12 @@ class Order(Table):
             ORDER BY price {asc_desc}, size - filled_size DESC
             LIMIT 1
             """
-            values = {"game_id": game_id,
-                      "order_status": OrderStatus.ACTIVE.value,
-                      "order_side": order_side.value,
-                      "resource": resource.value}
+            values = {
+                "game_id": game_id,
+                "order_status": OrderStatus.ACTIVE.value,
+                "order_side": order_side.value,
+                "resource": resource.value,
+            }
             result = await database.fetch_all(query, values)
             best_orders.extend(result)
 

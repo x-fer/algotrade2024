@@ -92,6 +92,9 @@ class ResourceMarket:
         buyer = self._get_player(buyer_id)
         seller = self._get_player(seller_id)
 
+        if buyer.is_bot and seller.is_bot:
+            logger.warn(f"Trading between two bots: {buyer_id}-{seller_id}, resource {trade.buy_order.resource.name}, size {trade.filled_size}, price {trade.filled_price}")
+
         if not buyer.is_bot:
             buyer.money -= trade.filled_money
             buyer[self.resource.name] += trade.filled_size
