@@ -256,13 +256,13 @@ def test_invalid_callback_type():
     orderbook = OrderBook()
     try:
         orderbook.register_callback('invalid', lambda *kwargs: True)
-        assert False
+        assert False  # pragma: no cover
     except ValueError as e:
         assert str(e) == "Invalid callback type"
 
     orderbook = OrderBook()
     try:
         orderbook.register_callback('on_trade', 42)
-        assert False
+        assert False  # pragma: no cover
     except ValueError as e:
         assert str(e) == "Callback is not callable"

@@ -57,21 +57,6 @@ def test_market_prices():
         assert len(response.json()["COAL"]) == 3
         assert len(response.json()["OIL"]) == 3
 
-# @router.post("/game/{game_id}/player/{player_id}/energy/set_price")
-# async def energy_set_price_player(price: EnergyPrice,
-#                                   game: Game = Depends(game_dep),
-#                                   player: int = Depends(player_dep)) -> SuccessfulResponse:
-#     if price.price <= 0:
-#         raise HTTPException(
-#             status_code=400, detail="Price must be greater than 0")
-
-#     await Player.update(
-#         player_id=player.player_id,
-#         energy_price=price.price
-#     )
-
-#     return SuccessfulResponse()
-
 
 def test_energy_set_price_player():
     # OK
@@ -103,49 +88,6 @@ def test_energy_set_price_player():
         assert mock_player_dep.call_count == 1
         assert mock_update.call_count == 0
 
-
-# class OrderResponse(BaseModel):
-#     order_id: int
-#     player_id: int
-#     price: int
-#     size: int
-#     tick: int
-#     timestamp: pd.Timestamp
-#     order_side: OrderSide
-#     order_status: OrderStatus
-#     filled_size: int
-#     expiration_tick: int
-
-
-# class OrderRestriction(Enum):
-#     bot_orders = "bot"
-#     best_orders = "best"
-#     all_orders = "all"
-
-
-# @router.get("/game/{game_id}/orders")
-# async def order_list(game: Game = Depends(game_dep),
-#                      restriction: OrderRestriction = Query(
-#                          default=OrderRestriction.all_orders),
-#                      ) -> Dict[Resource, List[OrderResponse]]:
-#     if restriction == OrderRestriction.all_orders:
-#         orders = await Order.list(
-#             game_id=game.game_id,
-#             order_status=OrderStatus.ACTIVE.value
-#         )
-#     elif restriction == OrderRestriction.bot_orders:
-#         orders = await Order.list_bot_orders_by_game_id(
-#             game_id=game.game_id,
-#         )
-#     elif restriction == OrderRestriction.best_orders:
-#         best_buy_order = await Order.list_best_orders_by_game_id(
-#             game_id=game.game_id, order_side=OrderSide.BUY
-#         )
-#         best_sell_order = await Order.list_best_orders_by_game_id(
-#             game_id=game.game_id, order_side=OrderSide.SELL
-#         )
-#         orders = best_buy_order + best_sell_order
-#     return orders_to_dict(orders)
 
 def test_order_list():
 
@@ -214,22 +156,6 @@ def test_order_list():
         assert len(response.json()["OIL"]) == 2
 
 
-# @router.get("/game/{game_id}/player/{player_id}/orders")
-# async def order_list_player(game: Game = Depends(game_dep),
-#                             player: Player = Depends(player_dep)
-#                             ) -> Dict[Resource, List[OrderResponse]]:
-#     active_orders = await Order.list(
-#         game_id=game.game_id,
-#         player_id=player.player_id,
-#         order_status=OrderStatus.ACTIVE.value,
-#     )
-#     pending_orders = await Order.list(
-#         game_id=game.game_id,
-#         player_id=player.player_id,
-#         order_status=OrderStatus.PENDING.value,
-#     )
-#     return orders_to_dict(active_orders + pending_orders)
-
 def test_order_list_player():
     with patch("model.Order.list") as mock_list:
         mock_list.return_value = [
@@ -271,3 +197,35 @@ def test_order_get_player():
         assert mock_check_game_active_dep.call_count == 1
         assert mock_player_dep.call_count == 1
         assert response.json()["order_id"] == 1
+
+
+@pytest.mark.asyncio
+async def test_order_create_player():
+    response = client.post("/game/1/player/1/orders/create", json={
+        "resource": "COAL",
+        "price": 10,
+        "size": 10,
+        "side": "BUY",
+    })
+
+    assert response.status_code == 400, response.text
+
+    response = client.post("/game/1/player/1/orders/create", json={
+        "resource": "COAL",
+        "price": 10,
+        "size": 10,
+        "side": "BUY",
+        "expiration_length": -10
+    })
+
+    assert response.status_code == 400, response.text
+
+    response = client.post("/game/1/player/1/orders/create", json={
+        "resource": "COAL",
+        "price": 10,
+        "size": 10,
+        "side": "BUY",
+        "expiration_tick": 0
+    })
+
+    assert response.status_code == 400, response.text

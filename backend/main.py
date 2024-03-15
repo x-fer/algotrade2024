@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from config import config
 from db import database
 from game.tick import Ticker
+from model.player import Player
 from routers import admin_router, users_router
 import psutil
 import os
