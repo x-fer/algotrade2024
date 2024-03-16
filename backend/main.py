@@ -7,12 +7,14 @@ from contextlib import asynccontextmanager
 from config import config
 from db import database
 from game.tick import Ticker
-from model.player import Player
 from routers import admin_router, users_router
 import psutil
 import os
 from logger import logger
 from docs import tags_metadata, description
+
+# used in integration tests, only when single threaded
+tick_event = asyncio.Event()
 
 
 async def background_tasks():
@@ -20,10 +22,16 @@ async def background_tasks():
     children = parent_process.children(
         recursive=True)
 
+    if config["in_tests"]:
+        assert len(children) == 1
+
     if len(children) == 1 or children[1].pid == os.getpid():
         ticker = Ticker()
 
-        await ticker.run_tick_manager()
+        if config["in_tests"]:
+            await ticker.run_tick_manager(tick_event=tick_event)
+        else:
+            await ticker.run_tick_manager()
 
 
 @asynccontextmanager
@@ -73,6 +81,9 @@ async def log_request_middleware(request: Request, call_next):
     formatted_process_time = '{0:.8f}'.format(process_time)
     url = f"{request.url.path}" + \
         (f"?{request.query_params}" if request.query_params else "")
+
+    if request.client is None and config["in_tests"]:
+        return response
 
     # hack, mozda maknuti
     response_body = b""
