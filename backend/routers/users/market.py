@@ -15,7 +15,8 @@ from routers.model import SuccessfulResponse
 from config import config
 
 
-router = APIRouter(dependencies=[Depends(check_game_active_dep)])
+# router = APIRouter(dependencies=[Depends(check_game_active_dep)])
+router = APIRouter(dependencies=[])
 
 
 class MarketPricesResponse(BaseModel):

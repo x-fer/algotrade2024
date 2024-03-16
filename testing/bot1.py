@@ -1,16 +1,11 @@
+from multiprocessing import Pool
+import random
 from time import sleep
 import requests
 from pprint import pprint
 from datetime import datetime, timedelta
 
 url = "http://localhost:8000"
-
-
-def migrate():
-    r = requests.get(url + "/admin/migrate",
-                     params={"admin_secret": "mojkljuc"})
-
-    assert r.status_code == 200
 
 
 def create_team():
@@ -90,6 +85,7 @@ def buy_resources(game_id, player, team_secret, resource, amount):
 
     # @router.post("/game/{game_id}/player/{player_id}/orders/create")
 
+    print()
     pprint(r.json())
 
     coal_sell_orders = [x for x in r.json()[resource]
@@ -130,43 +126,54 @@ def turn_on(game_id, player_id, team_secret, plant_type, number):
     assert r.status_code == 200, r.text
 
 
+def set_energy_price(price, game_id, player_id, team_secret):
+    r = requests.post(url + f"/game/{game_id}/player/{player_id}/energy/set_price",
+                      params={"team_secret": team_secret},
+                      json={"price": price})
+
+    assert r.status_code == 200, r.text
+
+
 def play(game_id, player_id, team_secret):
     while True:
         player = get_player(game_id, player_id, team_secret)
         plant_prices = get_plant_prices(game_id, player_id, team_secret)
 
+        energy_price = random.randint(450, 500)
+        set_energy_price(energy_price, game_id, player_id, team_secret)
+
         print(f"Player COAL: {player['coal']}")
         print(f"Player MONEY: {player['money']}")
 
-        if plant_prices["COAL"]["next_price"] <= player["money"]:
-            # print("Bought coal plant")
-
+        if plant_prices["COAL"]["next_price"] + 20000 <= player["money"]:
             buy_plant(game_id, player_id, team_secret, "COAL")
             continue
 
         if player["coal"] < 30:
-            # print("Bought coal")
-
             buy_resources(game_id, player, team_secret, "COAL", 30)
             sleep(1)
 
             continue
 
-        if player["coal"] > 0:
-            turn_on(game_id, player_id, team_secret,
-                    "COAL", player["coal_plants_owned"])
+        turn_on(game_id, player_id, team_secret,
+                "COAL", player["coal_plants_owned"])
 
         sleep(1)
 
 
-def main():
+def run(x):
     # migrate()
     team_secret = create_team()
-    game_id = make_game()
+    game_id = 4
     player_id = create_player(game_id, team_secret)
 
-    sleep(2)
     play(game_id, player_id, team_secret)
+
+
+def main():
+
+    with Pool(25) as p:
+        p.map(run, range(25))
 
 
 if __name__ == "__main__":

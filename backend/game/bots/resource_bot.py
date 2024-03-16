@@ -77,9 +77,11 @@ class ResourceBot(Bot):
             resource_orders = orders[resource]
             resource_sum = resources_sum[resource]
 
-            filled_buy_perc, filled_sell_perc = self.get_filled_perc(resource_orders)
+            filled_buy_perc, filled_sell_perc = self.get_filled_perc(
+                resource_orders)
             volume = self.get_volume(resource_sum)
-            price = self.get_price(resource, volume, filled_buy_perc, filled_sell_perc)
+            price = self.get_price(
+                resource, volume, filled_buy_perc, filled_sell_perc)
             price = self.get_mixed_price(tick_data, resource, price)
             await self.create_orders(
                 tick_data.game.current_tick, resource, price, volume
@@ -189,7 +191,8 @@ class ResourceBot(Bot):
 
     def mix_dataset_price(self, dataset_row, price, resource: Resource):
         return (
-            dataset_price_weight * dataset_row[resource.name.lower() + "_price"]
+            dataset_price_weight *
+            dataset_row[resource.name.lower() + "_price"]
             + (1 - dataset_price_weight) * price
         )
 
@@ -208,15 +211,15 @@ class ResourceBot(Bot):
                 tick,
                 resource,
                 order_side=OrderSide.BUY,
-                price=int(buy_price * (1 - i* extra_orders_price_diff)),
-                volume=int(buy_volume * (1 - i* extra_orders_volume_diff)),
+                price=int(buy_price * (1 - i * extra_orders_price_diff)),
+                volume=int(buy_volume * (1 - i * extra_orders_volume_diff)),
             )
             await self.create_order(
                 tick,
                 resource,
                 order_side=OrderSide.SELL,
-                price=int(sell_price * (1 + i* extra_orders_price_diff)),
-                volume=int(sell_volume * (1 - i* extra_orders_volume_diff)),
+                price=int(sell_price * (1 + i * extra_orders_price_diff)),
+                volume=int(sell_volume * (1 - i * extra_orders_volume_diff)),
             )
 
     async def create_order(
@@ -240,7 +243,7 @@ class ResourceBot(Bot):
             size=volume,
             order_side=order_side,
             resource=resource,
-            expiration_tick=tick + expiration_ticks,
+            expiration_tick=tick + expiration_ticks + 1,
         )
 
 

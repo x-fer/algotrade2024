@@ -22,7 +22,7 @@ dataset:
   max_ticks_in_request: 100
   
   price_multiplier:
-    coal: 1450
+    coal: 3000
     uranium: 15000
     biomass: 2900
     gas: 2870
@@ -49,8 +49,8 @@ player:
 bots:
   team_name: bots
   team_secret: oiajsdpifjapsndkcapis
-  resource_sum: 20000
-  default_volume: 3000
+  resource_sum: 1000
+  default_volume: 250
   min_volume: 200
   max_volume: 6000
   min_price: 1
