@@ -45,7 +45,7 @@ def create_player(game_id, team_secret):
 
     r = requests.post(url + f"/game/{game_id}/player/create",
                       params={"team_secret": team_secret},
-                      json={"player_name": "test_player"})
+                      json={"player_name": "zvone_bot3000"})
 
     assert r.status_code == 200
 
@@ -86,7 +86,7 @@ def buy_resources(game_id, player, team_secret, resource, amount):
     # @router.post("/game/{game_id}/player/{player_id}/orders/create")
 
     print()
-    pprint(r.json())
+    pprint(r.json()["COAL"])
 
     coal_sell_orders = [x for x in r.json()[resource]
                         if x["order_side"] == "SELL"]
@@ -95,7 +95,8 @@ def buy_resources(game_id, player, team_secret, resource, amount):
         print("No coal to buy")
         return
 
-    cheapest = min([x for x in coal_sell_orders], key=lambda x: x["price"])
+    cheapest = min([x for x in coal_sell_orders],
+                   key=lambda x: x["price"])
 
     can_buy = min(player["money"] // cheapest["price"],
                   amount, cheapest["size"])
@@ -103,7 +104,7 @@ def buy_resources(game_id, player, team_secret, resource, amount):
     if can_buy > 0:
         r = requests.post(url + f"/game/{game_id}/player/{player['player_id']}/orders/create",
                           params={"team_secret": team_secret},
-                          json={"resource": resource, "size": can_buy, "price": cheapest["price"], "side": "BUY", "expiration_length": 10})
+                          json={"resource": resource, "size": can_buy, "price": cheapest["price"] + 50, "side": "BUY", "expiration_length": 10})
         if r.status_code == 200:
             print(f"Placed order for {can_buy} {resource}")
         else:
@@ -136,11 +137,15 @@ def set_energy_price(price, game_id, player_id, team_secret):
 
 def play(game_id, player_id, team_secret):
     while True:
+
         player = get_player(game_id, player_id, team_secret)
         plant_prices = get_plant_prices(game_id, player_id, team_secret)
 
-        energy_price = random.randint(450, 500)
+        energy_price = random.randint(300, 400)
         set_energy_price(energy_price, game_id, player_id, team_secret)
+
+        turn_on(game_id, player_id, team_secret,
+                "COAL", player["coal_plants_owned"])
 
         print(f"Player COAL: {player['coal']}")
         print(f"Player MONEY: {player['money']}")
@@ -155,25 +160,25 @@ def play(game_id, player_id, team_secret):
 
             continue
 
-        turn_on(game_id, player_id, team_secret,
-                "COAL", player["coal_plants_owned"])
-
         sleep(1)
 
 
 def run(x):
     # migrate()
-    team_secret = create_team()
-    game_id = 4
+    team_secret = "C4PIHRN8"
+    game_id = 3
     player_id = create_player(game_id, team_secret)
+    # player_id = 23
 
     play(game_id, player_id, team_secret)
 
 
 def main():
 
-    with Pool(25) as p:
-        p.map(run, range(25))
+    # with Pool(25) as p:
+    #     p.map(run, range(25))
+
+    run(1)
 
 
 if __name__ == "__main__":

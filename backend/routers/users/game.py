@@ -40,12 +40,11 @@ class GameTimeData(GameData):
 
 
 @router.get("/game/{game_id}")
-async def get_game(game_id: int) -> GameTimeData:
-    game = await Game.get(game_id=game_id)
+async def get_game(game: Game = Depends(game_dep)) -> GameTimeData:
     next_tick_time = game.start_time + \
         timedelta(milliseconds=game.current_tick *
                   game.tick_time)
-    return GameTimeData(**asdict(game), 
+    return GameTimeData(**asdict(game),
                         current_time=datetime.now(),
                         next_tick_time=next_tick_time)
 

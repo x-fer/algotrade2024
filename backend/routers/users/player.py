@@ -5,6 +5,7 @@ from db import database
 from model import Player, Team
 from config import config
 from model.game import Game
+from model.order import Order
 from .dependencies import game_dep, player_dep, check_game_active_dep, team_dep
 from routers.model import SuccessfulResponse
 
@@ -74,6 +75,11 @@ async def player_create(game: Game = Depends(game_dep),
         if game.is_contest and team_players >= 1:
             raise HTTPException(
                 400, "Only one player per team can be created in contest mode")
+
+        if team_players >= config["player"]["max_players_per_team"]:
+            raise HTTPException(
+                400, "Maximum number of players per team reached")
+
         team_id = team.team_id
         game_id = game.game_id
 
@@ -116,6 +122,30 @@ class PlayerNetWorth(BaseModel):
     total: int
 
 
-@router.get("/game/{game_id}/player/{player_id}/net_worth")
+@router.get("/game/{game_id}/player/{player_id}/networth")
 async def player_net_worth(player: Player = Depends(player_dep), game: Game = Depends(game_dep)) -> PlayerNetWorth:
     return await player.get_networth(game)
+
+
+@router.get("/game/{game_id}/player/{player_id}/reset")
+async def player_reset(game: Game = Depends(game_dep),
+                       team: Team = Depends(team_dep),
+                       player: Player = Depends(player_dep)) -> SuccessfulResponse:
+
+    if game.is_contest:
+        raise HTTPException(
+            400, "Players cannot be reset in contest mode")
+
+    fields = {
+        x: 0
+        for x in Player.__dataclass_fields__.keys()
+        if x not in ["player_id", "player_name", "game_id", "team_id", "is_active", "is_bot", "table_name"]
+    }
+    fields["money"] = config["player"]["starting_money"]
+    fields["energy_price"] = 1e9
+
+    async with database.transaction():
+        await Player.update(player_id=player.player_id, **fields)
+        await Order.cancel_player_orders(player_id=player.player_id)
+
+    return SuccessfulResponse()

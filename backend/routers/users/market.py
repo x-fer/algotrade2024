@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
+from model.resource import Energy
 from model.trade import TradeDb
 from pydantic import BaseModel
 from model import Order, OrderSide, OrderType, OrderStatus, Resource
@@ -31,8 +32,9 @@ class MarketPricesResponse(BaseModel):
 
 @router.get("/game/{game_id}/market/prices")
 async def market_prices(start_end=Depends(start_end_tick_dep),
-                        resource: Resource = Query(default=None),
-                        game: Game = Depends(game_dep)) -> Dict[Resource, List[MarketPricesResponse]]:
+                        resource: Resource | Energy = Query(default=None),
+                        game: Game = Depends(game_dep)
+                        ) -> Dict[Resource | Energy, List[MarketPricesResponse]]:
     start_tick, end_tick = start_end
 
     all_prices = await Market.list_by_game_id_where_tick(
@@ -172,6 +174,12 @@ async def order_create_player(order: UserOrder,
     if order.expiration_tick <= game.current_tick:
         raise HTTPException(
             status_code=400, detail=f"Expiration tick ({order.expiration_tick}) must be in the future, current_tick ({game.current_tick})")
+    if order.price <= 0:
+        raise HTTPException(
+            status_code=400, detail=f"Price ({order.price}) must be greater than 0")
+    if order.size <= 0:
+        raise HTTPException(
+            status_code=400, detail=f"Size ({order.size}) must be greater than 0")
 
     total_orders_not_processed = await Order.count_player_orders(
         game_id=game.game_id,
@@ -216,14 +224,23 @@ async def order_cancel_player(body: OrderCancel,
                               player: Player = Depends(player_dep)) -> SuccessfulResponse:
     async with database.transaction():
         for order_id in body.ids:
-            if (await Order.get(order_id=order_id)).player_id != player.player_id:
+            order_to_cancel = await Order.get(order_id=order_id)
+            if order_to_cancel.player_id != player.player_id:
                 raise HTTPException(
                     status_code=400, detail="You can only cancel your own orders")
-
-            await Order.update(
-                order_id=order_id,
-                order_status=OrderStatus.USER_CANCELLED.value
-            )
+            elif order_to_cancel.order_status == OrderStatus.PENDING.value:
+                await Order.update(
+                    order_id=order_id,
+                    order_status=OrderStatus.CANCELLED.value
+                )
+            elif order_to_cancel.order_status == OrderStatus.ACTIVE.value:
+                await Order.update(
+                    order_id=order_id,
+                    order_status=OrderStatus.USER_CANCELLED.value
+                )
+            else:
+                raise HTTPException(
+                    status_code=400, detail="Only pending or active orders can be cancelled")
     return SuccessfulResponse()
 
 

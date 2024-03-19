@@ -297,6 +297,14 @@ async def run_migrations():
                     row["OIL_PRICE"] // 1_000_000),
             ))
             tick += 1
+
+        for x in dataset_data:
+            assert x.coal_price > -config["bots"]["min_price"]
+            assert x.uranium_price > -config["bots"]["min_price"]
+            assert x.biomass_price > -config["bots"]["min_price"]
+            assert x.gas_price > -config["bots"]["min_price"]
+            assert x.oil_price > -config["bots"]["min_price"]
+
         await DatasetData.create_many(dataset_data)
         logger.info(f"Added dataset {x}")
     logger.info("Migrated database")

@@ -18,7 +18,6 @@ min_price = config["bots"]["min_price"]
 max_price = config["bots"]["max_price"]
 price_change_coeff = config["bots"]["price_change_coeff"]
 expiration_ticks = config["bots"]["expiration_ticks"]
-dataset_price_weight = config["bots"]["dataset_price_weight"]
 extra_orders = config["bots"]["extra_orders"]
 extra_orders_price_diff = config["bots"]["extra_orders_price_diff"]
 extra_orders_volume_diff = config["bots"]["extra_orders_volume_diff"]
@@ -190,11 +189,7 @@ class ResourceBot(Bot):
         )
 
     def mix_dataset_price(self, dataset_row, price, resource: Resource):
-        return (
-            dataset_price_weight *
-            dataset_row[resource.name.lower() + "_price"]
-            + (1 - dataset_price_weight) * price
-        )
+        return dataset_row[resource.name.lower() + "_price"] + price
 
     async def create_orders(
         self, tick, resource: Resource, price: BuySellPrice, volume: BuySellVolume
@@ -206,21 +201,38 @@ class ResourceBot(Bot):
         if buy_price == sell_price:
             sell_price = buy_price + 1
 
+        buy_volume_sum = 0
+        sell_volume_sum = 0
         for i in range(extra_orders+1):
+            buy_volume_sum += self.get_i_price(1, i)
+            sell_volume_sum += self.get_i_price(1, i)
+        if buy_volume_sum <= 0 or sell_volume_sum <= 0:
+            logger.warn("Total sum of distributed orders is less than 0")
+            return
+
+        for i in range(extra_orders+1):
+            new_buy_volume = self.get_i_price(buy_volume, i) / buy_volume_sum
+            new_sell_volume = self.get_i_price(
+                sell_volume, i) / sell_volume_sum
+            new_buy_price = buy_price * (1 - i * extra_orders_price_diff)
+            new_sell_price = sell_price * (1 + i * extra_orders_price_diff)
             await self.create_order(
                 tick,
                 resource,
                 order_side=OrderSide.BUY,
-                price=int(buy_price * (1 - i * extra_orders_price_diff)),
-                volume=int(buy_volume * (1 - i * extra_orders_volume_diff)),
+                price=int(new_buy_price),
+                volume=int(new_buy_volume),
             )
             await self.create_order(
                 tick,
                 resource,
                 order_side=OrderSide.SELL,
-                price=int(sell_price * (1 + i * extra_orders_price_diff)),
-                volume=int(sell_volume * (1 - i * extra_orders_volume_diff)),
+                price=int(new_sell_price),
+                volume=int(new_sell_volume),
             )
+
+    def get_i_price(self, x, i):
+        return x * (1 - i * extra_orders_volume_diff)
 
     async def create_order(
         self, tick, resource: Resource, order_side: OrderSide, price: int, volume: int
@@ -228,10 +240,10 @@ class ResourceBot(Bot):
         logger.debug(
             f"({self.game_id}) Bot creating orders {tick=}, {order_side.value} {resource=}, {price=}"
         )
-        if price < 0:
+        if price <= 0:
             logger.warn(f"Volume ({volume}) is less than 0!")
             return
-        if price < 0:
+        if price <= 0:
             logger.warn(f"Price ({price}) is less than 0!")
             return
         await Order.create(

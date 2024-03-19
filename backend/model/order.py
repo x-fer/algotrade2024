@@ -52,6 +52,27 @@ class Order(Table):
         return self.timestamp < other.timestamp  # pragma: no cover
 
     @classmethod
+    async def cancel_player_orders(cls, player_id):
+        query = f"""
+        UPDATE {cls.table_name}
+        SET order_status=:new_order_status
+        WHERE player_id=:player_id 
+        AND order_status=:order_status
+        """
+        values = {
+            "player_id": player_id,
+            "new_order_status": OrderStatus.USER_CANCELLED,
+            "order_status": OrderStatus.ACTIVE,
+        }
+        await database.fetch_val(query, values)
+        values = {
+            "player_id": player_id,
+            "new_order_status": OrderStatus.PENDING,
+            "order_status": OrderStatus.CANCELLED,
+        }
+        await database.fetch_val(query, values)
+
+    @classmethod
     async def count_player_orders(cls, game_id, player_id, resource: Resource):
         query = f"""
         SELECT COUNT(*) FROM {cls.table_name}

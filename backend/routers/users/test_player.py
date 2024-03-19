@@ -153,7 +153,7 @@ def test_player_net_worth():
 
     with patch("routers.users.player.Player.get_networth") as mock_get_networth:
         mock_get_networth.return_value = sample_return
-        response = client.get(f"/game/1/player/1/net_worth?team_secret=secret")
+        response = client.get(f"/game/1/player/1/networth?team_secret=secret")
 
         assert mock_get_networth.call_count == 1
 
