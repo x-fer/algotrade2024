@@ -106,7 +106,7 @@ class Player(Table):
             }
 
         data = (await DatasetData.list_by_game_id_where_tick(
-            game.dataset_id, game.game_id, game.total_ticks - 1, game.total_ticks - 1))[0]
+            game.dataset_id, game.game_id, game.current_tick - 1, game.current_tick - 1))[0]
 
         for resource in Resource:
             final_price = data[f"{resource.name.lower()}_price"]

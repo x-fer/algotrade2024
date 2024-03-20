@@ -124,6 +124,10 @@ class PlayerNetWorth(BaseModel):
 
 @router.get("/game/{game_id}/player/{player_id}/networth")
 async def player_net_worth(player: Player = Depends(player_dep), game: Game = Depends(game_dep)) -> PlayerNetWorth:
+    if game.current_tick == 0:
+        raise HTTPException(
+            400, "Game has not started yet or first tick has not been processed")
+
     return await player.get_networth(game)
 
 
