@@ -104,8 +104,7 @@ class Player(Table):
             value = 0
 
             for i in range(1, getattr(self, f"{type.lower()}_plants_owned") + 1):
-                value += round(type.get_plant_price(i) *
-                               config["power_plant"]["sell_coeff"])
+                value += type.get_sell_price(i)
 
             net_worth["plants_owned"][type.lower()] = {
                 "owned": getattr(self, f"{type.lower()}_plants_owned"),
