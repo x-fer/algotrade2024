@@ -22,6 +22,7 @@ class Order(Table):
     tick: int
 
     timestamp: datetime
+    resource: Resource | Energy
 
     order_side: OrderSide
     order_type: OrderType = field(default=OrderType.LIMIT)
@@ -32,8 +33,6 @@ class Order(Table):
     filled_price: float = field(default=0)
 
     expiration_tick: int = field(default=1)
-
-    resource: Resource | Energy = field(default=Resource.coal)
 
     def __post_init__(self):
         self.order_side = get_enum(self.order_side, OrderSide)
@@ -51,6 +50,27 @@ class Order(Table):
 
     def __lt__(self, other):  # pragma: no cover
         return self.timestamp < other.timestamp  # pragma: no cover
+
+    @classmethod
+    async def cancel_player_orders(cls, player_id):
+        query = f"""
+        UPDATE {cls.table_name}
+        SET order_status=:new_order_status
+        WHERE player_id=:player_id 
+        AND order_status=:order_status
+        """
+        values = {
+            "player_id": player_id,
+            "new_order_status": OrderStatus.USER_CANCELLED,
+            "order_status": OrderStatus.ACTIVE,
+        }
+        await database.fetch_val(query, values)
+        values = {
+            "player_id": player_id,
+            "new_order_status": OrderStatus.PENDING,
+            "order_status": OrderStatus.CANCELLED,
+        }
+        await database.fetch_val(query, values)
 
     @classmethod
     async def count_player_orders(cls, game_id, player_id, resource: Resource):
@@ -83,6 +103,8 @@ class Order(Table):
         AND players.is_bot IS TRUE
         AND orders.order_status=:order_status
         """
+        values = {"game_id": game_id,
+                  "order_status": OrderStatus.ACTIVE.value}
         values = {"game_id": game_id, "order_status": OrderStatus.ACTIVE.value}
         result = await database.fetch_all(query, values)
         return [cls(**x) for x in result]

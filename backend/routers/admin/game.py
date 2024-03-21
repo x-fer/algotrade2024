@@ -116,6 +116,11 @@ class NetworthData:
 @limiter.exempt
 async def game_networth(game_id: int) -> List[NetworthData]:
     game = await Game.get(game_id=game_id)
+
+    if game.current_tick == 0:
+        raise HTTPException(
+            400, "Game has not started yet or first tick has not been processed")
+
     players = await Player.list(game_id=game_id)
 
     team_networths = []

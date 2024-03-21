@@ -12,5 +12,5 @@ def team_secret(request: Request):
     return param
 
 
-limiter = Limiter(key_func=team_secret, default_limits=["3/second"],
+limiter = Limiter(key_func=team_secret, default_limits=["100000/second"],  # TODO: vrati na 3
                   storage_uri=f"redis://localhost:{config['redis']['port']}/0")

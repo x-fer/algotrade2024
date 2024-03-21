@@ -37,7 +37,7 @@ class ResourceMarket:
             try:
                 self.orderbook.cancel_order(order.order_id)
             except ValueError as e:
-                logger.warn(
+                logger.warning(
                     f"Error cancelling order for order_id {order.order_id}: {e}")
                 order.order_status = OrderStatus.CANCELLED
                 self._update_order(order)
@@ -50,7 +50,7 @@ class ResourceMarket:
             try:
                 self.orderbook.add_order(order)
             except ValueError as e:
-                logger.warn(
+                logger.warning(
                     f"Error adding order for order_id {order.order_id}: {e}")
         self.orderbook.match(tick)
 
@@ -93,7 +93,7 @@ class ResourceMarket:
         seller = self._get_player(seller_id)
 
         if buyer.is_bot and seller.is_bot:
-            logger.warn(f"Trading between two bots: {buyer_id}-{seller_id}, resource {trade.buy_order.resource.name}, size {trade.filled_size}, price {trade.filled_price}")
+            logger.warning(f"Trading between two bots: {buyer_id}-{seller_id}, resource {trade.buy_order.resource.name}, size {trade.filled_size}, price {trade.filled_price}")
 
         if not buyer.is_bot:
             buyer.money -= trade.filled_money
@@ -107,7 +107,7 @@ class ResourceMarket:
         if self.players is None:
             raise ValueError("Players dictionary not set")
         if player_id not in self.players:
-            logger.warn(f"Player with id {player_id} not in dictionary")
+            logger.warning(f"Player with id {player_id} not in dictionary")
             return None
         return self.players[player_id]
 

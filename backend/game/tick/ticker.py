@@ -30,8 +30,9 @@ class Ticker:
     def __init__(self):
         self.game_data: Dict[int, GameData] = {}
         self.game_futures: Dict[int, asyncio.Future] = {}
+        self.tick_event = None
 
-    async def run_tick_manager(self, iters=None):
+    async def run_tick_manager(self, iters=None, tick_event=None):
         for i in range(iters or sys.maxsize):
             games = await Game.list()
 
@@ -43,7 +44,7 @@ class Ticker:
                     continue
 
                 if game.game_id not in self.game_data:
-                    await self.start_game(game)
+                    await self.start_game(game, tick_event=None)
                     continue
 
             await asyncio.sleep(0.1)
@@ -61,7 +62,8 @@ class Ticker:
             logger.critical(
                 f"Failed ending game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
 
-    async def start_game(self, game: Game):
+    async def start_game(self, game: Game, tick_event=None):
+        self.tick_event = tick_event
         try:
             logger.info(
                 f"Starting game ({game.game_id}) {game.game_name}")
@@ -83,6 +85,10 @@ class Ticker:
         for i in range(iters or sys.maxsize):
             game = await Game.get(game_id=game.game_id)
             try:
+                if self.tick_event is not None:
+                    await self.tick_event.wait()
+                    self.tick_event.clear()
+
                 if game.current_tick >= game.total_ticks:
                     await self.end_game(game)
                     return

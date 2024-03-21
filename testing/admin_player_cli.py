@@ -85,7 +85,7 @@ def create_game():
     )
 
     if response.status_code != 200:
-        print("Error " + response.status_code)
+        print("Error ", response.status_code)
     pprint(response.json())
 
 

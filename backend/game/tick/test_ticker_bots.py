@@ -4,7 +4,9 @@ from datetime import datetime
 from game.tick import Ticker, GameData
 from model import Game
 from game.bots import ResourceBot
-from game.fixtures.fixtures import *
+from fixtures.fixtures import *
+from game.bots import ResourceBot
+from fixtures.fixtures import *
 
 
 @pytest.mark.asyncio

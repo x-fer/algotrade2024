@@ -1,6 +1,6 @@
 from copy import deepcopy
 import pytest
-from game.fixtures.fixtures import *
+from fixtures.fixtures import *
 from model.order_types import OrderSide, OrderStatus
 
 
@@ -18,7 +18,6 @@ def test_run_markets_no_match(get_tick_data, get_order, ticker, get_player, coal
 
     player_dict = get_player_dict([player1, player2])
 
-    
     markets = get_markets(player_dict)
 
     tick_data = get_tick_data(

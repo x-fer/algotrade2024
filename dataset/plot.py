@@ -4,6 +4,7 @@ import sys
 
 df = pd.read_csv(sys.argv[1])
 
+
 # Date as index
 df["date"] = pd.to_datetime(df["date"])
 df = df.set_index("date")
@@ -17,3 +18,6 @@ for col in df.columns:
     df[col].plot()
     plt.title(col)
     plt.show()
+
+    # plt.savefig(f"ivan/{col}.png")
+    # plt.clf()

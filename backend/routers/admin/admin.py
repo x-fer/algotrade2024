@@ -23,6 +23,12 @@ async def migrate() -> SuccessfulResponse:
     return SuccessfulResponse()
 
 
+@router.get("/tick_all_games")
+@limiter.exempt
+async def tick_all_games() -> SuccessfulResponse:
+    return SuccessfulResponse()
+
+
 router.include_router(player.router)
 router.include_router(dataset.router)
 router.include_router(game.router)

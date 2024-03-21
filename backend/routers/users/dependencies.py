@@ -21,7 +21,7 @@ async def game_dep(game_id: int) -> Game:
         raise HTTPException(status_code=403, detail="Invalid game_id")
 
 
-async def check_game_active_dep(game: Game = Depends(game_dep)):
+async def check_game_active_dep(game: Game = Depends(game_dep)) -> None:
     if game.is_finished:
         raise HTTPException(403, "Game is already finished")
     if datetime.now() < game.start_time:

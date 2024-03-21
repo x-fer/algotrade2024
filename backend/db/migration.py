@@ -218,20 +218,20 @@ async def run_migrations():
 
     logger.info("Filling datasets")
     datasets_path = config["dataset"]["datasets_path"]
-    for x in os.listdir(datasets_path):
-        if not x.endswith(".csv"):
+    for dataset in os.listdir(datasets_path):
+        if not dataset.endswith(".csv"):
             continue
         try:
-            await Datasets.get(dataset_name=x)
-            logger.debug(f"Dataset {x} already created")
+            await Datasets.get(dataset_name=dataset)
+            logger.debug(f"Dataset {dataset} already created")
             continue
         except:
             pass
 
-        df = pd.read_csv(f"{datasets_path}/{x}")
+        df = pd.read_csv(f"{datasets_path}/{dataset}")
 
         # TODO: asserts, async transaction - ne zelimo da se dataset kreira ako faila kreiranje redaka
-        dataset_id = await Datasets.create(dataset_name=x, dataset_description="Opis")
+        dataset_id = await Datasets.create(dataset_name=dataset, dataset_description="Opis")
 
         price_multipliers = config["dataset"]["price_multiplier"]
         energy_output_multipliers = config["dataset"]["energy_output_multiplier"]
@@ -297,6 +297,14 @@ async def run_migrations():
                     row["OIL_PRICE"] // 1_000_000),
             ))
             tick += 1
+
+        for x in dataset_data:
+            assert x.coal_price > -config["bots"]["min_price"]
+            assert x.uranium_price > -config["bots"]["min_price"]
+            assert x.biomass_price > -config["bots"]["min_price"]
+            assert x.gas_price > -config["bots"]["min_price"]
+            assert x.oil_price > -config["bots"]["min_price"]
+
         await DatasetData.create_many(dataset_data)
-        logger.info(f"Added dataset {x}")
+        logger.info(f"Added dataset {dataset}")
     logger.info("Migrated database")

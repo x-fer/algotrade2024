@@ -22,45 +22,45 @@ dataset:
   max_ticks_in_request: 100
   
   price_multiplier:
-    coal: 1450
-    uranium: 15000
-    biomass: 2900
-    gas: 2870
-    oil: 2900
-    energy: 500
+    coal: 2400
+    uranium: 30000
+    biomass: 6000
+    gas: 6070
+    oil: 6000
+    energy: 50
 
   energy_output_multiplier:
-    coal: 15
-    uranium: 160
-    biomass: 30
-    gas: 30
-    oil: 30
-    geothermal: 3
-    wind: 1
-    solar: 1
-    hydro: 2
+    coal: 150
+    uranium: 1600
+    biomass: 300
+    gas: 300
+    oil: 300
+    geothermal: 30
+    wind: 10
+    solar: 10
+    hydro: 20
 
-  energy_demand_multiplier: 55100
+  energy_demand_multiplier: 30000
 
 player:
-  starting_money: 350000
+  max_players_per_team: 10
+  starting_money: 1500000
   max_orders: 10
 
 bots:
   team_name: bots
   team_secret: oiajsdpifjapsndkcapis
-  resource_sum: 20000
-  default_volume: 3000
-  min_volume: 200
-  max_volume: 6000
-  min_price: 1
-  max_price: 201
+  resource_sum: 1000
+  default_volume: 200
+  min_volume: 50
+  max_volume: 400
+  min_price: -100
+  max_price: 100
   expiration_ticks: 5
   price_change_coeff: 0.3
-  dataset_price_weight: 0.85
-  extra_orders: 3
-  extra_orders_price_diff: 0.1
-  extra_orders_volume_diff: 0.2
+  extra_orders: 5
+  extra_orders_price_diff: 0.01
+  extra_orders_volume_diff: 0.1
   final_volume_multiplier: 1
   final_price_multiplier: 1
 
@@ -77,7 +77,7 @@ power_plant:
     biomass: 968000
     gas: 970400
     oil: 968000
-    geothermal: 450000
-    wind: 150000
-    solar: 150000
-    hydro: 300000
+    geothermal: 400000
+    wind: 100000
+    solar: 100000
+    hydro: 250000

@@ -30,7 +30,7 @@ class Market(Table):
         return await super().create(*args, col_nums=0, **kwargs)
 
     @classmethod
-    async def list_by_game_id_where_tick(cls, game_id, min_tick, max_tick, resource=None):
+    async def list_by_game_id_where_tick(cls, game_id, min_tick, max_tick, resource: Resource | Energy = None):
         resource_query = "" if resource is None else " AND resource=:resource"
         query = f"""
         SELECT * FROM {cls.table_name} 

@@ -26,6 +26,13 @@ class PowerPlantType(str, Enum):
     def get_plant_price(self, power_plant_count: int):
         return int(self.get_base_price() * (1 + config["power_plant"]["price_coeff"] * power_plant_count))
 
+    def get_sell_price(self, power_plant_count: int):
+        plant_price = self.get_plant_price(power_plant_count - 1)
+        sell_plant_price = round(
+            plant_price * config["power_plant"]["sell_coeff"])
+
+        return sell_plant_price
+
     def get_produced_energy(self, dataset_row: dict):
         return dataset_row[self.get_name()]
 
@@ -97,8 +104,7 @@ class Player(Table):
             value = 0
 
             for i in range(1, getattr(self, f"{type.lower()}_plants_owned") + 1):
-                value += round(type.get_plant_price(i) *
-                               config["power_plant"]["sell_coeff"])
+                value += type.get_sell_price(i)
 
             net_worth["plants_owned"][type.lower()] = {
                 "owned": getattr(self, f"{type.lower()}_plants_owned"),
@@ -106,7 +112,7 @@ class Player(Table):
             }
 
         data = (await DatasetData.list_by_game_id_where_tick(
-            game.dataset_id, game.game_id, game.total_ticks - 1, game.total_ticks - 1))[0]
+            game.dataset_id, game.game_id, game.current_tick - 1, game.current_tick - 1))[0]
 
         for resource in Resource:
             final_price = data[f"{resource.name.lower()}_price"]

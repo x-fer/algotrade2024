@@ -1,6 +1,6 @@
 import asyncio
 import time
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
@@ -13,16 +13,25 @@ import os
 from logger import logger
 from docs import tags_metadata, description
 
+# used in integration tests, only when single threaded
+tick_event = asyncio.Event()
+
 
 async def background_tasks():
     parent_process = psutil.Process(os.getppid())
     children = parent_process.children(
         recursive=True)
 
+    if config["in_tests"]:
+        assert len(children) == 1
+
     if len(children) == 1 or children[1].pid == os.getpid():
         ticker = Ticker()
 
-        await ticker.run_tick_manager()
+        if config["in_tests"]:
+            await ticker.run_tick_manager(tick_event=tick_event)
+        else:
+            await ticker.run_tick_manager()
 
 
 @asynccontextmanager
@@ -73,13 +82,23 @@ async def log_request_middleware(request: Request, call_next):
     url = f"{request.url.path}" + \
         (f"?{request.query_params}" if request.query_params else "")
 
+    if request.client is None and config["in_tests"]:
+        return response
+
+    # hack, mozda maknuti
+    response_body = b""
+    async for chunk in response.body_iterator:
+        response_body += chunk
+
     message = (f"{request.client.host}:{request.client.port} - "
                f"\"{request.method} {url}\" "
                f"[{response.status_code}], "
                f"completed in: {formatted_process_time}ms, "
-               f"request body: {body}")
+               f"request body: {body}"
+               f"response body: {response_body.decode()}")
     asyncio.create_task(log_request(message))
-    return response
+    return Response(content=response_body, status_code=response.status_code,
+                    headers=dict(response.headers), media_type=response.media_type)
 
 
 @app.get("/", include_in_schema=False)
