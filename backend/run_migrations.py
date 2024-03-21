@@ -14,7 +14,7 @@ async def main():
         try:
             await migration.run_migrations()
         except:
-            logger.warn("Migration script failed, dropping tables...")
+            logger.warning("Migration script failed, dropping tables...")
             await migration.drop_tables()
             await migration.run_migrations()
 

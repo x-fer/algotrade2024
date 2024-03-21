@@ -61,12 +61,12 @@ class ResourceBot(Bot):
         ):
             # for resource in Resource:
             #     if order_count[resource] == 0:
-            #         logger.warn(f"Game ({tick_data.game.game_id}) No orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
+            #         logger.warning(f"Game ({tick_data.game.game_id}) No orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
             return
 
         # for resource in Resource:
         #     if order_count[resource] > 0:
-        #         logger.warn(f"Game ({tick_data.game.game_id}) Duplicate orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
+        #         logger.warning(f"Game ({tick_data.game.game_id}) Duplicate orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}")
 
         self.last_tick = tick_data.game.current_tick
         resources_sum = self.get_resources_sum(tick_data)
@@ -207,7 +207,7 @@ class ResourceBot(Bot):
             buy_volume_sum += self.get_i_price(1, i)
             sell_volume_sum += self.get_i_price(1, i)
         if buy_volume_sum <= 0 or sell_volume_sum <= 0:
-            logger.warn("Total sum of distributed orders is less than 0")
+            logger.warning("Total sum of distributed orders is less than 0")
             return
 
         for i in range(extra_orders+1):
@@ -241,10 +241,10 @@ class ResourceBot(Bot):
             f"({self.game_id}) Bot creating orders {tick=}, {order_side.value} {resource=}, {price=}"
         )
         if price <= 0:
-            logger.warn(f"Volume ({volume}) is less than 0!")
+            logger.warning(f"Volume ({volume}) is less than 0!")
             return
         if price <= 0:
-            logger.warn(f"Price ({price}) is less than 0!")
+            logger.warning(f"Price ({price}) is less than 0!")
             return
         await Order.create(
             game_id=self.game_id,

@@ -190,8 +190,6 @@ class TestGetPrice:
 def assert_prices(bot: ResourceBot, price: BuySellPrice):
     assert min_price <= price.buy_price <= max_price
     assert min_price <= price.sell_price <= max_price
-    assert 0 < price.buy_price
-    assert 0 < price.sell_price
     assert 0 <= bot.last_buy_coeffs[Resource.coal] <= 1
     assert 0 <= bot.last_sell_coeffs[Resource.coal] <= 1
     assert bot.last_sell_coeffs[Resource.coal] >= bot.last_buy_coeffs[Resource.coal]

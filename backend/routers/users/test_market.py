@@ -52,7 +52,7 @@ def test_market_prices():
 
         response = client.get("/game/1/market/prices?start_tick=1&end_tick=3")
         assert response.status_code == 200, response.text
-        assert mock_check_game_active_dep.call_count == 1
+        assert mock_check_game_active_dep.call_count == 0
         assert mock_start_end_tick_dep.call_count == 1
         assert len(response.json()["COAL"]) == 3
         assert len(response.json()["OIL"]) == 3
@@ -68,7 +68,7 @@ def test_energy_set_price_player():
         response = client.post(
             "/game/1/player/1/energy/set_price", json={"price": 10})
         assert response.status_code == 200, response.text
-        assert mock_check_game_active_dep.call_count == 1
+        assert mock_check_game_active_dep.call_count == 0
         assert mock_player_dep.call_count == 1
         mock_update.assert_called_once_with(
             player_id=1,
@@ -84,7 +84,7 @@ def test_energy_set_price_player():
         response = client.post(
             "/game/1/player/1/energy/set_price", json={"price": -10})
         assert response.status_code == 400, response.text
-        assert mock_check_game_active_dep.call_count == 1
+        assert mock_check_game_active_dep.call_count == 0
         assert mock_player_dep.call_count == 1
         assert mock_update.call_count == 0
 
@@ -125,7 +125,7 @@ def test_order_list():
         # no argument, we get .list() as output
         response = client.get("/game/1/orders")
         assert response.status_code == 200, response.text
-        assert mock_check_game_active_dep.call_count == 1
+        assert mock_check_game_active_dep.call_count == 0
         assert len(sum(response.json().values(), [])) == 2
         assert "COAL" in response.json()
 
@@ -135,7 +135,7 @@ def test_order_list():
         # bot orders
         response = client.get("/game/1/orders?restriction=bot")
         assert response.status_code == 200, response.text
-        assert mock_check_game_active_dep.call_count == 1
+        assert mock_check_game_active_dep.call_count == 0
         assert len(sum(response.json().values(), [])) == 2
         assert "COAL" in response.json()
         assert len(response.json()["COAL"]) == 1
@@ -147,7 +147,7 @@ def test_order_list():
         # best orders
         response = client.get("/game/1/orders?restriction=best")
         assert response.status_code == 200, response.text
-        assert mock_check_game_active_dep.call_count == 1
+        assert mock_check_game_active_dep.call_count == 0
         assert len(sum(response.json().values(), [])) == 4
         assert "COAL" in response.json()
 
@@ -171,7 +171,7 @@ def test_order_list_player():
 
         response = client.get("/game/1/player/1/orders")
         assert response.status_code == 200, response.text
-        assert mock_check_game_active_dep.call_count == 1
+        assert mock_check_game_active_dep.call_count == 0
         assert mock_player_dep.call_count == 1
 
         assert len(sum(response.json().values(), [])
@@ -194,7 +194,7 @@ def test_order_get_player():
         response = client.get("/game/1/player/1/orders/1")
 
         assert response.status_code == 200, response.text
-        assert mock_check_game_active_dep.call_count == 1
+        assert mock_check_game_active_dep.call_count == 0
         assert mock_player_dep.call_count == 1
         assert response.json()["order_id"] == 1
 

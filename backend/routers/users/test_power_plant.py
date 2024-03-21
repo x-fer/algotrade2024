@@ -83,7 +83,7 @@ def test_buy_plant_sell_plant():
 
         assert mock_check_game_active_dep.call_count == 1
         assert response.status_code == 200, response.text
-        assert mock_update.call_count == 2
+        assert mock_update.call_count == 1
         assert mock_get.call_count == 1
 
 

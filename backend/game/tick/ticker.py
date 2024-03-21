@@ -30,6 +30,7 @@ class Ticker:
     def __init__(self):
         self.game_data: Dict[int, GameData] = {}
         self.game_futures: Dict[int, asyncio.Future] = {}
+        self.tick_event = None
 
     async def run_tick_manager(self, iters=None, tick_event=None):
         for i in range(iters or sys.maxsize):
