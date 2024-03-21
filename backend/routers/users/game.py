@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from model import Game
 from model.dataset_data import DatasetData
@@ -20,15 +20,19 @@ async def server_time() -> datetime:
 class GameData(BaseModel):
     game_id: int
     game_name: str
-    is_contest: bool
-    start_time: datetime
+    is_contest: bool = Field(..., description="True if game is either a contest or a competition round. False if it is a normal game")
+    start_time: datetime = Field(..., description="Exact time at which this game starts")
     total_ticks: int
-    tick_time: int
-    current_tick: int
-    is_finished: bool
+    tick_time: int = Field(..., description="Time in milliseconds between ticks")
+    current_tick: int = Field(..., description="Current tick in this game")
+    is_finished: bool = Field(..., description="True if the game is finished")
 
 
-@router.get("/game/list")
+@router.get(
+    "/game/list",
+    summary="List all available games.",
+    response_description="List of games",
+)
 async def game_list() -> List[GameData]:
     games = await Game.list()
     return games
@@ -36,22 +40,25 @@ async def game_list() -> List[GameData]:
 
 class GameTimeData(GameData):
     current_time: datetime
-    next_tick_time: datetime
+    next_tick_time: datetime = Field(..., description="Exact time when next tick begins")
 
 
-@router.get("/game/{game_id}")
+@router.get(
+    "/game/{game_id}",
+    summary="Current time on server and time of the next tick in this game.",
+)
 async def get_game(game: Game = Depends(game_dep)) -> GameTimeData:
-    next_tick_time = game.start_time + \
-        timedelta(milliseconds=game.current_tick *
-                  game.tick_time)
-    return GameTimeData(**asdict(game),
-                        current_time=datetime.now(),
-                        next_tick_time=next_tick_time)
+    next_tick_time = game.start_time + timedelta(
+        milliseconds=game.current_tick * game.tick_time
+    )
+    return GameTimeData(
+        **asdict(game), current_time=datetime.now(), next_tick_time=next_tick_time
+    )
 
 
 class DatasetListResponseItem(BaseModel):
-    tick: int
-    date: str
+    tick: int = Field(..., description="In game tick when this data was used")
+    date: datetime = Field(..., description="Time when this measurment took place in the real world. Year is not accurate")
     coal: int
     uranium: int
     biomass: int
@@ -61,13 +68,20 @@ class DatasetListResponseItem(BaseModel):
     wind: int
     solar: int
     hydro: int
-    energy_demand: int
-    max_energy_price: int
+    energy_demand: int = Field(..., description="Volume of energy that was demanded in the tick")
+    max_energy_price: int = Field(..., description="Maximum price at which energy was tried to be bought in the tick")
+
+    def __post_init__(self):
+        self.date.year = 2012
 
 
-@router.get("/game/{game_id}/dataset")
-async def dataset_list(start_end=Depends(start_end_tick_dep),
-                       game: Game = Depends(game_dep)) -> Dict[int, DatasetListResponseItem]:
+@router.get(
+    "/game/{game_id}/dataset",
+    summary="Get power plant production rates for all resources and energy demand for previous ticks.",
+)
+async def dataset_list(
+    start_end=Depends(start_end_tick_dep), game: Game = Depends(game_dep)
+) -> Dict[int, DatasetListResponseItem]:
     start_tick, end_tick = start_end
 
     all_entries = await DatasetData.list_by_game_id_where_tick(
@@ -78,7 +92,6 @@ async def dataset_list(start_end=Depends(start_end_tick_dep),
     )
     all_entries_dict = {}
     for entry in all_entries:
-        entry.date = str(entry.date)
         all_entries_dict[entry.tick] = entry
 
     return all_entries_dict

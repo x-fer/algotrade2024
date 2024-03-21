@@ -1,3 +1,12 @@
+short_description = """
+Docs for Algotrade hackathon - the biggest hackathon in Zagreb.
+
+**FAQ**: In case of any questions, ping organizers in discord or in person!
+
+**IMPORTANT**: Each team will get a team_id. Make sure to send it as a query
+parameter in all requests you send!
+"""
+
 description = """
 Docs for Algotrade hackathon - the biggest hackathon in Zagreb.
 
@@ -64,35 +73,13 @@ parameter in all requests you send!
 
 """
 
-game_desc = """
-Here you can see avaliable games.
-"""
+game_desc = "Here you can see avaliable games."
 
-player_desc = """
-You will be able to
-- Create player in a game
-- Get all created players in a game
-- Get player info - player resources, money, power plants etc.
-"""
+player_desc = "Manage players in games for your team and get their current info."
 
-market_desc = """
-You can:
-- Create buy and sell orders for resources that will be matched
-at the end of every tick.
-- List your orders and cancel ones you do not longer need
-- Set your price for produced electricity
+market_desc = "Create buy and sell orders for resources, list orders and set price for electricity."
 
-"""
-
-power_plant_desc = """
-You can:
-- Buy more power plants
-- Sell power plants
-- You can process at most the number of resources per tick
-as you have power plants of that type
-- You can also buy and sell renewables that will produce
-energy passively
-"""
+power_plant_desc = "Buy or sell power plants and turn them on or off."
 
 tags_metadata = [
     {

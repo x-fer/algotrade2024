@@ -1,9 +1,7 @@
 from typing import Any
-from databases import Database
 from dataclasses import fields, asdict
 from .db import database
 from enum import Enum
-from logger import logger
 
 
 class Table:
