@@ -11,7 +11,7 @@ from routers import admin_router, users_router
 import psutil
 import os
 from logger import logger
-from docs import tags_metadata, description
+from docs import tags_metadata, short_description
 
 # used in integration tests, only when single threaded
 tick_event = asyncio.Event()
@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Algotrade API",
     version="0.0.1",
-    description=description,
+    description=short_description,
     openapi_tags=tags_metadata,
     lifespan=lifespan,
     # docs_url=None
