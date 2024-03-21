@@ -181,8 +181,8 @@ class UserOrder(BaseModel):
     resource: Resource = Field(..., description="resource you are buying or selling")
     price: int = Field(..., description="price per unit of resource you are buying or selling")
     size: int = Field(..., description="ammount of resource you want to buy or sell")
-    expiration_tick: Optional[int]  = Field(..., description="exact tick in which this order will expire")
-    expiration_length: Optional[int] = Field(..., description= "number of ticks from now when this order will expire")
+    expiration_tick: Optional[int]  = Field(None, description="exact tick in which this order will expire")
+    expiration_length: Optional[int] = Field(None, description= "number of ticks from now when this order will expire")
     side: OrderSide = Field(..., description="BUY if you want to buy a resource, SELL if you want to sell it")
 
 
