@@ -51,7 +51,7 @@ async def get_game(game: Game = Depends(game_dep)) -> GameTimeData:
 
 class DatasetListResponseItem(BaseModel):
     tick: int
-    date: str
+    date: datetime
     coal: int
     uranium: int
     biomass: int
@@ -63,6 +63,9 @@ class DatasetListResponseItem(BaseModel):
     hydro: int
     energy_demand: int
     max_energy_price: int
+    
+    def __post_init__(self):
+        self.date.year = 2012
 
 
 @router.get("/game/{game_id}/dataset")
@@ -78,7 +81,6 @@ async def dataset_list(start_end=Depends(start_end_tick_dep),
     )
     all_entries_dict = {}
     for entry in all_entries:
-        entry.date = str(entry.date)
         all_entries_dict[entry.tick] = entry
 
     return all_entries_dict

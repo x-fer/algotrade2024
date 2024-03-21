@@ -1,7 +1,8 @@
-from pprint import pprint
-from db.table import Table
 from dataclasses import dataclass
+from datetime import datetime
+
 from db.db import database
+from db.table import Table
 
 
 @dataclass
@@ -10,7 +11,7 @@ class DatasetData(Table):
 
     dataset_data_id: int
     dataset_id: int
-    date: str
+    date: datetime
     tick: int
 
     coal: int
