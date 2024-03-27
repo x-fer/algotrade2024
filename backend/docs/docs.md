@@ -3,13 +3,19 @@
 
 Algotrade hackathon game rules and technical details.
 
+In case of any questions, ping organizers in discord or in person!
+
 ## Table of contents
 1. [Task description](#task)
     1. [Resource market](#resource_market)
     1. [Power plants](#resource_market)
-    1. [Electricity market](#resource_market)
+    1. [Electricity market](#electricity_market)
 1. [Ticks](#ticks)
 1. [Rounds and scoring](#games)
+1. [Api](#api)
+1. [Appendix](#extra)
+    1. [Order matching example](#order_matching)
+    1. [Bot orders mechanics](#bot_orders)
 
 ## Task description <a name="task"></a>
 
@@ -40,7 +46,7 @@ Order is defined by:
 - order price: price per unit of resource you are selling (not the total price of the order)
 - expiration tick: tick in the game when this order expires
 
-### Matching engine
+### Matching engine <a name="matching_engine"></a>
 
 will place the orders by the time of arrival - as if they were evaluated real time. They are evalueated at the end of the tick for performance reasons. 
 
@@ -49,9 +55,87 @@ will place the orders by the time of arrival - as if they were evaluated real ti
 
 If during this process there are two orders with the same price, engine will look for the first one. If no matching order is found, placed order will be saved by engine for later matching, until it expires.
 
-When orders match, price of the first order is set as trade price. Then the engine checks if the selling player has enough resources and if buying player has enough money. If not, the respective order is cancelled. Otherwise, both order sizes are reduced until one of them is filled. One that is not filled is matched again.
+When orders match, price of the first order is set as trade price. Then the engine checks if the selling player has enough resources and if buying player has enough money. If not, the respective order is cancelled. Otherwise, both order sizes are reduced until one of them is filled. One that is not filled is matched again. See [example](#matching_example).
 
-### Matching example
+<img src="./match.drawio.svg" style="width:390px;height:250px;">
+
+### Bot orders
+
+Every 5 ticks, our bots create new resource orders (both buy and sell). Price is determined by dataset and [pricing mechanic](#bot_orders). Volume is set to keep players total resources constant. For example if players colectively have a lot of resources, our bots will have bigger buy volume, but smaller sell volume.
+
+## Power plants <a name="power_plants"></a>
+
+There are two types of power plants: renewable and non renewable.
+
+Every power plant you buy of one type makes the next one more expensive. You can also sell them at 70% of their original price.
+
+### Non renewable
+
+Non renewables require resources to run, but produce a lot of stable electricity. You can set how much resources of each type you want to burn. But you cannot burn more resources than power plants of that type that you have. 1 resource burned = 1 power plant is on.
+
+### Renewable
+
+Renewable always produce electricity following the dataset. However, renewables produce less electricity and less reliably. You can use modeling to predict how much they will produce, since every tick is one hour in dataset, which means that one day is 24 ticks.
+For example, solar plants will produce more electricity during daytime.
+
+## Energy market <a name="energy_market"></a>
+
+Energy market is simpler than resource market. You will set the price for your electricity. Our market will have certain volume of electricity each tick (electricity demand) and the maximum price at which it will buy electricity. It will look for cheapest electricity from players and buy as much as it can. If it is not filled, it will look for more. If two players have the same price, we will sell it proportionaly to the electricity they produced.
+
+## Ticks <a name="ticks"></a>
+
+In one tick players can create new orders and do other requests.
+
+At the end of tick following things happen in this order:
+
+1) Resource orders are added to match engine in time order, and 
+then matched on the price-time priority
+
+1) Power plants consume set ammount of resources and then
+produces electricity
+
+1) Energy agent buys players energy on price priority
+    - If you have energy that is not sold to energy agent, it is destroyed!
+So make sure you produce the right amount of energy
+
+<img src="./tick.drawio.svg" style="width:450px;height:200px;">
+
+
+## Rounds and scoring <a name="games"></a>
+
+There will be multiple games during hackathon.
+
+- One game will be open all night long for testing your bots.
+
+- There will be **three competition** rounds lasting for 30 minutes. These 
+rounds will be scored and they have annotation is_contest=True.
+
+- Around one hour before each competition round, we will start a **test round** that will simulate contest. They will also last 30 minutes, have the same limitations, but will not be scored. We encourage you to use your best bots here to promote good competition, however don't have to since these rounds aren't scored. These rounds will also have annotation is_contest=True.
+
+You will be able to differentiate between competition and test rounds by names.
+
+### Limitations
+
+Normal round lasts all night long and may be reset a few times. You may have 10 bots in one game and can reset their money balance. Ticks in these games are longer so you can see more easily what is happening.
+
+In contest rounds (including both test and competition rounds), ticks last one second, and your team is limited to one bot. You can not reset the balance of this bot! So make sure everything goes as planned and that you don't waste your resources and money.
+
+All games will use different datasets.
+
+### Scoring
+
+You are scored by your players net worth. This is calculated as sum of sell prices of every power plant you have plus money you have plus value of resources you own in current market.
+
+## Api <a name="api"></a>
+
+See [api docs](/docs).
+
+**Important** Each team will get a team_id. Make sure to send it as a query
+parameter in all requests you send!
+
+## Appendix
+
+### Order matching example <a name="matching_example"></a>
 
 The table below is showing already placed orders for coal resource.
 
@@ -95,54 +179,17 @@ Order 6 is matched with order 5 with price $280 and size 100. Both orders 5 and 
 |4| BUY | $270 | 100 |
 |3| SELL | $290 | 300 |
 
-### Bot orders
+### Bot orders mechanics <a name="bot_orders"></a>
 
-Our bots place orders on the market. They are supposed to controll the market
+**Constants in this explanation may be changed**
 
-## Ticks <a name="ticks"></a>
+This mechanism is done for each resource seperately.
 
-Game is split into many ticks.
-In one tick players can create new orders and do other requests.
+Bot total volume is set between 100 and 400. If players have 10000 resources, then both sell and buy volume will be 200. If players have more total resources than 10000, buy volume will be reduced linearly, and sell will be increased linearly. Same is done otherwise.
 
-At the end of tick following things happen in this order:
+Price is taken directly from dataset for the tick (about 1000-3000 per resource), but some bot coefficient is added. This coefficient is between -100 and 100. It is different for buy and for sell, so it is possible that buy and sell prices from bots are much apart.
+Buy coefficient is bigger if last bot buy orders (those from previous 5 ticks) were sold well - if they were more filled. If previous buy orders weren't traded at all, it means that bot price is too high and that it should lower it.
+It is done the same for sell orders but in different direction.
+If final bot buy is higher than final bot sell, then the new price is calculated as weighted (by already calculated bot buy and sell volume) of these two prices. Then these prices are equal, and sell price is increased by 1 - so that bot doesn't sell resources to itself.
 
-1) Resource orders are added to match engine in time order, and 
-then matched on price-time priority.
-
-1) Power plants consume set ammount of resources and then
-produces electricity
-
-1) Energy agent buys players energy on price priority
-
-1) If you have energy that is not sold to energy agent, it is destroyed!
-So make sure you produce the right amount of energy
-
-Every 5 ticks, our agents create new orders:
-
-1) Resource agents create new resource orders (both buy and sell)
-
-1) Energy agent sets new price and demand for electricity
-
-
-**FAQ**: In case of any questions, ping organizers in discord or in person!
-
-**IMPORTANT**: Each team will get a team_id. Make sure to send it as a query
-parameter in all requests you send!
-
-
-
-
-
-
-
-
-
-## Technical details <a name="games"></a>
-
-- One game will be open all night long for testing your bots.
-
-- There will be three competition rounds lasting for 30 minutes. These 
-rounds will be scored and they have annotation is_contest=True.
-
-- Before these competition rounds, we will start test rounds that will 
-simulate contest. They will also last 30 minutes, but will not be scored.
+Once the price and volume is determined, bot *disperses* the orders. It creates many smaller orders totaling in volume to the calculated volume from before, but with small variations in pricing from the original (about 1%).
