@@ -45,7 +45,7 @@ def play():
         print(f"Player MONEY: {player['money']}")
 
         # if we can buy a plant we buy it (20000 is some slack to get resources)
-        if plant_prices["COAL"]["next_price"] + 20000 <= player["money"]:
+        if plant_prices["COAL"]["next_price"] + 2_000_000 <= player["money"]:
             r = api.buy_plant("COAL")
             assert r.status_code == 200, r.text
             continue
@@ -68,7 +68,10 @@ def play():
 
             # size is min what can be bought, we don't want to buy more than 50, and we can't buy more than we can afford
             size = min(size, 50 - player["coal"],
-                       player["money"] // cheapest_price)
+                       int(player["money"] // cheapest_price))
+
+            if size == 0:
+                continue
 
             print("buying resources")
             print(f"Cheapest price: {cheapest_price}, size: {size}")
