@@ -24,7 +24,7 @@ class PowerPlantType(str, Enum):
         return config["power_plant"]["base_prices"][self.get_name()]
 
     def get_plant_price(self, power_plant_count: int):
-        return int(self.get_base_price() * (1 + config["power_plant"]["price_coeff"] * power_plant_count))
+        return int(self.get_base_price() * (1 + 0.03 * (power_plant_count ** 2) + 0.1 * power_plant_count))
 
     def get_sell_price(self, power_plant_count: int):
         plant_price = self.get_plant_price(power_plant_count - 1)

@@ -13,8 +13,10 @@ def test_get_base_price():
 
 
 def test_get_plant_price():
-    assert PowerPlantType.COAL.get_plant_price(
-        2) == config["power_plant"]["base_prices"]["coal"] * (1 + config["power_plant"]["price_coeff"] * 2)
+    assert PowerPlantType.COAL.get_plant_price(2) >\
+        PowerPlantType.COAL.get_plant_price(0)
+    assert PowerPlantType.COAL.get_plant_price(0) ==\
+        PowerPlantType.COAL.get_base_price()
 
 
 def test_get_produced_energy():

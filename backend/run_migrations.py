@@ -9,7 +9,7 @@ async def main():
     if config['testing']:
         await migration.drop_tables()
         await migration.run_migrations()
-        await migration.fill_tables()
+        await migration.fill_dummy_tables()
     else:
         try:
             await migration.run_migrations()

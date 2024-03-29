@@ -98,10 +98,10 @@ def main():
 
         df = pd.read_csv(dataset_path)
 
-        df = df[500:1800]
+        df = df[:1800]
 
         # for resource in ["COAL", "URANIUM", "BIOMASS", "GAS", "OIL", "WIND", "SOLAR", "HYDRO"]:
-        for resource in ["URANIUM"]:
+        for resource in ["SOLAR"]:
             money = start_money
             burned_total = 0
             has_plants = 0
@@ -113,8 +113,8 @@ def main():
                 max_energy_price = (x["MAX_ENERGY_PRICE"] *
                                     price_multiplier["energy"] // 1000000)
 
-                energy_price = max_energy_price * 0.90
-                # energy_price = np.random.randint(45, 50)
+                # energy_price = max_energy_price * 0.90
+                energy_price = np.random.randint(400, 500)
 
                 energy_output = energy_output_multiplier[
                     resource.lower()
