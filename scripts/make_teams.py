@@ -1,5 +1,6 @@
 import requests
 from datetime import datetime, timedelta
+from pprint import pprint
 
 URL = "localhost:8000"
 ADMIN_SECRET = "mojkljuc"
@@ -34,11 +35,22 @@ def make_team(team):
                       json=team, params={"admin_secret": ADMIN_SECRET})
     assert r.status_code == 200, r.text
 
+    print(f"Team {team['team_name']} created")
+    pprint(r.json())
+
 
 def make_game(game):
     r = requests.post(f"http://{URL}/admin/game/create",
                       json=game, params={"admin_secret": ADMIN_SECRET})
     assert r.status_code == 200, r.text
+
+
+def list_games():
+    r = requests.get(f"http://{URL}/admin/game/list",
+                     params={"admin_secret": ADMIN_SECRET})
+    assert r.status_code == 200, r.text
+    print("Games:")
+    pprint(r.json())
 
 
 if __name__ == "__main__":
@@ -60,3 +72,5 @@ if __name__ == "__main__":
         del game["dataset_name"]
 
         make_game(game)
+
+    list_games()

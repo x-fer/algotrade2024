@@ -5,172 +5,94 @@ import requests
 from pprint import pprint
 from datetime import datetime, timedelta
 
-url = "http://localhost:8000"
+from algotrade_api import AlgotradeApi
 
 
-def create_team():
-    r = requests.post(url + "/admin/team/create",
-                      params={"admin_secret": "mojkljuc"},
-                      json={"team_name": "test_team", "team_secret": "mojkljuc"})
+url = "localhost:8000"
 
-    assert r.status_code == 200
+team_secret = "CCLL0FGQ"
+game_id = 1
+player_id = -1  # we will get this later
 
-    r = requests.get(url + "/admin/team/list",
-                     params={"admin_secret": "mojkljuc"})
-
-    team_secret = [x["team_secret"]
-                   for x in r.json() if x["team_name"] == "test_team"][0]
-
-    return team_secret
+api = AlgotradeApi(url, team_secret, game_id, player_id)
 
 
-def make_game():
-    now = datetime.now() + timedelta(seconds=1)
-    r = requests.post(url + "/admin/game/create",
-                      params={"admin_secret": "mojkljuc"},
-                      json={"game_name": "test_game", "contest": False, "dataset_id": "1", "total_ticks": 1800, "tick_time": 1000, "start_time": now.isoformat()})
-
-    assert r.status_code == 200
-
-    r = requests.get(url + "/admin/game/list",
-                     params={"admin_secret": "mojkljuc"})
-
-    game_id = [x["game_id"]
-               for x in r.json() if x["game_name"] == "test_game"][0]
-
-    return game_id
-
-
-def create_player(game_id, team_secret):
-
-    r = requests.post(url + f"/game/{game_id}/player/create",
-                      params={"team_secret": team_secret},
-                      json={"player_name": "zvone_bot3000"})
-
-    assert r.status_code == 200
-
-    return r.json()["player_id"]
-
-
-def get_player(game_id, player_id, team_secret):
-    r = requests.get(url + f"/game/{game_id}/player/{player_id}",
-                     params={"team_secret": team_secret})
-
-    assert r.status_code == 200, r.text
-
-    return r.json()
-
-
-def get_plant_prices(game_id, player_id, team_secret):
-    r = requests.get(url + f"/game/{game_id}/player/{player_id}/plant/list",
-                     params={"team_secret": team_secret})
-
-    assert r.status_code == 200, r.text
-
-    return r.json()
-
-
-def buy_plant(game_id, player_id, team_secret, plant_type):
-    r = requests.post(url + f"/game/{game_id}/player/{player_id}/plant/buy",
-                      params={"team_secret": team_secret},
-                      json={"type": plant_type})
-
-    assert r.status_code == 200, r.text
-
-
-def buy_resources(game_id, player, team_secret, resource, amount):
-    # /game/{game_id}/orders
-    r = requests.get(url + f"/game/{game_id}/orders",
-                     params={"team_secret": team_secret, "restrictions": "all"})
-
-    # @router.post("/game/{game_id}/player/{player_id}/orders/create")
-
-    print()
-    pprint(r.json()["COAL"])
-
-    coal_sell_orders = [x for x in r.json()[resource]
-                        if x["order_side"] == "SELL"]
-
-    if len(coal_sell_orders) == 0:
-        print("No coal to buy")
-        return
-
-    cheapest = min([x for x in coal_sell_orders],
-                   key=lambda x: x["price"])
-
-    can_buy = min(player["money"] // cheapest["price"],
-                  amount, cheapest["size"])
-
-    if can_buy > 0:
-        r = requests.post(url + f"/game/{game_id}/player/{player['player_id']}/orders/create",
-                          params={"team_secret": team_secret},
-                          json={"resource": resource, "size": can_buy, "price": cheapest["price"] + 50, "side": "BUY", "expiration_length": 10})
-        if r.status_code == 200:
-            print(f"Placed order for {can_buy} {resource}")
-        else:
-            print(r.text)
-    else:
-        print("No resources to buy")
-
-# class PowerOn(BaseModel):
-#     type: PowerPlantType
-#     number: int
-
-
-# @router.post("/game/{game_id}/player/{player_id}/plant/on")
-
-def turn_on(game_id, player_id, team_secret, plant_type, number):
-    r = requests.post(url + f"/game/{game_id}/player/{player_id}/plant/on",
-                      params={"team_secret": team_secret},
-                      json={"type": plant_type, "number": number})
-
-    assert r.status_code == 200, r.text
-
-
-def set_energy_price(price, game_id, player_id, team_secret):
-    r = requests.post(url + f"/game/{game_id}/player/{player_id}/energy/set_price",
-                      params={"team_secret": team_secret},
-                      json={"price": price})
-
-    assert r.status_code == 200, r.text
-
-
-def play(game_id, player_id, team_secret):
+def play():
     while True:
+        # tick time is 1 second
+        sleep(1)
 
-        player = get_player(game_id, player_id, team_secret)
-        plant_prices = get_plant_prices(game_id, player_id, team_secret)
+        # we get our player stats
+        r = api.get_player()
+        assert r.status_code == 200, r.text
+        player = r.json()
 
-        energy_price = random.randint(300, 400)
-        set_energy_price(energy_price, game_id, player_id, team_secret)
+        # we get the plant prices if we want to buy a plant
+        r = api.get_plant_prices()
+        assert r.status_code == 200, r.text
+        plant_prices = r.json()
 
-        turn_on(game_id, player_id, team_secret,
-                "COAL", player["coal_plants_owned"])
+        # we set the energy price to sell our energy, if it's higher than the market, it won't sell
+        energy_price = random.randint(400, 500)
+        r = api.set_energy_price(energy_price)
+        assert r.status_code == 200, r.text
+
+        # we turn on as many plants as we can burn coal this turn
+        t = api.turn_on("COAL", player["coal_plants_owned"])
+        assert r.status_code == 200, r.text
 
         print(f"Player COAL: {player['coal']}")
         print(f"Player MONEY: {player['money']}")
 
+        # if we can buy a plant we buy it (20000 is some slack to get resources)
         if plant_prices["COAL"]["next_price"] + 20000 <= player["money"]:
-            buy_plant(game_id, player_id, team_secret, "COAL")
+            r = api.buy_plant("COAL")
+            assert r.status_code == 200, r.text
             continue
 
+        # if we can't buy a plant we buy resources
         if player["coal"] < 30:
-            buy_resources(game_id, player, team_secret, "COAL", 30)
-            sleep(1)
+            # list available market orders
+            r = api.get_orders()
+            assert r.status_code == 200, r.text
+
+            orders = r.json()["COAL"]
+
+            # filter for only sell orders
+            orders = [order for order in orders if order["order_side"] == "SELL"]
+
+            # find the cheapest order
+            cheapest = sorted(orders, key=lambda x: x["price"])[0]
+            cheapest_price = cheapest["price"]
+            size = cheapest["size"]
+
+            # size is min what can be bought, we don't want to buy more than 50, and we can't buy more than we can afford
+            size = min(size, 50 - player["coal"],
+                       player["money"] // cheapest_price)
+
+            print("buying resources")
+            print(f"Cheapest price: {cheapest_price}, size: {size}")
+
+            r = api.create_order("COAL", cheapest_price + 10,
+                                 size, "BUY", expiration_length=10)
+            assert r.status_code == 200, r.text
 
             continue
-
-        sleep(1)
 
 
 def run(x):
-    # migrate()
-    team_secret = "C4PIHRN8"
-    game_id = 3
-    player_id = create_player(game_id, team_secret)
-    # player_id = 23
+    # each game, we must create a new player
+    # in contest mode, we can make only one
+    r = api.create_player("bot1")
+    assert r.status_code == 200, r.text
 
-    play(game_id, player_id, team_secret)
+    print("Player created")
+    pprint(r.json())
+
+    player_id = r.json()["player_id"]
+
+    api.set_player_id(player_id)
+    play()
 
 
 def main():
