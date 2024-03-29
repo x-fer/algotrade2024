@@ -101,7 +101,7 @@ def main():
         df = df[:1800]
 
         # for resource in ["COAL", "URANIUM", "BIOMASS", "GAS", "OIL", "WIND", "SOLAR", "HYDRO"]:
-        for resource in ["SOLAR"]:
+        for resource in ["WIND"]:
             money = start_money
             burned_total = 0
             has_plants = 0
