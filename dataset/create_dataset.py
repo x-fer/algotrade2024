@@ -127,17 +127,12 @@ groups = df.groupby("split")
 
 
 def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
-
     # scale to 0 1
     df = df * (1 / df.mean())
 
     new_df = pd.DataFrame(columns=["date", "COAL", "URANIUM", "BIOMASS", "GAS", "OIL",
                                    "GEOTHERMAL", "WIND", "SOLAR", "HYDRO", "ENERGY_DEMAND", "MAX_ENERGY_PRICE"])
-
     new_df["date"] = df.index.to_series()
-
-    # all in kW
-    # COAL:
 
     def mavg_noise(box_size, size):
         return np.convolve(np.ones(box_size) / box_size,
@@ -145,30 +140,39 @@ def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
             0, 1, size + box_size-1),
             mode="valid")
 
-    new_df["COAL"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
-    new_df["URANIUM"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
-    new_df["BIOMASS"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
-    new_df["GAS"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
-    new_df["OIL"] = 1_000_000 + mavg_noise(24, len(df)) * 2000
+    def norm_col(col):
+        return col / col.mean()
+    
+    def linear(col):
+        end = 0.1 * len(col) / 1800
+        col = col + np.linspace(0, end, len(col))
+        return norm_col(col)
 
-    new_df["GEOTHERMAL"] = 1_000_000 * df["Rain"]
-    new_df["WIND"] = 1_000_000 * df["Wind"]
-    new_df["SOLAR"] = 1_000_000 * df["UV"]
-    new_df["HYDRO"] = 1_000_000 * df["River"]
+    new_df["COAL"] = mavg_noise(24, len(df)) * 0.02
+    new_df["URANIUM"] = mavg_noise(24, len(df)) * 0.02
+    new_df["BIOMASS"] = mavg_noise(24, len(df)) * 0.02
+    new_df["GAS"] = mavg_noise(24, len(df)) * 0.02
+    new_df["OIL"] = mavg_noise(24, len(df)) * 0.02
 
-    new_df["ENERGY_DEMAND"] = 1_000_000 * df["Energy"]
-    new_df["MAX_ENERGY_PRICE"] = 1_000_000 * df["Energy"]
+    new_df["GEOTHERMAL"] = df["Rain"]
+    new_df["WIND"] = df["Wind"]
+    new_df["SOLAR"] = df["UV"]
+    new_df["HYDRO"] = df["River"]
 
-    new_df["COAL_PRICE"] = df["COAL_PRICE"] * 1_000_000
-    new_df["URANIUM_PRICE"] = df["URANIUM_PRICE"] * 1_000_000
-    new_df["BIOMASS_PRICE"] = df["BIOMASS_PRICE"] * 1_000_000
-    new_df["GAS_PRICE"] = df["GAS_PRICE"] * 1_000_000
-    new_df["OIL_PRICE"] = df["OIL_PRICE"] * 1_000_000
+    new_df["ENERGY_DEMAND"] = df["Energy"]
+    new_df["MAX_ENERGY_PRICE"] = norm_col(0.3 + 0.6*1/df["Energy"] + 0.1*1/df["Energy"]**2)
+
+    new_df["COAL_PRICE"] = linear(df["COAL_PRICE"])
+    new_df["URANIUM_PRICE"] = linear(df["URANIUM_PRICE"])
+    new_df["BIOMASS_PRICE"] = linear(df["BIOMASS_PRICE"])
+    new_df["GAS_PRICE"] = linear(df["GAS_PRICE"])
+    new_df["OIL_PRICE"] = linear(df["OIL_PRICE"])
 
     for col in new_df.columns:
         # make int
         if col == "date":
             continue
+        new_df[col] *= 1_000_000
         new_df[col] = new_df[col].apply(lambda x: int(x))
         new_df[col] = new_df[col].astype(int)
 
@@ -177,7 +181,7 @@ def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
         if col == "date":
             continue
 
-        plt.plot(new_df[col], label=col)
+        # plt.plot(new_df[col], label=col)
         l.append(new_df[col].sum())
 
     # plt.title("Dataset outputs")
@@ -189,9 +193,16 @@ def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
     # plt.legend()
     # plt.show()
 
+    # plt.plot(new_df["COAL_PRICE"], label="COAL")
+    # plt.plot(new_df["URANIUM_PRICE"], label="URANIUM")
+    # plt.plot(new_df["BIOMASS_PRICE"], label="BIO")
+    # plt.plot(new_df["GAS_PRICE"], label="GAS")
+    # plt.plot(new_df["OIL_PRICE"], label="OIL")
+    # plt.legend()
+
+    # plt.plot(new_df["ENERGY_DEMAND"][:1800])
     # plt.plot(new_df["MAX_ENERGY_PRICE"])
-    # plt.plot(new_df["ENERGY_DEMAND"].apply(lambda x: x / 10000))
-    # plt.title("MAX_ENERGY_PRICE vs DEMAND")
+    # plt.title("PRICES")
     # plt.show()
 
     return new_df

@@ -1,51 +1,64 @@
+from collections import defaultdict
 from datetime import datetime
 from typing import Dict
 from game.price_tracker.price_tracker import PriceTracker
 from model import Trade
 from config import config
 from model.player import Player
+from logger import logger
+
+
+max_energy_per_player = config["player"]["max_energy_per_player"]
 
 
 class EnergyMarket:
-
     def __init__(self):
         self.price_tracker = PriceTracker()
+        self.orders = {}
+        self.trades = []
 
     def match(self, players: Dict[int, Player], demand: int, max_price: int) -> Dict[int, int]:
-        players_sorted = sorted(players.values(), key=lambda x: x.energy_price)
-        players_sorted = [
-            player for player in players_sorted if player.energy_price <= max_price]
+        max_per_player = int(demand * max_energy_per_player)
+        def get_energy(player: Player):
+            return max_per_player if player.energy > max_per_player else player.energy
 
-        max_per_player = int(demand * config["max_energy_per_player"])
+        players_grouped: list[Player] = defaultdict(list)
+        for player in players.values():
+            if player.energy_price <= max_price and player.energy > 0:
+                players_grouped[player.energy_price].append(player)
 
-        orders = {}
-        trades = []
+        self.orders = {}
+        self.trades = []
 
-        for player in players_sorted:
-            to_sell = min(player.energy, demand, max_per_player)
+        for price in sorted(players_grouped.keys()):
+            player_group: list[Player] = players_grouped[price]
+            group_energy_sum = sum(get_energy(player) for player in player_group)
 
-            if to_sell <= 0:
-                continue
-
-            # player.energy -= to_sell # ne trebamo, zelimo da im se prikaze koliko proizvode
-            demand -= to_sell
-
-            player.money += to_sell * player.energy_price
-
-            trades.append(Trade(
-                buy_order=None,
-                sell_order=None,
-                filled_price=player.energy_price,
-                filled_size=to_sell,
-                filled_money=to_sell * player.energy_price,
-                tick=datetime.now(),
-            ))
-
-            orders[player.player_id] = to_sell
-
-            if demand == 0:
+            for player in player_group:
+                if group_energy_sum > demand:
+                    energy_to_sell = get_energy(player) * demand / group_energy_sum
+                    print("PRINTIG 1", player.energy, energy_to_sell)
+                    print("PRINTIG  ", demand, group_energy_sum)
+                else:
+                    energy_to_sell = get_energy(player)
+                    print("PRINTIG 2", player.energy, energy_to_sell)
+                energy_to_sell = int(energy_to_sell)
+                self.create_trade(player, energy_to_sell, price)
+            demand -= group_energy_sum
+            if demand <= 0:
                 break
 
-        self.price_tracker.on_end_match(trades)
+        self.price_tracker.on_end_match(self.trades)
+        return self.orders
 
-        return orders
+    def create_trade(self, player: Player, energy, energy_price):
+        player.money += energy * player.energy_price
+        self.trades.append(Trade(
+            buy_order=None,
+            sell_order=None,
+            filled_price=energy_price,
+            filled_size=energy,
+            filled_money=energy * energy_price,
+            tick=datetime.now(),
+        ))
+        self.orders[player.player_id] = energy

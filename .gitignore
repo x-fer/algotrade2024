@@ -14,3 +14,4 @@ dump.rdb
 htmlcov/
 .pytest_cache/
 .DS_Store
+*/chunks/

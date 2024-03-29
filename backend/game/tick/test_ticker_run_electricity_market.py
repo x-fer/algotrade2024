@@ -40,7 +40,7 @@ def test_player_price_too_high(get_tick_data, ticker, get_player):
 def test_player_over_max_demand(get_tick_data, ticker, get_player):
     demand = 100
 
-    max_sold_per_player = int(config["max_energy_per_player"] * demand)
+    max_sold_per_player = int(config["player"]["max_energy_per_player"] * demand)
 
     player1 = get_player(
         money=0, coal=0, energy=max_sold_per_player + 1,  energy_price=99)
@@ -88,7 +88,7 @@ def test_demand_filled(get_tick_data, ticker, get_player):
                get_player(money=0, coal=0, energy=100000,  energy_price=100),
                ]
 
-    max_per_player = int(demand * config["max_energy_per_player"])
+    max_per_player = int(demand * config["player"]["max_energy_per_player"])
 
     player_dict = get_player_dict(players)
 
