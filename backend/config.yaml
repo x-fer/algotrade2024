@@ -22,29 +22,29 @@ dataset:
   max_ticks_in_request: 100
   
   price_multiplier:
-    coal: 2400
-    uranium: 30000
-    biomass: 6000
-    gas: 6070
-    oil: 6000
-    energy: 50
+    coal: 20000
+    uranium: 120000
+    biomass: 60000
+    gas: 50700
+    oil: 60000
+    energy: 500
 
   energy_output_multiplier:
-    coal: 150
-    uranium: 1600
-    biomass: 300
+    coal: 115
+    uranium: 1500
+    biomass: 130
     gas: 300
-    oil: 300
+    oil: 380
     geothermal: 30
-    wind: 10
-    solar: 10
-    hydro: 20
+    wind: 40
+    solar: 35
+    hydro: 130
 
   energy_demand_multiplier: 30000
 
 player:
   max_players_per_team: 10
-  starting_money: 1500000
+  starting_money: 50_000_000
   max_orders: 10
 
 bots:
@@ -64,7 +64,7 @@ bots:
   final_volume_multiplier: 1
   final_price_multiplier: 1
 
-max_energy_per_player: 0.2
+max_energy_per_player: 0.3
 
 power_plant:
   resources_per_tick: 1
@@ -72,12 +72,12 @@ power_plant:
   sell_coeff: 0.7
 
   base_prices:
-    coal: 302500
-    uranium: 9750000
-    biomass: 968000
-    gas: 970400
-    oil: 968000
-    geothermal: 400000
-    wind: 100000
-    solar: 100000
-    hydro: 250000
+    coal: 3025000
+    uranium: 97500000
+    biomass: 9680000
+    gas: 9704000
+    oil: 9680000
+    geothermal: 4000000
+    wind: 2000000
+    solar: 1000000
+    hydro: 12007999
