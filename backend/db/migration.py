@@ -1,42 +1,7 @@
-import os
-import pandas as pd
 from db.db import database
-from model import Team, Player, Game, Datasets, DatasetData
-from datetime import datetime, timedelta
-from config import config
 from logger import logger
-
-
-async def fill_tables():
-    g_team_id = await Team.create(team_name="Goranov_tim", team_secret="gogi")
-    k_team_id = await Team.create(team_name="Krunov_tim", team_secret="kruno")
-    z_team_id = await Team.create(team_name="Zvonetov_tim", team_secret="zvone")
-
-    datasets = await Datasets.list()
-
-    dataset_id = datasets[0].dataset_id
-
-    not_nat_game_id = await Game.create(
-        game_name="Stalna igra",
-        is_contest=False,
-        dataset_id=dataset_id,
-        start_time=datetime.now() + timedelta(milliseconds=3000),
-        total_ticks=2300,
-        tick_time=5000)
-    nat_game_id = await Game.create(
-        game_name="Natjecanje",
-        is_contest=True,
-        dataset_id=dataset_id,
-        start_time=datetime.now() + timedelta(milliseconds=5000),
-        total_ticks=100,
-        tick_time=1000)
-
-    for game_id in [not_nat_game_id, nat_game_id]:
-        await Player.create(player_name="Goran", is_active=True, is_bot=False, game_id=game_id, team_id=g_team_id, money=350000, coal=1000)
-        await Player.create(player_name="Kruno", is_active=True, is_bot=False, game_id=game_id, team_id=k_team_id, money=350000, coal=1000)
-        await Player.create(player_name="Zvone", is_active=True, is_bot=False, game_id=game_id, team_id=z_team_id, money=350000, coal=1000)
-
-    logger.info("Filled database with dummy data")
+from .fill_teams import fill_bots, fill_dummy_tables
+from .fill_datasets import fill_datasets
 
 
 async def delete_tables():
@@ -50,6 +15,13 @@ async def drop_tables():
 
 async def run_migrations():
     logger.info("Running migration script")
+    await create_tables()
+    await fill_datasets()
+    await fill_bots()
+    logger.info("Migrated database")
+
+
+async def create_tables():
     await database.execute('''
               CREATE TABLE IF NOT EXISTS teams (
               team_id SERIAL PRIMARY KEY,
@@ -202,109 +174,3 @@ async def run_migrations():
                 max_energy_price BIGINT NOT NULL,
                 FOREIGN KEY (dataset_id) REFERENCES datasets(dataset_id)
                 )''')
-
-    try:
-        await Team.get(
-            team_name=config["bots"]["team_name"],
-            team_secret=config["bots"]["team_secret"]
-        )
-        logger.info("Bots team already created")
-    except:
-        logger.info("Creating bots team")
-        await Team.create(
-            team_name=config["bots"]["team_name"],
-            team_secret=config["bots"]["team_secret"]
-        )
-
-    logger.info("Filling datasets")
-    datasets_path = config["dataset"]["datasets_path"]
-    for dataset in os.listdir(datasets_path):
-        if not dataset.endswith(".csv"):
-            continue
-        try:
-            await Datasets.get(dataset_name=dataset)
-            logger.debug(f"Dataset {dataset} already created")
-            continue
-        except:
-            pass
-
-        df = pd.read_csv(f"{datasets_path}/{dataset}")
-
-        # TODO: asserts, async transaction - ne zelimo da se dataset kreira ako faila kreiranje redaka
-        dataset_id = await Datasets.create(dataset_name=dataset, dataset_description="Opis")
-
-        price_multipliers = config["dataset"]["price_multiplier"]
-        energy_output_multipliers = config["dataset"]["energy_output_multiplier"]
-        energy_demand_multiplier = config["dataset"]["energy_demand_multiplier"]
-
-        # date,COAL,URANIUM,BIOMASS,GAS,OIL,GEOTHERMAL,WIND,SOLAR,HYDRO,ENERGY_DEMAND,MAX_ENERGY_PRICE
-        tick = 0
-        dataset_data = []
-        for index, row in df.iterrows():
-            dataset_data.append(DatasetData(
-                dataset_data_id=0,
-                dataset_id=dataset_id,
-                tick=tick,
-                date=datetime.strptime(
-                    row["date"], "%Y-%m-%d %H:%M:%S"),
-                coal=(
-                    energy_output_multipliers["coal"] *
-                    row["COAL"] // 1_000_000),
-                uranium=(
-                    energy_output_multipliers["uranium"] *
-                    row["URANIUM"] // 1_000_000),
-                biomass=(
-                    energy_output_multipliers["biomass"] *
-                    row["BIOMASS"] // 1_000_000),
-                gas=(
-                    energy_output_multipliers["gas"] *
-                    row["GAS"] // 1_000_000),
-                oil=(
-                    energy_output_multipliers["oil"] *
-                    row["OIL"] // 1_000_000),
-                geothermal=(
-                    energy_output_multipliers["geothermal"] *
-                    row["GEOTHERMAL"] // 1_000_000),
-                wind=(
-                    energy_output_multipliers["wind"] *
-                    row["WIND"] // 1_000_000),
-                solar=(
-                    energy_output_multipliers["solar"] *
-                    row["SOLAR"] // 1_000_000),
-                hydro=(
-                    energy_output_multipliers["hydro"] *
-                    row["HYDRO"] // 1_000_000),
-                energy_demand=(
-                    energy_demand_multiplier *
-                    row["ENERGY_DEMAND"] // 1_000_000),
-                max_energy_price=(
-                    price_multipliers["energy"] *
-                    row["MAX_ENERGY_PRICE"] // 1_000_000),
-                coal_price=(
-                    price_multipliers["coal"] *
-                    row["COAL_PRICE"] // 1_000_000),
-                uranium_price=(
-                    price_multipliers["uranium"] *
-                    row["URANIUM_PRICE"] // 1_000_000),
-                biomass_price=(
-                    price_multipliers["biomass"] *
-                    row["BIOMASS_PRICE"] // 1_000_000),
-                gas_price=(
-                    price_multipliers["gas"] *
-                    row["GAS_PRICE"] // 1_000_000),
-                oil_price=(
-                    price_multipliers["oil"] *
-                    row["OIL_PRICE"] // 1_000_000),
-            ))
-            tick += 1
-
-        for x in dataset_data:
-            assert x.coal_price > -config["bots"]["min_price"]
-            assert x.uranium_price > -config["bots"]["min_price"]
-            assert x.biomass_price > -config["bots"]["min_price"]
-            assert x.gas_price > -config["bots"]["min_price"]
-            assert x.oil_price > -config["bots"]["min_price"]
-
-        await DatasetData.create_many(dataset_data)
-        logger.info(f"Added dataset {dataset}")
-    logger.info("Migrated database")

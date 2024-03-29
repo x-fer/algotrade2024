@@ -110,6 +110,20 @@ class Order(Table):
         return [cls(**x) for x in result]
 
     @classmethod
+    async def delete_bot_orders(cls, game_id):
+        query = f"""
+        DELETE FROM {cls.table_name}
+        USING players 
+        WHERE orders.player_id = players.player_id
+        AND orders.game_id=:game_id 
+        AND players.is_bot IS TRUE
+        AND orders.order_status=:order_status
+        """
+        for order_status in [OrderStatus.PENDING.value, OrderStatus.ACTIVE.value]:
+            values = {"game_id": game_id, "order_status": order_status}
+            await database.execute(query, values)
+
+    @classmethod
     async def list_best_orders_by_game_id(cls, game_id, order_side: OrderSide):
         best_orders = []
         for resource in Resource:

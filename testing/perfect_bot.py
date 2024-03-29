@@ -113,8 +113,8 @@ def main():
                 max_energy_price = (x["MAX_ENERGY_PRICE"] *
                                     price_multiplier["energy"] // 1000000)
 
-                energy_price = max_energy_price * 0.90
-                # energy_price = np.random.randint(45, 50)
+                # energy_price = max_energy_price * 0.90
+                energy_price = np.random.randint(400, 500)
 
                 energy_output = energy_output_multiplier[
                     resource.lower()

@@ -66,7 +66,7 @@ class Ticker:
         self.tick_event = tick_event
         try:
             logger.info(
-                f"Starting game ({game.game_id}) {game.game_name}")
+                f"Starting game ({game.game_id}) {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
 
             await self.delete_all_running_bots(game.game_id)
 
@@ -127,7 +127,6 @@ class Ticker:
                                   order_status=OrderStatus.IN_QUEUE.value)
         orders += await Order.list(game_id=game_id,
                                    order_status=OrderStatus.ACTIVE.value)
-
         for order in orders:
             markets = self.game_data[game_id].markets
             markets[order.resource.value].orderbook.add_order(order)
@@ -137,6 +136,8 @@ class Ticker:
 
         for bot in bots:
             await Player.update(player_id=bot.player_id, is_active=False)
+        
+        await Order.delete_bot_orders(game_id=game_id)
 
     async def run_game_tick(self, game: Game):
 
