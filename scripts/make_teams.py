@@ -38,7 +38,6 @@ def make_team(team):
     print(f"Team {team['team_name']} created")
     pprint(r.json())
 
-
 def make_game(game):
     r = requests.post(f"http://{URL}/admin/game/create",
                       json=game, params={"admin_secret": ADMIN_SECRET})
@@ -51,7 +50,6 @@ def list_games():
     assert r.status_code == 200, r.text
     print("Games:")
     pprint(r.json())
-
 
 if __name__ == "__main__":
     datasets = get_datasets()
