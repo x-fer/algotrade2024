@@ -29,7 +29,7 @@ class OrderSide():
 
 
 class AlgotradeApi:
-    def __init__(self, url, team_secret, game_id, player_id):
+    def __init__(self, url, team_secret, game_id, player_id=None):
         self.team_secret = team_secret
         self.URL = url
 
