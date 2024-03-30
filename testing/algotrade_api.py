@@ -1,9 +1,13 @@
 from pprint import pprint
 import requests
+from enum import Enum
 
 
-class Resource():
+class Energy(Enum):
     energy = "ENERGY"
+
+
+class Resource(Enum):
     coal = "COAL"
     uranium = "URANIUM"
     biomass = "BIOMASS"
@@ -11,7 +15,7 @@ class Resource():
     oil = "OIL"
 
 
-class PowerPlant():
+class PowerPlant(Enum):
     COAL = "COAL"
     URANIUM = "URANIUM"
     BIOMASS = "BIOMASS"
@@ -23,7 +27,7 @@ class PowerPlant():
     HYDRO = "HYDRO"
 
 
-class OrderSide():
+class OrderSide(Enum):
     BUY = "BUY"
     SELL = "SELL"
 

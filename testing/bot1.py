@@ -12,7 +12,7 @@ url = "localhost:8000"
 
 team_secret = "CCLL0FGQ"
 game_id = 1
-player_id = -1  # we will get this later
+player_id = None  # we will get this later
 
 api = AlgotradeApi(url, team_secret, game_id, player_id)
 
