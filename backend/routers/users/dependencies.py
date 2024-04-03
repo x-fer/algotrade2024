@@ -73,9 +73,9 @@ async def start_end_tick_dep(
         end_tick = start_tick
 
     if start_tick < 0:
-        start_tick = game.current_tick + start_tick
+        start_tick = max(0, game.current_tick + start_tick)
     if end_tick < 0:
-        end_tick = game.current_tick + end_tick
+        end_tick = max(0, game.current_tick + end_tick)
 
     if game.current_tick == 0:
         raise HTTPException(

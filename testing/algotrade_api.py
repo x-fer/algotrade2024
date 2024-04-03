@@ -1,8 +1,9 @@
+from enum import Enum
 from pprint import pprint
 import requests
 
 
-class Resource():
+class Resource(Enum):
     energy = "ENERGY"
     coal = "COAL"
     uranium = "URANIUM"
@@ -11,7 +12,7 @@ class Resource():
     oil = "OIL"
 
 
-class PowerPlant():
+class PowerPlant(Enum):
     COAL = "COAL"
     URANIUM = "URANIUM"
     BIOMASS = "BIOMASS"
@@ -23,13 +24,13 @@ class PowerPlant():
     HYDRO = "HYDRO"
 
 
-class OrderSide():
+class OrderSide(Enum):
     BUY = "BUY"
     SELL = "SELL"
 
 
 class AlgotradeApi:
-    def __init__(self, url, team_secret, game_id, player_id):
+    def __init__(self, url, team_secret, game_id, player_id=None):
         self.team_secret = team_secret
         self.URL = url
 
