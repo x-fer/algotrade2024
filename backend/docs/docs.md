@@ -12,7 +12,6 @@ In case of any questions, ping organizers in discord or in person!
     1. [Electricity market](#electricity_market)
 1. [Ticks](#ticks)
 1. [Rounds and scoring](#games)
-1. [Api](#api)
 1. [Appendix](#extra)
     1. [Order matching example](#order_matching)
     1. [Bot orders mechanics](#bot_orders)
@@ -26,7 +25,7 @@ Resources can be stored in your storage.
 
 You can also process resources you own and produce electricity using *power plants*. This electricity can be sold on *electricity market*, but cannot be stored.
 
-Player with the most money at the end of the game wins!
+Player with the biggest networth at the end of the game wins!
 
 <img src="./trzista.drawio.svg" style="width:450px;height:300px;">
 
@@ -44,7 +43,7 @@ Order is defined by:
 - resource: resource you want to buy or sell
 - order size: number of resources you are trading
 - order price: price per unit of resource you are selling (not the total price of the order)
-- expiration tick: tick in the game when this order expires
+- expiration tick: tick in the game when this order expires (see api docs for details)
 
 ### Matching engine <a name="matching_engine"></a>
 
@@ -69,6 +68,14 @@ There are two types of power plants: renewable and non renewable.
 
 Every power plant you buy of one type makes the next one more expensive. You can also sell them at 70% of their original price.
 
+Exact formula for price of power plant is:
+
+$$
+Base price \times (1 + 0.1 x + 0.03 x^2)
+$$
+
+Where x is the number of power plants of this type you already own.
+
 ### Non renewable
 
 Non renewables require resources to run, but produce a lot of stable electricity. You can set how much resources of each type you want to burn. But you cannot burn more resources than power plants of that type that you have. 1 resource burned = 1 power plant is on.
@@ -77,6 +84,10 @@ Non renewables require resources to run, but produce a lot of stable electricity
 
 Renewable always produce electricity following the dataset. However, renewables produce less electricity and less reliably. You can use modeling to predict how much they will produce, since every tick is one hour in dataset, which means that one day is 24 ticks.
 For example, solar plants will produce more electricity during daytime.
+
+You can see example of electricity production from one solar plant below.
+
+<img src="./solar.svg" style="width:480px;height:350px;">
 
 ## Energy market <a name="energy_market"></a>
 
@@ -105,33 +116,35 @@ So make sure you produce the right amount of energy
 
 There will be multiple games during hackathon.
 
-- One game will be open all night long for testing your bots.
+- One game will be open all night long for testing your bots, this game will have annotation `is_contest=False`.
 
 - There will be **three competition** rounds lasting for 30 minutes. These 
-rounds will be scored and they have annotation is_contest=True.
+rounds will be scored and they have annotation `is_contest=True`.
 
-- Around one hour before each competition round, we will start a **test round** that will simulate contest. They will also last 30 minutes, have the same limitations, but will not be scored. We encourage you to use your best bots here to promote good competition, however don't have to since these rounds aren't scored. These rounds will also have annotation is_contest=True.
+- Around one hour before each competition round, we will start a **test round** that will simulate contest. They will also last 30 minutes, have the same limitations, but will not be scored. We encourage you to use your best bots here to promote good competition, however don't have to since these rounds aren't scored. These rounds will also have annotation `is_contest=True`.
 
-You will be able to differentiate between competition and test rounds by names.
+You will be able to differentiate between competition and test rounds by names, or ask organizers.
 
-### Limitations
+<a name="is_contest"></a>
+Normal round `is_contest=False` lasts all night long and may be reset a few times. You may have 10 bots in one game and can reset their money balance. Ticks in these games are longer so you can see more easily what is happening.
 
-Normal round lasts all night long and may be reset a few times. You may have 10 bots in one game and can reset their money balance. Ticks in these games are longer so you can see more easily what is happening.
-
-In contest rounds (including both test and competition rounds), ticks last one second, and your team is limited to one bot. You can not reset the balance of this bot! So make sure everything goes as planned and that you don't waste your resources and money.
+When `is_contest=True` (including both test and competition rounds), ticks last one second, and your team is limited to one bot. You can not reset the balance of this bot! So make sure everything goes as planned and that you don't waste your resources and money.
 
 All games will use different datasets.
 
+### Team secrets and creating players <a name="team_secret"></a>
+
+Each team will get a unique `team_secret`. Make sure to send it as a query parameter in all requests you send! Do not share this secret with other teams.
+
+Each game has unique `game_id`. In games you will be able to create multiple players for testing purposes (so that each team member can create their own bots for example). This is of course restricted in contest rounds.
+
+Note: if you created player in one game, it is not created in all games!
+
+See [api docs](/docs) for more details.
+
 ### Scoring
 
-You are scored by your players net worth. This is calculated as sum of sell prices of every power plant you have plus money you have plus value of resources you own in current market.
-
-## Api <a name="api"></a>
-
-See [api docs](/docs).
-
-**Important** Each team will get a team_id. Make sure to send it as a query
-parameter in all requests you send!
+You are scored by your players net worth. This is calculated as sum of sell prices of every power plant you own plus money you have plus value of resources you own in current market prices.
 
 ## Appendix
 

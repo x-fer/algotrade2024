@@ -185,13 +185,6 @@ async def test_start_end_tick_dep():
         assert e.status_code == 400
         assert e.detail == "Game just started (it is tick=0), no data to return"
 
-    try:
-        await start_end_tick_dep(g, -100, -100)
-        assert False  # pragma: no cover
-    except HTTPException as e:
-        assert e.status_code == 400
-        assert e.detail == "Game just started (it is tick=0), no data to return"
-
     # game running tests:
 
     g = Game(
@@ -226,23 +219,17 @@ async def test_start_end_tick_dep():
     assert start == 3
     assert end == 3
 
-    try:
-        await start_end_tick_dep(g, -100, -100)
-        assert False  # pragma: no cover
-    except HTTPException as e:
-        assert e.status_code == 400
+    start, end = await start_end_tick_dep(g, -100, -100)
+    assert start == 0
+    assert end == 0
 
-    try:
-        await start_end_tick_dep(g, -100, None)
-        assert False  # pragma: no cover
-    except HTTPException as e:
-        assert e.status_code == 400
+    start, end = await start_end_tick_dep(g, -100, None)
+    assert start == 0
+    assert end == 0
 
-    try:
-        await start_end_tick_dep(g, None, -100)
-        assert False  # pragma: no cover
-    except HTTPException as e:
-        assert e.status_code == 400
+    start, end = await start_end_tick_dep(g, None, -100)
+    assert start == 0
+    assert end == 0
 
     try:
         await start_end_tick_dep(g, 5, None)
