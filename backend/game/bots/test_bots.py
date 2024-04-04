@@ -166,24 +166,24 @@ def volume():
 
 
 class TestGetPrice:
-    def test_get_price_0_0(self, bot, volume):
-        price = bot.get_price(Resource.coal, volume, 0, 0)
+    def test_get_price_0_0(self, bot):
+        price = bot.get_price(Resource.coal, 0, 0)
         assert_prices(bot, price)
 
-    def test_get_price_0_1(self, bot, volume):
-        price = bot.get_price(Resource.coal, volume, 0, 0)
+    def test_get_price_0_1(self, bot):
+        price = bot.get_price(Resource.coal, 0, 0)
         assert_prices(bot, price)
 
-    def test_get_price_1_0(self, bot, volume):
-        price = bot.get_price(Resource.coal, volume, 1, 0)
+    def test_get_price_1_0(self, bot):
+        price = bot.get_price(Resource.coal, 1, 0)
         assert_prices(bot, price)
 
-    def test_get_price_2(self, bot, volume):
-        price = bot.get_price(Resource.coal, volume, 1, 0.2)
+    def test_get_price_2(self, bot):
+        price = bot.get_price(Resource.coal, 1, 0.2)
         assert_prices(bot, price)
-        price = bot.get_price(Resource.coal, volume, 0.5, 0.76)
+        price = bot.get_price(Resource.coal, 0.5, 0.76)
         assert_prices(bot, price)
-        price = bot.get_price(Resource.coal, volume, 0.3, 0.2)
+        price = bot.get_price(Resource.coal, 0.3, 0.2)
         assert_prices(bot, price)
 
 

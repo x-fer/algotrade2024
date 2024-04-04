@@ -203,6 +203,6 @@ Bot total volume is set between 100 and 400. If players have 10000 resources, th
 Price is taken directly from dataset for the tick (about 1000-3000 per resource), but some bot coefficient is added. This coefficient is between -100 and 100. It is different for buy and for sell, so it is possible that buy and sell prices from bots are much apart.
 Buy coefficient is bigger if last bot buy orders (those from previous 5 ticks) were sold well - if they were more filled. If previous buy orders weren't traded at all, it means that bot price is too high and that it should lower it.
 It is done the same for sell orders but in different direction.
-If final bot buy is higher than final bot sell, then the new price is calculated as weighted (by already calculated bot buy and sell volume) of these two prices. Then these prices are equal, and sell price is increased by 1 - so that bot doesn't sell resources to itself.
+These two coefficients are averaged and taken as final coefficient to price.
 
 Once the price and volume is determined, bot *disperses* the orders. It creates many smaller orders totaling in volume to the calculated volume from before, but with small variations in pricing from the original (about 1%).

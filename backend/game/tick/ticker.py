@@ -19,7 +19,7 @@ from db import database
 class GameData:
     def __init__(self, game: Game):
         self.markets: Dict[int, ResourceMarket] = {
-            resource.value: ResourceMarket(resource)
+            resource.value: ResourceMarket(resource, game.game_id)
             for resource in Resource
         }
         self.energy_market = EnergyMarket()
