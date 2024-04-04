@@ -1,14 +1,17 @@
 from dataclasses import dataclass
+import dataclasses
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
-from model import Game, Datasets, Player
+import json
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect, WebSocketException
+from model import Game, Datasets, Player, DatasetData
 from game.bots import Bots
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List
 from model.team import Team
 from routers.model import SuccessfulResponse
-from db import limiter
+from db import limiter, database
+import asyncio
 
 
 router = APIRouter()
@@ -134,3 +137,60 @@ async def game_networth(game_id: int) -> List[NetworthData]:
         })
 
     return team_networths
+
+
+@router.websocket("/game/{game_id}/dashboard/graphs")
+@limiter.exempt
+async def dashboard(websocket: WebSocket, game_id: int):
+    await websocket.accept()
+
+    try:
+        while True:
+            game = await Game.get(game_id=game_id)
+
+            current_tick = game.current_tick
+
+            if current_tick == 0:
+                await asyncio.sleep(1)
+                continue
+
+            data = (await DatasetData.list_by_game_id_where_tick(
+                game.dataset_id, game.game_id, current_tick - 1, current_tick - 1))[0]
+
+            data = dataclasses.asdict(data)
+
+            await websocket.send_json(json.dumps(data, default=str))
+
+            await asyncio.sleep(1)
+    except WebSocketException:
+        pass
+
+
+@router.websocket("/game/{game_id}/dashboard/players")
+@limiter.exempt
+async def dashboard(websocket: WebSocket, game_id: int):
+    await websocket.accept()
+
+    try:
+        while True:
+            game = await Game.get(game_id=game_id)
+            await websocket.send_json(game.dict())
+
+            await asyncio.sleep(1)
+    except WebSocketException:
+        pass
+
+
+@router.websocket("/game/{game_id}/dashboard/orderbooks")
+@limiter.exempt
+async def dashboard(websocket: WebSocket, game_id: int):
+    await websocket.accept()
+
+    try:
+        while True:
+            game = await Game.get(game_id=game_id)
+            await websocket.send_json()
+
+            await asyncio.sleep(1)
+    except WebSocketException:
+        pass
