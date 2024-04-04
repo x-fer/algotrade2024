@@ -17,7 +17,7 @@ games = [
     {"game_name": "game1",
      "contest": False,
      "dataset_name": "df_2431_2011-11-06 03:30:00_2012-02-15 09:30:00.csv",
-     "start_time": (datetime.now() + timedelta(seconds=2)).isoformat(),
+     "start_time": (datetime.now() + timedelta(seconds=5)).isoformat(),
      "total_ticks": 1000,
      "tick_time": 1000},
 ]

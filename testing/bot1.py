@@ -10,7 +10,7 @@ from algotrade_api import AlgotradeApi
 
 url = "localhost:8000"
 
-team_secret = "6E1U5GVQ"
+team_secret = "PWLQ0CET"
 game_id = 1
 player_id = -1  # we will get this later
 
