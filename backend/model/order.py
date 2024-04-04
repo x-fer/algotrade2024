@@ -78,34 +78,47 @@ class Order(Table):
         SELECT COUNT(*) FROM {cls.table_name}
         WHERE game_id=:game_id
         AND player_id=:player_id
-        AND (order_status=:order_active
-        OR order_status=:order_pending
-        OR order_status=:order_inqueue)
+        AND (order_status=ACTIVE
+        OR order_status=PENDING
+        OR order_status=IN_QUEUE)
         AND resource=:resource
         """
         values = {
             "game_id": game_id,
             "player_id": player_id,
-            "order_active": OrderStatus.ACTIVE.value,
-            "order_inqueue": OrderStatus.IN_QUEUE.value,
-            "order_pending": OrderStatus.PENDING.value,
             "resource": resource.value,
         }
         result = await database.execute(query, values)
         return result
 
     @classmethod
+    async def list_orders_by_game_id(cls, game_id):
+        query = f"""
+        SELECT orders.* FROM {cls.table_name} 
+        JOIN players ON orders.player_id = players.player_id
+        WHERE orders.game_id=:game_id
+        AND (
+            orders.order_status=ACTIVE
+            OR (
+            orders.order_status=PENDING
+            AND players.is_bot IS TRUE
+            ))
+        """
+        values = {"game_id": game_id}
+        result = await database.fetch_all(query, values)
+        return [cls(**x) for x in result]
+
+    @classmethod
     async def list_bot_orders_by_game_id(cls, game_id):
         query = f"""
         SELECT orders.* FROM {cls.table_name} 
         JOIN players ON orders.player_id = players.player_id
-        WHERE orders.game_id=:game_id 
+        WHERE orders.game_id=:game_id
         AND players.is_bot IS TRUE
-        AND orders.order_status=:order_status
+        AND (orders.order_status=ACTIVE
+        OR orders.order_status=PENDING)
         """
-        values = {"game_id": game_id,
-                  "order_status": OrderStatus.ACTIVE.value}
-        values = {"game_id": game_id, "order_status": OrderStatus.ACTIVE.value}
+        values = {"game_id": game_id}
         result = await database.fetch_all(query, values)
         return [cls(**x) for x in result]
 
@@ -129,9 +142,14 @@ class Order(Table):
         for resource in Resource:
             asc_desc = "ASC" if order_side == OrderSide.BUY else "DESC"
             query = f"""
-            SELECT * FROM {cls.table_name}
-            WHERE game_id=:game_id
-            AND order_status=:order_status
+            SELECT orders.* FROM {cls.table_name} 
+            JOIN players ON orders.player_id = players.player_id
+            WHERE orders.game_id=:game_id
+            AND (orders.order_status=ACTIVE
+            OR (
+            orders.order_status=PENDING
+            AND players.is_bot IS TRUE
+            ))
             AND order_side=:order_side
             AND resource=:resource
             ORDER BY price {asc_desc}, size - filled_size DESC
@@ -139,7 +157,6 @@ class Order(Table):
             """
             values = {
                 "game_id": game_id,
-                "order_status": OrderStatus.ACTIVE.value,
                 "order_side": order_side.value,
                 "resource": resource.value,
             }

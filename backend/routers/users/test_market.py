@@ -91,7 +91,7 @@ def test_energy_set_price_player():
 
 def test_order_list():
 
-    with patch("model.Order.list") as mock_list, \
+    with patch("model.Order.list_orders_by_game_id") as mock_list, \
             patch("model.Order.list_bot_orders_by_game_id") as mock_bot_list, \
             patch("model.Order.list_best_orders_by_game_id") as mock_best_list:
 

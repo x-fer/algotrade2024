@@ -118,8 +118,8 @@ async def order_list(
     ),
 ) -> Dict[Resource, List[OrderResponse]]:
     if restriction == OrderRestriction.all_orders:
-        orders = await Order.list(
-            game_id=game.game_id, order_status=OrderStatus.ACTIVE.value
+        orders = await Order.list_orders_by_game_id(
+            game_id=game.game_id
         )
     elif restriction == OrderRestriction.bot_orders:
         orders = await Order.list_bot_orders_by_game_id(
