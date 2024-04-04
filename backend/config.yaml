@@ -58,7 +58,7 @@ bots:
   min_price: -100
   max_price: 100
   expiration_ticks: 3
-  price_change_coeff: 0.3
+  price_change_coeff: 0.25
   extra_orders: 5
   extra_orders_price_diff: 0.02
   extra_orders_volume_diff: 0.12
