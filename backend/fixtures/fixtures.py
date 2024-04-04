@@ -184,6 +184,7 @@ def get_order():
             tick=tick,
             size=size,
             order_side=order_side,
+            expiration_tick=5,
         )
         order_id += 1
         return order

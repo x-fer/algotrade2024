@@ -2,6 +2,7 @@ from collections import deque
 from xheap import XHeap
 from functools import reduce
 from model import Order, OrderSide, OrderStatus, OrderType, Trade
+from logger import logger
 
 
 class OrderBook():
@@ -103,7 +104,7 @@ class OrderBook():
 
     def match(self, tick: int):
         self._invoke_callbacks('on_begin_match')
-        self._remove_expired(tick)
+        self._remove_expired(tick, with_warning=True)
         self.match_trades = []
         while len(self.queue) > 0:
             order: Order = self.queue.popleft()
@@ -112,11 +113,14 @@ class OrderBook():
             self._invoke_callbacks('on_order_update', order)
             self._add_order(order)
             self._match(tick)
+        self._remove_expired(tick+1)
         self._invoke_callbacks('on_end_match', self.match_trades)
 
-    def _remove_expired(self, tick: int):
+    def _remove_expired(self, tick: int, with_warning=False):
         while self._min_expire_time() is not None and self._min_expire_time().expiration_tick <= tick:
             order: Order = self.expire_heap.peek()
+            if with_warning:
+                logger.warning(f"Order ({order.order_id}) expired in tick ({tick}) at beggining of a match. This is probably due to expiration_tick set to current tick")
             order.order_status = OrderStatus.EXPIRED
             self._invoke_callbacks('on_order_update', order)
             self._invoke_callbacks('on_cancel', order)
@@ -213,11 +217,15 @@ class OrderBook():
             self._remove_order(order_id)
 
     def __str__(self):
-        s = "BUY:"
-        for order in self.buy_side:
-            s += f"(price: {order.price}, size: {order.size}, filled: {order.filled_size}), "
-        s += "\nSELL:"
-        for order in self.sell_side:
-            s += f"(price: {order.price}, size: {order.size}, filled: {order.filled_size}), "
+        orders_str = self._get_orders_str()
+        return f"orderbook(buy_side ({len(self.buy_side)}), sell_side ({len(self.sell_side)}), queue ({len(self.queue_set)}), {orders_str})"
 
-        return s
+    def _get_orders_str(self):
+        buy_orders_str = ", ".join(map(_order_to_str, self.buy_side))
+        sell_order_str = ", ".join(map(_order_to_str, self.sell_side))
+        queue_order_str = ", ".join(map(_order_to_str, self.queue))
+        return f"buy_orders: [{buy_orders_str}], sell_orders: [{sell_order_str}], queue_orders: [{queue_order_str}]"
+
+def _order_to_str(order: Order):
+    order_letter = 'B' if order.order_side == OrderSide.BUY else 'S'
+    return f"({order_letter}{order.price}:{order.filled_size}/{order.size})"

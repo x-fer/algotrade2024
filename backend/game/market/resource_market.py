@@ -8,10 +8,11 @@ from logger import logger
 
 
 class ResourceMarket:
-    def __init__(self, resource: Resource):
+    def __init__(self, resource: Resource, game_id: int=None):
         self.resource = resource
         self.orderbook = OrderBook()
         self.price_tracker = PriceTracker(self.orderbook)
+        self.game_id = game_id
 
         callbacks = {
             'check_trade': self._check_trade,
@@ -51,11 +52,8 @@ class ResourceMarket:
             except ValueError as e:
                 logger.warning(
                     f"Error adding order for order_id {order.order_id}: {e}")
+        logger.info(f"Orderbook for {self.resource.name:>8s} in game ({self.game_id}) matching in tick ({tick}) - {self.orderbook.__str__()}")
         self.orderbook.match(tick)
-
-        logger.debug(f"Matching:\n"
-                     + self.resource.name + " " + str(tick) + "\n"
-                     + self.orderbook.__str__() + "\n")
         return self._updated
 
     def _update_order(self, order: Order):
@@ -92,7 +90,7 @@ class ResourceMarket:
         seller = self._get_player(seller_id)
 
         if buyer.is_bot and seller.is_bot:
-            logger.warning(f"Trading between two bots: {buyer_id}-{seller_id}, resource {trade.buy_order.resource.name}, size {trade.filled_size}, price {trade.filled_price}")
+            logger.warning(f"Trading between two bots in game ({self.game_id}): {buyer_id}-{seller_id}, resource {trade.buy_order.resource.name}, size {trade.filled_size}, price {trade.filled_price}")
 
         if not buyer.is_bot:
             buyer.money -= trade.filled_money

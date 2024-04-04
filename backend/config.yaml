@@ -45,7 +45,7 @@ dataset:
 player:
   max_players_per_team: 10
   starting_money: 50_000_000
-  max_orders: 10
+  max_orders: 20
   max_energy_per_player: 0.4
 
 bots:
@@ -57,13 +57,14 @@ bots:
   max_volume: 400
   min_price: -100
   max_price: 100
-  expiration_ticks: 5
-  price_change_coeff: 0.3
+  expiration_ticks: 3
+  price_change_coeff: 0.25
   extra_orders: 5
-  extra_orders_price_diff: 0.01
-  extra_orders_volume_diff: 0.1
+  extra_orders_price_diff: 0.02
+  extra_orders_volume_diff: 0.12
   final_volume_multiplier: 1
   final_price_multiplier: 1
+  log_when_no_orders: ${LOG_BOTS}
 
 power_plant:
   resources_per_tick: 1
