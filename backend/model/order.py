@@ -78,9 +78,9 @@ class Order(Table):
         SELECT COUNT(*) FROM {cls.table_name}
         WHERE game_id=:game_id
         AND player_id=:player_id
-        AND (order_status=ACTIVE
-        OR order_status=PENDING
-        OR order_status=IN_QUEUE)
+        AND (order_status='ACTIVE'
+        OR order_status='PENDING'
+        OR order_status='IN_QUEUE')
         AND resource=:resource
         """
         values = {
@@ -98,9 +98,9 @@ class Order(Table):
         JOIN players ON orders.player_id = players.player_id
         WHERE orders.game_id=:game_id
         AND (
-            orders.order_status=ACTIVE
+            orders.order_status='ACTIVE'
             OR (
-            orders.order_status=PENDING
+            orders.order_status='PENDING'
             AND players.is_bot IS TRUE
             ))
         """
@@ -115,8 +115,8 @@ class Order(Table):
         JOIN players ON orders.player_id = players.player_id
         WHERE orders.game_id=:game_id
         AND players.is_bot IS TRUE
-        AND (orders.order_status=ACTIVE
-        OR orders.order_status=PENDING)
+        AND (orders.order_status='ACTIVE'
+        OR orders.order_status='PENDING')
         """
         values = {"game_id": game_id}
         result = await database.fetch_all(query, values)
@@ -130,11 +130,11 @@ class Order(Table):
         WHERE orders.player_id = players.player_id
         AND orders.game_id=:game_id 
         AND players.is_bot IS TRUE
-        AND orders.order_status=:order_status
+        AND (orders.order_status='PENDING'
+        OR orders.order_status='ACTIVE')
         """
-        for order_status in [OrderStatus.PENDING.value, OrderStatus.ACTIVE.value]:
-            values = {"game_id": game_id, "order_status": order_status}
-            await database.execute(query, values)
+        values = {"game_id": game_id}
+        await database.execute(query, values)
 
     @classmethod
     async def list_best_orders_by_game_id(cls, game_id, order_side: OrderSide):
@@ -145,9 +145,9 @@ class Order(Table):
             SELECT orders.* FROM {cls.table_name} 
             JOIN players ON orders.player_id = players.player_id
             WHERE orders.game_id=:game_id
-            AND (orders.order_status=ACTIVE
+            AND (orders.order_status='ACTIVE'
             OR (
-            orders.order_status=PENDING
+            orders.order_status='PENDING'
             AND players.is_bot IS TRUE
             ))
             AND order_side=:order_side
