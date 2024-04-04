@@ -119,7 +119,8 @@ class OrderBook():
     def _remove_expired(self, tick: int, with_warning=False):
         while self._min_expire_time() is not None and self._min_expire_time().expiration_tick <= tick:
             order: Order = self.expire_heap.peek()
-            logger.warning(f"Order ({order.order_id}) expired in tick ({tick}) at beggining of a match. This is probably due to expiration_tick set to current tick")
+            if with_warning:
+                logger.warning(f"Order ({order.order_id}) expired in tick ({tick}) at beggining of a match. This is probably due to expiration_tick set to current tick")
             order.order_status = OrderStatus.EXPIRED
             self._invoke_callbacks('on_order_update', order)
             self._invoke_callbacks('on_cancel', order)
