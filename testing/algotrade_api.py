@@ -68,6 +68,10 @@ class AlgotradeApi:
             params={"team_secret": self.team_secret},
             json={"player_name": player_name})
 
+    def reset_player(self):
+        return requests.get(f"http://{self.URL}/game/{self.game_id}/player/{self.player_id}/reset",
+                            params={"team_secret": self.team_secret})
+
     def get_player(self):
         return requests.get(f"http://{self.URL}/game/{self.game_id}/player/{self.player_id}",
                             params={"team_secret": self.team_secret})
