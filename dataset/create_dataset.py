@@ -84,7 +84,7 @@ def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
 
     def add_linear(col):
         end = 0.12 * len(col) / 1800
-        col = 0.2 + col + np.linspace(0, end, len(col))
+        col = 0.4 + col + np.linspace(0, end, len(col))
         return norm_col(col)
 
     # scale so all cols average to 1
@@ -154,14 +154,14 @@ def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
     # plt.title("Dataset outputs sum")
     # plt.legend()
     # plt.show()
-    # graph_df = new_df.iloc[:1800:3, :]
-    # plt.plot(graph_df["COAL_PRICE"], label="COAL")
-    # plt.plot(graph_df["URANIUM_PRICE"], label="URANIUM")
-    # plt.plot(graph_df["BIOMASS_PRICE"], label="BIO")
-    # plt.plot(graph_df["GAS_PRICE"], label="GAS")
-    # plt.plot(graph_df["OIL_PRICE"], label="OIL")
-    # plt.legend()
-    # plt.show() 
+    graph_df = new_df.iloc[:1800:3, :]
+    plt.plot(graph_df["COAL_PRICE"], label="COAL")
+    plt.plot(graph_df["URANIUM_PRICE"], label="URANIUM")
+    plt.plot(graph_df["BIOMASS_PRICE"], label="BIO")
+    plt.plot(graph_df["GAS_PRICE"], label="GAS")
+    plt.plot(graph_df["OIL_PRICE"], label="OIL")
+    plt.legend()
+    plt.show() 
 
     # plt.plot(new_df["ENERGY_DEMAND"][:1800])
     # plt.plot(new_df["MAX_ENERGY_PRICE"])
