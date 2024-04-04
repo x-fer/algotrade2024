@@ -15,3 +15,4 @@ coredis==4.16.0
 redis==5.0.1
 slowapi==0.1.9
 httpx==0.26.0
+websockets==12.0
