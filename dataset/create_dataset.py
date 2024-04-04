@@ -23,7 +23,9 @@ df = df.rename(columns={"Global Horizontal UV Irradiance (280-400nm)": "UV"})
 df = df.rename(columns={"Precipitable Water": "Rain"})
 df = df.rename(columns={"Wind Speed": "Wind"})
 df = df.rename(columns={"Temperature": "Temp"})
-
+df["Wind"] = df["Wind"].rolling(3).mean()
+df["Wind"] = df["Wind"].rolling(3).mean()
+df["UV"] = df["UV"].rolling(3).mean()
 
 # load energy data
 energy = pd.read_csv("data/DUQ_hourly.csv")
@@ -75,12 +77,19 @@ groups = df.groupby("split")
 
 # Prepare data for csv -> these go directly to game and sql
 def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
-    def mavg_noise(box_size, size):
-        noise = np.random.normal(0, 1, size + box_size - 1)
-        return np.convolve(np.ones(box_size) / box_size, noise, mode="valid")
+    def from_0_to_1(col):
+        return (col - col.min()) / (col.max() - col.min())
+
+    def mavg_noise(size):
+        box_size_1 = 128
+        box_size_2 = 32
+        noise = np.random.uniform(0, 1, size + box_size_1 + box_size_2 - 2)
+        noise = np.convolve(np.ones(box_size_1) / box_size_1, noise, mode="valid")
+        noise = np.convolve(np.ones(box_size_2) / box_size_2, noise, mode="valid")
+        return 2*from_0_to_1(noise)-1
 
     def norm_col(col):
-        return col / col[:1800].mean()
+        return col / col[50:1850].mean()
 
     def add_linear(col):
         end = 0.12 * len(col) / 1800
@@ -108,11 +117,11 @@ def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
     )
     new_df["date"] = df.index.to_series()
 
-    new_df["COAL"] = mavg_noise(24, len(df)) * 0.02
-    new_df["URANIUM"] = mavg_noise(24, len(df)) * 0.02
-    new_df["BIOMASS"] = mavg_noise(24, len(df)) * 0.02
-    new_df["GAS"] = mavg_noise(24, len(df)) * 0.02
-    new_df["OIL"] = mavg_noise(24, len(df)) * 0.02
+    new_df["COAL"] = 1 + mavg_noise(len(df)) * 0.03
+    new_df["URANIUM"] = 1 + mavg_noise(len(df)) * 0.03
+    new_df["BIOMASS"] = 1 + mavg_noise(len(df)) * 0.03
+    new_df["GAS"] = 1 + mavg_noise(len(df)) * 0.03
+    new_df["OIL"] = 1 + mavg_noise(len(df)) * 0.03
 
     new_df["GEOTHERMAL"] = df["Rain"]
     new_df["WIND"] = df["Wind"]
@@ -138,37 +147,39 @@ def prepare_chunk(df: pd.DataFrame) -> pd.DataFrame:
         new_df[col] = new_df[col].apply(lambda x: int(x))
         new_df[col] = new_df[col].astype(int)
 
-    l = []
-    for col in new_df.columns:
-        if col == "date":
-            continue
-
-        # plt.plot(new_df[col], label=col)
-        l.append(new_df[col].sum())
-
-    # plt.title("Dataset outputs")
+    # plt.title("Power plants outputs")
+    # graph_df = new_df.iloc[:1800, :]
+    # plt.plot(graph_df["COAL"], label="COAL")
+    # plt.plot(graph_df["URANIUM"], label="URANIUM")
+    # plt.plot(graph_df["BIOMASS"], label="BIO")
+    # plt.plot(graph_df["GAS"], label="GAS")
+    # plt.plot(graph_df["OIL"], label="OIL")
+    # plt.plot(graph_df["GEOTHERMAL"], label="GEOTHERMAL")
+    # plt.plot(graph_df["WIND"], label="WIND")
+    # plt.plot(graph_df["SOLAR"], label="SOLAR")
+    # plt.plot(graph_df["HYDRO"], label="HYDRO")
     # plt.legend()
     # plt.show()
 
     # plt.bar(new_df.columns[1:], l)
-    # plt.title("Dataset outputs sum")
+    
+    # plt.title("Market prices")
+    # graph_df = new_df.iloc[50:1850:3, :]
+    # plt.plot(graph_df["COAL_PRICE"], label="COAL")
+    # plt.plot(graph_df["URANIUM_PRICE"], label="URANIUM")
+    # plt.plot(graph_df["BIOMASS_PRICE"], label="BIO")
+    # plt.plot(graph_df["GAS_PRICE"], label="GAS")
+    # plt.plot(graph_df["OIL_PRICE"], label="OIL")
     # plt.legend()
-    # plt.show()
-    graph_df = new_df.iloc[:1800:3, :]
-    plt.plot(graph_df["COAL_PRICE"], label="COAL")
-    plt.plot(graph_df["URANIUM_PRICE"], label="URANIUM")
-    plt.plot(graph_df["BIOMASS_PRICE"], label="BIO")
-    plt.plot(graph_df["GAS_PRICE"], label="GAS")
-    plt.plot(graph_df["OIL_PRICE"], label="OIL")
-    plt.legend()
-    plt.show() 
+    # plt.show() 
 
+    # plt.title("Energy prices and demand")
     # plt.plot(new_df["ENERGY_DEMAND"][:1800])
     # plt.plot(new_df["MAX_ENERGY_PRICE"])
     # plt.title("PRICES")
     # plt.show() 
 
-    return new_df
+    return new_df.iloc[50:, :]
 
 
 for name, group in groups:
@@ -186,6 +197,9 @@ for name, group in groups:
     assert all(time_delta == pd.Timedelta("60 minutes"))
 
     group = prepare_chunk(group)
+    # print(group.iloc[:1800, :].min())
+    # print(group.iloc[:1800, :].max())
+    # print(group.iloc[:1800, :].mean())
 
     group.to_csv(
         f"chunks/df_{len(group)}_{group.index[0]}_{group.index[-1]}.csv", index=False
