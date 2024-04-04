@@ -52,7 +52,7 @@ class ResourceMarket:
             except ValueError as e:
                 logger.warning(
                     f"Error adding order for order_id {order.order_id}: {e}")
-        logger.info(f"Orderbook for {self.resource.name:>8s} in game ({self.game_id}) matching in tick ({tick}) - {self.orderbook.__str__()}")
+        logger.debug(f"Orderbook for {self.resource.name:>8s} in game ({self.game_id}) matching in tick ({tick}) - {self.orderbook.__str__()}")
         self.orderbook.match(tick)
         return self._updated
 
