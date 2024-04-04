@@ -112,6 +112,7 @@ class OrderBook():
             self._invoke_callbacks('on_order_update', order)
             self._add_order(order)
             self._match(tick)
+        self._remove_expired(tick+1)
         self._invoke_callbacks('on_end_match', self.match_trades)
 
     def _remove_expired(self, tick: int):
@@ -213,11 +214,15 @@ class OrderBook():
             self._remove_order(order_id)
 
     def __str__(self):
-        s = "BUY:"
-        for order in self.buy_side:
-            s += f"(price: {order.price}, size: {order.size}, filled: {order.filled_size}), "
-        s += "\nSELL:"
-        for order in self.sell_side:
-            s += f"(price: {order.price}, size: {order.size}, filled: {order.filled_size}), "
+        orders_str = self._get_orders_str()
+        return f"orderbook(buy_side ({len(self.buy_side)}), sell_side ({len(self.sell_side)}), queue ({len(self.queue_set)}), {orders_str})"
 
-        return s
+    def _get_orders_str(self):
+        buy_orders_str = ", ".join(map(_order_to_str, self.buy_side))
+        sell_order_str = ", ".join(map(_order_to_str, self.sell_side))
+        queue_order_str = ", ".join(map(_order_to_str, self.queue))
+        return f"buy_orders: [{buy_orders_str}], sell_orders: [{sell_order_str}], queue_orders: [{queue_order_str}]"
+
+def _order_to_str(order: Order):
+    order_letter = 'B' if order.order_side == OrderSide.BUY else 'S'
+    return f"({order_letter}{order.price}:{order.filled_size}/{order.size})"

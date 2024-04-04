@@ -28,7 +28,7 @@ class TestCancelTrade():
         orderbook = OrderBook()
         orderbook.register_callback('on_cancel', sample_mock.some_method)
         buy_order = get_order(player_id=1, price=5, size=50,
-                              order_side=OrderSide.BUY, expiration=2, tick=1)
+                              order_side=OrderSide.BUY, expiration=4, tick=1)
 
         orderbook.add_order(buy_order)
         orderbook.match(tick=1)

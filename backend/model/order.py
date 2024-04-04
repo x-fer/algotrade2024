@@ -32,7 +32,7 @@ class Order(Table):
     filled_money: int = field(default=0)
     filled_price: float = field(default=0)
 
-    expiration_tick: int = field(default=1)
+    expiration_tick: int = field(default=0)
 
     def __post_init__(self):
         self.order_side = get_enum(self.order_side, OrderSide)

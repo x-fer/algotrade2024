@@ -50,7 +50,7 @@ class ResourceBot(Bot):
         if self.player_id is None:
             await self.create_player(tick_data)
 
-        self._log_if_no_or_duplicate(tick_data)
+        await self._log_if_no_or_duplicate(tick_data)
         if not self.should_create_orders(tick_data):
             return
 

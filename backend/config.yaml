@@ -64,7 +64,7 @@ bots:
   extra_orders_volume_diff: 0.12
   final_volume_multiplier: 1
   final_price_multiplier: 1
-  log_when_no_orders: 1
+  log_when_no_orders: ${LOG_BOTS}
 
 power_plant:
   resources_per_tick: 1
