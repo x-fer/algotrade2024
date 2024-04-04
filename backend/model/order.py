@@ -61,14 +61,14 @@ class Order(Table):
         """
         values = {
             "player_id": player_id,
-            "new_order_status": OrderStatus.USER_CANCELLED,
-            "order_status": OrderStatus.ACTIVE,
+            "new_order_status": OrderStatus.USER_CANCELLED.value,
+            "order_status": OrderStatus.ACTIVE.value,
         }
         await database.fetch_val(query, values)
         values = {
             "player_id": player_id,
-            "new_order_status": OrderStatus.PENDING,
-            "order_status": OrderStatus.CANCELLED,
+            "new_order_status": OrderStatus.PENDING.value,
+            "order_status": OrderStatus.CANCELLED.value,
         }
         await database.fetch_val(query, values)
 
