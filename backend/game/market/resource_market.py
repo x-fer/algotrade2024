@@ -5,6 +5,7 @@ from game.price_tracker.price_tracker import PriceTracker
 from model import Resource, Trade, Order
 from model.player import Player
 from logger import logger
+from timer import Timer
 
 
 class ResourceMarket:
@@ -52,7 +53,8 @@ class ResourceMarket:
             except ValueError as e:
                 logger.warning(
                     f"Error adding order for order_id {order.order_id}: {e}")
-        logger.debug(f"Orderbook for {self.resource.name:>8s} in game ({self.game_id}) matching in tick ({tick}) - {self.orderbook.__str__()}")
+        # with Timer("Logging orderbook"):
+        #     logger.debug(f"Orderbook for {self.resource.name:>8s} in game ({self.game_id}) matching in tick ({tick}) - {self.orderbook.__str__()}")
         self.orderbook.match(tick)
         return self._updated
 

@@ -6,6 +6,7 @@ from config import config
 from game.tick.tick_data import TickData
 from logger import logger
 from model import Order, OrderSide, Player, Resource, Team
+from timer import Timer
 
 from . import Bot
 
@@ -47,28 +48,37 @@ class ResourceBot(Bot):
         self.player_id = None
 
     async def run(self, tick_data: TickData):
-        if self.player_id is None:
-            await self.create_player(tick_data)
+        with Timer("Create player"):
+            if self.player_id is None:
+                await self.create_player(tick_data)
 
-        await self._log_if_no_or_duplicate(tick_data)
-        if not self.should_create_orders(tick_data):
-            return
+        with Timer("log if no or duplicate"):
+            await self._log_if_no_or_duplicate(tick_data)
+        with Timer("Should create orders"):
+            if not self.should_create_orders(tick_data):
+                return
 
         self.last_tick = tick_data.game.current_tick
-        resources_sum = self.get_resources_sum(tick_data)
-        orders = await self.get_last_orders()
+        with Timer("Get resources sum"):
+            resources_sum = self.get_resources_sum(tick_data)
+        with Timer("Get last orders"):
+            orders = await self.get_last_orders()
 
+        
         for resource in Resource:
-            resource_orders = orders[resource]
-            resource_sum = resources_sum[resource]
+            with Timer(f"Calculate orders for {resource.name}"):
+                with Timer(f"Everything else for {resource.name}"):
+                    resource_orders = orders[resource]
+                    resource_sum = resources_sum[resource]
 
-            filled_buy_perc, filled_sell_perc = self.get_filled_perc(resource_orders)
-            volume = self.get_volume(resource_sum)
-            price = self.get_price(resource, filled_buy_perc, filled_sell_perc)
-            price = self.get_mixed_price(tick_data, resource, price)
-            await self.create_orders(
-                tick_data.game.current_tick, resource, price, volume
-            )
+                    filled_buy_perc, filled_sell_perc = self.get_filled_perc(resource_orders)
+                    volume = self.get_volume(resource_sum)
+                    price = self.get_price(resource, filled_buy_perc, filled_sell_perc)
+                    price = self.get_mixed_price(tick_data, resource, price)
+                with Timer(f"Create orders for {resource.name}"):
+                    await self.create_orders(
+                        tick_data.game.current_tick, resource, price, volume
+                    )
 
     def should_create_orders(self, tick_data: TickData):
         if (

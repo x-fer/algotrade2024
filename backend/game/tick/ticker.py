@@ -14,6 +14,7 @@ from model.trade import TradeDb
 from .tick_data import TickData
 from logger import logger
 from db import database
+from timer import Timer
 
 
 class GameData:
@@ -113,7 +114,8 @@ class Ticker:
                     await database.execute(
                         "LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
 
-                    await self.run_game_tick(game)
+                    with Timer("Game tick"):
+                        await self.run_game_tick(game)
 
             except Exception:
                 logger.critical(
@@ -140,26 +142,35 @@ class Ticker:
         await Order.delete_bot_orders(game_id=game_id)
 
     async def run_game_tick(self, game: Game):
+        logger.end()
+        with Timer("First debug"):
+            logger.debug(
+                f"({game.game_id}) {game.game_name}: {game.current_tick} tick")
+        with Timer("Get tick data"):
+            tick_data = await self.get_tick_data(game)
 
-        logger.debug(
-            f"({game.game_id}) {game.game_name}: {game.current_tick} tick")
-        tick_data = await self.get_tick_data(game)
+        with Timer("Run market"):
+            tick_data = self.run_markets(tick_data)
 
-        tick_data = self.run_markets(tick_data)
+        with Timer("run power plants"):
+            tick_data = self.run_power_plants(tick_data)
 
-        tick_data = self.run_power_plants(tick_data)
+        with Timer("Run electricity market"):
+            tick_data, energy_sold = self.run_electricity_market(
+                tick_data, self.game_data[game.game_id].energy_market)
 
-        tick_data, energy_sold = self.run_electricity_market(
-            tick_data, self.game_data[game.game_id].energy_market)
-
-        await self.save_electricity_orders(
-            game, tick_data.players, energy_sold, game.current_tick)
-
-        await self.save_tick_data(tick_data)
-        await self.save_market_data(tick_data)
-        await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
+        with Timer("Save elctricity orders"):
+            await self.save_electricity_orders(
+                game, tick_data.players, energy_sold, game.current_tick)
+        with Timer("Save tick data"):
+            await self.save_tick_data(tick_data)
+        with Timer("Save market data"):
+            await self.save_market_data(tick_data)
+        with Timer("Update game"):
+            await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
         tick_data.game.current_tick += 1
-        await self.run_bots(tick_data)
+        with Timer("Run bots"):
+            await self.run_bots(tick_data)
 
     async def get_tick_data(self, game: Game) -> TickData:
         players = {
@@ -190,25 +201,26 @@ class Ticker:
             market = tick_data.markets[resource]
             market.set_players(tick_data.players)
 
-        for resource in tick_data.markets.keys():
-            market = tick_data.markets[resource]
-            canceled_resource_orders = list(filter(
-                lambda order: order.resource.value == resource, tick_data.user_cancelled_orders))
+        with Timer("Cancel orders"):
+            for resource in tick_data.markets.keys():
+                market = tick_data.markets[resource]
+                canceled_resource_orders = list(filter(
+                    lambda order: order.resource.value == resource, tick_data.user_cancelled_orders))
 
-            updated = market.cancel(
-                canceled_resource_orders)
+                updated = market.cancel(
+                    canceled_resource_orders)
 
-            tick_data.updated_orders.update(updated)
+                tick_data.updated_orders.update(updated)
+        with Timer("Match orders"):
+            for resource in tick_data.markets.keys():
+                market = tick_data.markets[resource]
+                pending_resource_orders = list(filter(
+                    lambda order: order.resource.value == resource, tick_data.pending_orders))
 
-        for resource in tick_data.markets.keys():
-            market = tick_data.markets[resource]
-            pending_resource_orders = list(filter(
-                lambda order: order.resource.value == resource, tick_data.pending_orders))
+                updated = market.match(
+                    pending_resource_orders, tick_data.game.current_tick)
 
-            updated = market.match(
-                pending_resource_orders, tick_data.game.current_tick)
-
-            tick_data.updated_orders.update(updated)
+                tick_data.updated_orders.update(updated)
 
         tick_data.tick_trades = []
         for market in tick_data.markets.values():

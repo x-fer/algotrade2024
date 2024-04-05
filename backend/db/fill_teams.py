@@ -40,18 +40,18 @@ async def fill_dummy_tables():
         dataset_id=datasets[0].dataset_id,
         start_time=datetime.now() + timedelta(milliseconds=3000),
         total_ticks=2300,
-        tick_time=3000,
-    )
-    nat_game_id = await Game.create(
-        game_name="Natjecanje",
-        is_contest=True,
-        dataset_id=datasets[1].dataset_id,
-        start_time=datetime.now() + timedelta(milliseconds=5000),
-        total_ticks=1800,
         tick_time=1000,
     )
+    # nat_game_id = await Game.create(
+    #     game_name="Natjecanje",
+    #     is_contest=True,
+    #     dataset_id=datasets[1].dataset_id,
+    #     start_time=datetime.now() + timedelta(milliseconds=5000),
+    #     total_ticks=1800,
+    #     tick_time=1000,
+    # )
 
-    games = [nat_game_id, not_nat_game_id]
+    games = [not_nat_game_id]
     for game_id in games:
         for team_name, team_id in teams:
             await Player.create(
