@@ -98,17 +98,17 @@ class Ticker:
                     timedelta(milliseconds=game.current_tick *
                               game.tick_time)
 
-                to_wait = max(
-                    0, (should_start - datetime.now()).total_seconds())
+                to_wait = (should_start - datetime.now()).total_seconds()
+                tick_time = game.tick_time/1000
 
-                if to_wait < 0.1 and game.current_tick > 0:
+                if to_wait < 0.1 * tick_time and game.current_tick > 0:
                     logger.warning(
-                        f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}s in tick ({game.current_tick}), catching up or possible overload")
-                    await asyncio.sleep(0.1)
+                        f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}s/{tick_time}s in tick ({game.current_tick}), catching up or possible overload")
 
-                await asyncio.sleep(to_wait)
+                await asyncio.sleep(max(0, to_wait))
 
                 # run the tick
+                logger.info(f"Ticking game ({game.game_id}) {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
                 async with database.transaction():
                     await database.execute(
                         "LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")

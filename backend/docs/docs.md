@@ -42,7 +42,7 @@ Order is defined by:
 - order side: BUY / SELL
 - resource: resource you want to buy or sell
 - order size: number of resources you are trading
-- order price: price per unit of resource you are selling (not the total price of the order)
+- order price: price per unit of resource you are buying/selling (not the total price of the order)
 - expiration tick: tick in the game when this order expires (see api docs for details)
 
 ### Matching engine <a name="matching_engine"></a>
@@ -50,7 +50,7 @@ Order is defined by:
 will place the orders by the time of arrival - as if they were evaluated real time. They are evalueated at the end of the tick for performance reasons. 
 
 - If the order is BUY order: engine will look for the SELL order with the lowest price that is already in the engine and if the price is lower than the price of the BUY order, they will match. 
-- If the order is SELL order: engine will look for the BUY order with the highest price that is already in the engine and if the price is lower than the price of the BUY order, they will match.
+- If the order is SELL order: engine will look for the BUY order with the highest price that is already in the engine and if the price is higher than the price of the SELL order, they will match.
 
 If during this process there are two orders with the same price, engine will look for the first one. If no matching order is found, placed order will be saved by engine for later matching, until it expires.
 
@@ -102,7 +102,7 @@ At the end of tick following things happen in this order:
 1) Resource orders are added to match engine in time order, and 
 then matched on the price-time priority
 
-1) Power plants consume set ammount of resources and then
+1) Power plants consume set amount of resources and then
 produces electricity
 
 1) Energy agent buys players energy on price priority
@@ -203,6 +203,6 @@ Bot total volume is set between 100 and 400. If players have 10000 resources, th
 Price is taken directly from dataset for the tick (about 1000-3000 per resource), but some bot coefficient is added. This coefficient is between -100 and 100. It is different for buy and for sell, so it is possible that buy and sell prices from bots are much apart.
 Buy coefficient is bigger if last bot buy orders (those from previous 5 ticks) were sold well - if they were more filled. If previous buy orders weren't traded at all, it means that bot price is too high and that it should lower it.
 It is done the same for sell orders but in different direction.
-These two coefficients are averaged and taken as final coefficient to price.
+If final bot buy is higher than final bot sell, then the new price is calculated as weighted (by already calculated bot buy and sell volume) of these two prices. Then these prices are equal, and sell price is increased by 1 - so that bot doesn't sell resources to itself.
 
 Once the price and volume is determined, bot *disperses* the orders. It creates many smaller orders totaling in volume to the calculated volume from before, but with small variations in pricing from the original (about 1%).

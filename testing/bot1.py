@@ -5,22 +5,22 @@ import requests
 from pprint import pprint
 from datetime import datetime, timedelta
 
-from algotrade_api import AlgotradeApi
+from algotrade_api import AlgotradeApi, Resource
 
 
-url = "localhost:8000"
+url = "localhost:3000"
 
-team_secret = "PWLQ0CET"
+team_secret = "gogi"
 game_id = 1
-player_id = -1  # we will get this later
 
-api = AlgotradeApi(url, team_secret, game_id, player_id)
+api = AlgotradeApi(url, team_secret, game_id)
 
+resource = Resource.coal
 
 def play():
     while True:
         # tick time is 1 second
-        sleep(1)
+        sleep(0.050)
 
         # we get our player stats
         r = api.get_player()
@@ -38,25 +38,28 @@ def play():
         assert r.status_code == 200, r.text
 
         # we turn on as many plants as we can burn coal this turn
-        t = api.turn_on("COAL", player["coal_plants_owned"])
+        player_power_plants = player[f"{resource.value.lower()}_plants_owned"]
+        t = api.turn_on(resource.value, player_power_plants)
         assert r.status_code == 200, r.text
 
-        print(f"Player COAL: {player['coal']}")
+        print(f"Player {resource.name}: {player[resource.value.lower()]}")
         print(f"Player MONEY: {player['money']}")
+        print(f"Player power plant: {player_power_plants}")
 
         # if we can buy a plant we buy it (20000 is some slack to get resources)
-        if plant_prices["COAL"]["next_price"] + 2_000_000 <= player["money"]:
-            r = api.buy_plant("COAL")
+        if plant_prices[resource.value]["next_price"] + 2_000_000 <= player["money"]:
+            print(f"buying power {resource.name} plant")
+            r = api.buy_plant(resource.value)
             assert r.status_code == 200, r.text
             continue
 
         # if we can't buy a plant we buy resources
-        if player["coal"] < 30:
+        if player[resource.value.lower()] < 30:
             # list available market orders
             r = api.get_orders()
             assert r.status_code == 200, r.text
 
-            orders = r.json()["COAL"]
+            orders = r.json()[resource.value]
 
             # filter for only sell orders
             orders = [order for order in orders if order["order_side"] == "SELL"]
@@ -67,7 +70,7 @@ def play():
             size = cheapest["size"]
 
             # size is min what can be bought, we don't want to buy more than 50, and we can't buy more than we can afford
-            size = min(size, 50 - player["coal"],
+            size = min(size, 50 - player[resource.value.lower()],
                        int(player["money"] // cheapest_price))
 
             if size == 0:
@@ -76,8 +79,7 @@ def play():
             print("buying resources")
             print(f"Cheapest price: {cheapest_price}, size: {size}")
 
-            r = api.create_order("COAL", cheapest_price + 10,
-                                 size, "BUY", expiration_length=10)
+            r = api.create_order(resource.value, cheapest_price + 10, size, "BUY", expiration_length=10)
             assert r.status_code == 200, r.text
 
             continue
@@ -99,7 +101,6 @@ def run(x):
 
 
 def main():
-
     # with Pool(25) as p:
     #     p.map(run, range(25))
 
