@@ -108,7 +108,7 @@ async def player_create(
             game_id=game_id,
             team_id=team_id,
             player_name=player_name,
-            money=starting_money,
+            money=starting_money*10000,
         )
 
     return PlayerCreateResponse(player_id=player_id, player_name=player_name)

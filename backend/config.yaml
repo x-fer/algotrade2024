@@ -43,7 +43,7 @@ dataset:
   energy_demand_multiplier: 30000
 
 player:
-  max_players_per_team: 10
+  max_players_per_team: 50
   starting_money: 50_000_000
   max_orders: 20
   max_energy_per_player: 0.4

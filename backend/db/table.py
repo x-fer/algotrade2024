@@ -89,6 +89,7 @@ class Table:
 
     @classmethod
     async def update_many(cls, l: list, col_nums: int = 1) -> int:
+        l = list(l)
         if len(l) == 0:
             return 0
         if len(l) > step:

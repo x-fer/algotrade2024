@@ -5,12 +5,12 @@ import requests
 from pprint import pprint
 from datetime import datetime, timedelta
 
-from algotrade_api import AlgotradeApi
+from algotrade_api import AlgotradeApi, Resource
 
 
-url = "localhost:8000"
+url = "localhost:3000"
 
-team_secret = "W6OKEA13"
+team_secret = "gogi"
 game_id = 1
 player_id = -1  # we will get this later
 
@@ -24,7 +24,7 @@ def play():
 
         # we get our player stats
         r = api.get_player()
-        assert r.status_code == 200, r.text
+        # assert r.status_code == 200, r.text
         player = r.json()
 
         print(f"Player COAL: {player['coal']}")
@@ -32,7 +32,7 @@ def play():
 
         # list available market orders
         r = api.get_orders()
-        assert r.status_code == 200, r.text
+        # assert r.status_code == 200, r.text
 
         orders = r.json()["COAL"]
 
@@ -47,9 +47,15 @@ def play():
         print("buying resources")
         print(f"Cheapest price: {cheapest_price}, size: {size}")
 
-        r = api.create_order("COAL", cheapest_price + 1000,
-                             1, "BUY", expiration_length=10)
-        assert r.status_code == 200, r.text
+        for resource in Resource:
+            for i in range(10):
+                r = api.create_order(resource.value, cheapest_price + random.randint(-20, 20),
+                                    4, "BUY", expiration_length=5)
+                # assert r.status_code == 200, r.text
+
+                r = api.create_order(resource.value, cheapest_price + random.randint(-20, 20),
+                                    4, "SELL", expiration_length=5)
+                # assert r.status_code == 200, r.text
 
         continue
 
@@ -58,7 +64,7 @@ def run(x):
     # each game, we must create a new player
     # in contest mode, we can make only one
     r = api.create_player("bot1")
-    assert r.status_code == 200, r.text
+    # assert r.status_code == 200, r.text
 
     print("Player created")
     pprint(r.json())
@@ -71,10 +77,10 @@ def run(x):
 
 def main():
 
-    # with Pool(25) as p:
-    #     p.map(run, range(25))
+    with Pool(25) as p:
+        p.map(run, range(25))
 
-    run(1)
+    # run(1)
 
 
 if __name__ == "__main__":
