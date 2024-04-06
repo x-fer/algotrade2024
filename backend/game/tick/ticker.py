@@ -110,17 +110,18 @@ class Ticker:
                 await asyncio.sleep(max(0, to_wait))
 
                 # run the tick
-                logger.info(f"Ticking game ({game.game_id}) {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
+                
                 async with database.transaction():
                     await database.execute(
                         "LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
-
-                    await self.run_game_tick(game)
+                    with Timer() as t:
+                        await self.run_game_tick(game)
+                    logger.info(f"{t.interval:.6} Ticking game ({game.game_id}) {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
 
             except Exception:
                 logger.critical(
                     f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
-                asyncio.sleep(0.5)
+                await asyncio.sleep(0.5)
 
     async def load_previous_oderbook(self, game_id: int):
         # in case of restart these need to be reloaded
@@ -143,8 +144,8 @@ class Ticker:
         await Order.delete_bot_orders(game_id=game_id)
 
     async def run_game_tick(self, game: Game):
-        profiler = Profiler()
-        profiler.start()
+        # profiler = Profiler()
+        # profiler.start()
         logger.debug(
             f"({game.game_id}) {game.game_name}: {game.current_tick} tick")
 
@@ -164,7 +165,7 @@ class Ticker:
         await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
         tick_data.game.current_tick += 1
         await self.run_bots(tick_data)
-        profiler.stop()
+        # profiler.stop()
         # profiler.print()
 
     async def get_tick_data(self, game: Game) -> TickData:
