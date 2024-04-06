@@ -20,5 +20,5 @@ class Timer:
         self.end = time.time()
         self.interval = self.end - self.start
         level -= 1
-        if self.description and self.interval > 0.002:
+        if self.description and self.interval > 0.005:
             logger.info(f"{'  '*level:<s}{self.description:} {self.interval:.7f} sec")
