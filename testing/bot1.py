@@ -17,12 +17,25 @@ api = AlgotradeApi(url, team_secret, game_id)
 
 resource = Resource.coal
 
+def to_datetime(date: str):
+    return datetime.fromisoformat(date.replace('Z', '+00:00'))
+
+def tick():
+    game = api.get_game().json()
+
+    next_tick = to_datetime(game["next_tick_time"])
+    current_tick = to_datetime(game["current_time"])
+
+    diff = next_tick - current_tick
+    diff = diff.total_seconds()
+    print(diff)
+    sleep(max(0.01, diff + 0.1))
+
+
 def play():
     while True:
-        # tick time is 1 second
-        sleep(0.050)
-
-        # we get our player stats
+        tick()
+        
         r = api.get_player()
         assert r.status_code == 200, r.text
         player = r.json()
@@ -56,9 +69,9 @@ def play():
         # if we can't buy a plant we buy resources
         if player[resource.value.lower()] < 30:
             # list available market orders
-            r = api.get_orders()
+            r = api.get_orders(restriction="best")
             assert r.status_code == 200, r.text
-
+            
             orders = r.json()[resource.value]
 
             # filter for only sell orders
@@ -88,15 +101,15 @@ def play():
 def run(x):
     # each game, we must create a new player
     # in contest mode, we can make only one
-    r = api.create_player("bot1")
-    assert r.status_code == 200, r.text
+    # r = api.create_player("bot1")
+    # assert r.status_code == 200, r.text
 
-    print("Player created")
-    pprint(r.json())
+    # print("Player created")
+    # pprint(r.json())
 
-    player_id = r.json()["player_id"]
+    # player_id = r.json()["player_id"]
 
-    api.set_player_id(player_id)
+    api.set_player_id(1)
     play()
 
 
