@@ -15,6 +15,7 @@ from .tick_data import TickData
 from logger import logger
 from db import database
 from timer import Timer
+from pyinstrument import Profiler
 
 
 class GameData:
@@ -142,6 +143,8 @@ class Ticker:
         await Order.delete_bot_orders(game_id=game_id)
 
     async def run_game_tick(self, game: Game):
+        profiler = Profiler()
+        profiler.start()
         logger.debug(
             f"({game.game_id}) {game.game_name}: {game.current_tick} tick")
 
@@ -161,6 +164,8 @@ class Ticker:
         await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
         tick_data.game.current_tick += 1
         await self.run_bots(tick_data)
+        profiler.stop()
+        # profiler.print()
 
     async def get_tick_data(self, game: Game) -> TickData:
         players = {

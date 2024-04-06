@@ -41,14 +41,38 @@ class Table:
             return 0
 
         cols = [field.name for field in fields(cls)]
-        values = [_transform_kwargs(asdict(obj)) for obj in l]
-        for val in values:
+        def _remove_cols(val):
             for col in cols[:col_nums]:
                 val.pop(col, None)
+        def _add_num(i, val):
+            return f"{val}_{i}"
+        def _add_num_val(val):
+            i, val = val
+            for col in cols[col_nums:]:
+                val[_add_num(i, val)] = val.pop[col]
+            return val
+        def _add_num_form(val):
+            i, val = val
+            return [_add_num(i, col) for col in cols[col_nums:]]
+        def _format_one(val):
+            return f"({', '.join(val)})"
+        
+        values = map(asdict, l)
+        values = map(_transform_kwargs, values)
+        values = map(_remove_cols, values)
+        values = map(_add_num_val, enumerate(values))
+
+        values_format = [f':{col}' for col in cols[col_nums:]]
+        values_format = [values_format] * len(values)
+        values_format = map(_add_num_form, enumerate(values_format))
+        values_format = map(_format_one, values_format)
+        values_format = ", ".join(values_format)
+        print("values_format", values_format)
+        print("values", values)
 
         query = f"""INSERT INTO {cls.table_name}
-            ({', '.join(cols[col_nums:])}) 
-            VALUES ({', '.join(f':{col}' for col in cols[col_nums:])})
+            ({', '.join(cols[col_nums:])})
+            VALUES [{values_format}]
             RETURNING {cols[0]}"""
 
         return await database.execute_many(query, values)
