@@ -7,46 +7,49 @@ from logger import logger
 
 Migrator().run()
 
+logger.info("Deleting tables")
 for cls in [DatasetData, Datasets, Order, Team, Game, Player]:
     for pk in cls.all_pks():
-        cls.delete
+        cls.delete(pk)
 
+logger.info("Creating teams")
 teams = [
     Team(team_name="Goranov_tim", team_secret="gogi"),
     Team(team_name="Krunov_tim", team_secret="kruno"),
     Team(team_name="Zvonetov_tim", team_secret="zvone"),
     Team(team_name="Maja_tim", team_secret="maja")
 ]
-
 for team in teams:
     team.save()
 
 fill_datasets()
 
 datasets = list(Datasets.all_pks())
-assert isinstance(datasets[0], str)
+assert len(datasets) > 0
 
-games = [Game(
-    game_name="Stalna igra",
-    is_contest=False,
-    dataset_id=datasets[0],
-    start_time=datetime.now() + timedelta(milliseconds=3000),
-    total_ticks=2300,
-    tick_time=3000,
-)]
+logger.info("Creating games")
+games = [
+    Game(
+        game_name="Stalna igra",
+        is_contest=False,
+        dataset_id=datasets[0],
+        start_time=datetime.now() + timedelta(milliseconds=3000),
+        total_ticks=2300,
+        tick_time=3000
+    ),
+    Game(
+        game_name="Natjecanje",
+        is_contest=True,
+        dataset_id=datasets[1],
+        start_time=datetime.now() + timedelta(milliseconds=5000),
+        total_ticks=1800,
+        tick_time=1000,
+    )
+]
 for game in games:
     game.save()
 
-
-#     nat_game_id = await Game.create(
-#         game_name="Natjecanje",
-#         is_contest=True,
-#         dataset_id=datasets[1].dataset_id,
-#         start_time=datetime.now() + timedelta(milliseconds=5000),
-#         total_ticks=1800,
-#         tick_time=1000,
-#     )
-
+logger.info("Creating players")
 for game in games:
     for team in teams:
         Player(

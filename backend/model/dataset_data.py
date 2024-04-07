@@ -1,36 +1,23 @@
 from datetime import datetime
-from redis_om import  Field, HashModel, get_redis_connection
+from redis_om import  Field, JsonModel, get_redis_connection
+
+from model.power_plant_model import PowerPlantsModel, ResourcesModel
 
 
-class DatasetData(HashModel):
+class DatasetData(JsonModel):
     dataset_id: str = Field(index=True)
     date: datetime
     tick: int = Field(index=True)
 
-    coal: int
-    uranium: int
-    biomass: int
-    gas: int
-    oil: int
-    geothermal: int
-    wind: int
-    solar: int
-    hydro: int
-    
-    coal_price: int
-    uranium_price: int
-    biomass_price: int
-    gas_price: int
-    oil_price: int
     energy_demand: int
     max_energy_price: int
+
+    resource_prices: ResourcesModel = Field(default_factory=ResourcesModel)
+    power_plants_output: PowerPlantsModel = Field(default_factory=PowerPlantsModel)
 
     @property
     def dataset_data_id(self) -> str:
         return self.pk
-
-    def __getitem__(self, item):
-        return self.__getattribute__(item.lower())
 
     @classmethod
     async def list_by_game_id_where_tick(cls, dataset_id, game_id, min_tick, max_tick):
