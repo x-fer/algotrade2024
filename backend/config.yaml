@@ -4,12 +4,7 @@ server:
 
 redis:
   port: 6379
-
-database:
-  url: postgresql://postgres:postgres@localhost:5432/mydatabase
-
-test_database:
-  url: postgresql://postgres:postgres@localhost:5432/test_database
+  host: localhost
 
 admin:
   secret: mojkljuc

@@ -1,18 +1,11 @@
-from dataclasses import dataclass
 from datetime import datetime
-
-from db.db import database
-from db.table import Table
+from redis_om import  Field, HashModel, get_redis_connection
 
 
-@dataclass
-class DatasetData(Table):
-    table_name = "dataset_data"
-
-    dataset_data_id: int
-    dataset_id: int
+class DatasetData(HashModel):
+    dataset_id: str = Field(index=True)
     date: datetime
-    tick: int
+    tick: int = Field(index=True)
 
     coal: int
     uranium: int
@@ -23,6 +16,7 @@ class DatasetData(Table):
     wind: int
     solar: int
     hydro: int
+    
     coal_price: int
     uranium_price: int
     biomass_price: int
@@ -31,21 +25,16 @@ class DatasetData(Table):
     energy_demand: int
     max_energy_price: int
 
+    @property
+    def dataset_data_id(self) -> str:
+        return self.pk
+
     def __getitem__(self, item):
         return self.__getattribute__(item.lower())
 
     @classmethod
     async def list_by_game_id_where_tick(cls, dataset_id, game_id, min_tick, max_tick):
-        query = f"""
-        SELECT dataset_data.* FROM {cls.table_name} 
-        JOIN games ON dataset_data.dataset_id = games.dataset_id
-        WHERE dataset_data.dataset_id=:dataset_id AND game_id=:game_id AND tick BETWEEN :min_tick AND :max_tick
-        ORDER BY tick
-        """
-        values = {"dataset_id": dataset_id,
-                  "game_id": game_id,
-                  "min_tick": min_tick,
-                  "max_tick": max_tick}
-        result = await database.fetch_all(query, values)
-
-        return [cls(**x) for x in result]
+        raise Exception()
+    
+    class Meta:
+        database = get_redis_connection(port=6479)

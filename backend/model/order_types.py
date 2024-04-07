@@ -1,11 +1,6 @@
 from enum import Enum
 
 
-class OrderType(Enum):
-    LIMIT = "LIMIT"
-    MARKET = "MARKET"
-
-
 class OrderSide(Enum):
     BUY = "BUY"
     SELL = "SELL"

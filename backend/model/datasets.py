@@ -1,22 +1,13 @@
-from db.table import Table
-from dataclasses import dataclass
-from fastapi import HTTPException
-from model.dataset_data import DatasetData
+from redis_om import  Field, JsonModel, get_redis_connection
 
 
-@dataclass
-class Datasets(Table):
-    table_name = "datasets"
-
-    dataset_id: int
-    dataset_name: str
+class Datasets(JsonModel):
+    dataset_name: str = Field(index=True)
     dataset_description: str
 
-    @classmethod
-    async def validate_ticks(cls, dataset_id, min_ticks):
-        rows = await DatasetData.count(dataset_id=dataset_id)
+    @property
+    def dataset_id(self) -> str:
+        return self.pk
 
-        if rows < min_ticks:
-            raise HTTPException(400, "Dataset does not have enough ticks")
-
-        return dataset_id
+    class Meta:
+        database = get_redis_connection(port=6479)

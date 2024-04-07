@@ -1,10 +1,13 @@
-from dataclasses import dataclass
-from db.table import Table
+from redis_om import Field, HashModel, get_redis_connection
 
 
-@dataclass
-class Team(Table):
-    table_name = "teams"
-    team_id: int
+class Team(HashModel):
     team_name: str
-    team_secret: str
+    team_secret: str = Field(index=True)
+
+    @property
+    def team_id(self) -> str:
+        return self.pk
+
+    class Meta:
+        database = get_redis_connection(port=6479)

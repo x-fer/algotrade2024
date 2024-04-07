@@ -34,7 +34,7 @@ class Ticker:
 
     async def run_tick_manager(self, iters=None, tick_event=None):
         for i in range(iters or sys.maxsize):
-            games = await Game.list()
+            games: List[Game] = await Game.list()
 
             for game in games:
                 if game.is_finished:

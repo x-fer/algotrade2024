@@ -2,11 +2,11 @@ from enum import Enum
 
 
 class Resource(Enum):
-    coal = "COAL"
-    uranium = "URANIUM"
-    biomass = "BIOMASS"
-    gas = "GAS"
-    oil = "OIL"
+    COAL = "coal"
+    URANIUM = "uranium"
+    BIOMASS = "biomass"
+    GAS = "gas"
+    OIL = "oil"
 
 class Energy(Enum):
-    energy = "ENERGY"
+    ENERGY = "energy"

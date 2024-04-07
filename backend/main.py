@@ -106,5 +106,5 @@ async def root():
     return {"message": "Hello World"}
 
 
-app.include_router(admin_router, prefix="/admin")
-app.include_router(users_router)
+# app.include_router(admin_router, prefix="/admin")
+# app.include_router(users_router)
