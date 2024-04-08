@@ -47,16 +47,16 @@ bots:
   team_name: bots
   team_secret: oiajsdpifjapsndkcapis
   resource_sum: 1000
-  default_volume: 200
-  min_volume: 50
-  max_volume: 400
+  default_volume: 20000
+  min_volume: 5000
+  max_volume: 40000
   min_price: -100
   max_price: 100
   expiration_ticks: 3
   price_change_coeff: 0.25
-  extra_orders: 5
+  extra_orders: 50
   extra_orders_price_diff: 0.01
-  extra_orders_volume_diff: 0.12
+  extra_orders_volume_diff: 0.0012
   final_volume_multiplier: 1
   final_price_multiplier: 1
   log_when_no_orders: ${LOG_BOTS}

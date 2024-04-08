@@ -109,10 +109,7 @@ class Ticker:
                 await asyncio.sleep(to_wait)
                 
                 start_time = datetime.now()
-                with ExitStack() as stack:
-                    for player_lock in self.get_player_locks(game):
-                        stack.enter_context(player_lock)
-                    self.run_game_tick(game)
+                self.run_game_tick(game)
                 interval = (datetime.now() - start_time).total_seconds()
                 logger.info(
                     f"{interval:.6} Ticking game ({game.game_id}) {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
@@ -158,25 +155,26 @@ class Ticker:
         # profiler.start()
 
         self.pipe = Order.db().pipeline()
+        with ExitStack() as stack:
+            for player_lock in self.get_player_locks(game):
+                stack.enter_context(player_lock)
 
-        tick_data = self.get_tick_data(game)
+            tick_data = self.get_tick_data(game)
 
-        tick_data = self.run_markets(tick_data)
+            tick_data = self.run_markets(tick_data)
+            tick_data = self.run_power_plants(tick_data)    
+            tick_data, energy_sold = self.run_electricity_market(
+                tick_data, self.game_data[game.game_id].energy_market)
 
-        tick_data = self.run_power_plants(tick_data)    
-
-        tick_data, energy_sold = self.run_electricity_market(
-            tick_data, self.game_data[game.game_id].energy_market)
-
-        self.save_electricity_orders(
-            game, tick_data.players, energy_sold, game.current_tick)
-
-        self.save_tick_data(tick_data)
-        self.save_market_data(tick_data)
-        game.current_tick += 1
-        game.save(self.pipe)
+            self.save_electricity_orders(
+                game, tick_data.players, energy_sold, game.current_tick)
+            self.save_tick_data(tick_data)
+            self.save_market_data(tick_data)
+            game.current_tick += 1
+            game.save(self.pipe)
+            self.pipe.execute()
+        
         self.game_data[tick_data.game.game_id].bot.run(self.pipe, tick_data)
-
         self.pipe.execute()
 
         # profiler.stop()
@@ -237,12 +235,9 @@ class Ticker:
 
             tick_data.updated_orders.update(updated)
 
-        # tick_data.tick_trades = []
         for market in tick_data.markets.values():
             tick_data.tick_trades.extend(
                 market.get_last_tick_trades())
-        # tick_data.tick_trades = list(map(
-        #     TradeDb.from_trade, tick_data.tick_trades))
 
         return tick_data
 
@@ -272,8 +267,6 @@ class Ticker:
 
     def save_electricity_orders(self, game: Game, players: Dict[int, Player],
                                       energy_sold: Dict[int, int], tick: int):
-        electricity_orders = []
-        # pipe = Order.db().pipeline()
         for player_id, energy in energy_sold.items():
             Order(
                 game_id=game.game_id,
@@ -292,22 +285,14 @@ class Ticker:
             ).save(self.pipe)
 
     def save_tick_data(self, tick_data: TickData):
-        # pipe = Player.db().pipeline()
-        # for order in tick_data.players.values():
-        #     order.save(self.pipe)
         list(map(methodcaller('save', self.pipe), tick_data.players.values()))
-        # for order in tick_data.updated_orders.values():
-        #     order.save(self.pipe)
-        # pipe.execute()
         list(map(methodcaller('save', self.pipe), tick_data.updated_orders.values()))
-        
-        # TradeDb.create_many(tick_data.tick_trades)
+        list(map(methodcaller('save', self.pipe), tick_data.tick_trades))
 
     def save_market_data(self, tick_data: TickData):
         tick = tick_data.game.current_tick
         game_id = tick_data.game.game_id
 
-        # pipe = Market.db().pipeline()
         for resource, market in chain(
                 tick_data.markets.items(),
                 [(Energy.ENERGY.value, tick_data.energy_market)]):

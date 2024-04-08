@@ -13,10 +13,12 @@ Migrator().run()
 
 print("Old datasets", list(Datasets.find().all()))
 
+pipe = DatasetData.db().pipeline()
 logger.info("Deleting tables")
 for cls in [DatasetData, Datasets, Order, Team, Game, Player]:
     for pk in cls.all_pks():
-        cls.delete(pk)
+        cls.delete(pk, pipe)
+pipe.execute()
 
 logger.info("Creating teams")
 teams = [
@@ -62,7 +64,7 @@ games = [
         game_name="Natjecanje",
         is_contest=True,
         dataset_id=datasets[1],
-        start_time=datetime.now() + timedelta(milliseconds=3000),
+        start_time=datetime.now() + timedelta(milliseconds=5000),
         total_ticks=1800,
         tick_time=1000,
     )

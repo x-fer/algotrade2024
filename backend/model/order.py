@@ -31,12 +31,7 @@ class Order(JsonModel):
 
     @property
     def order_id(self) -> str:
-        # self.json
         return self.pk
-    
-    # def json(self, *args, **kwargs):
-    #     return super().json(self, *args, **kwargs)
-
 
     def __post_init__(self):
         self.order_side = get_enum(self.order_side, OrderSide)

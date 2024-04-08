@@ -17,6 +17,7 @@ energy_demand_multiplier = config["dataset"]["energy_demand_multiplier"]
 
 def fill_datasets():
     logger.info("Filling datasets")
+    pipe = DatasetData.db().pipeline()
     for dataset_name in os.listdir(datasets_path):
         if not dataset_name.endswith(".csv"):
             continue
@@ -31,9 +32,10 @@ def fill_datasets():
 
         tick = 0
         for _, row in df.iterrows():
-            from_row(dataset, tick, row).save()
+            from_row(dataset, tick, row).save(pipe)
             tick += 1
         logger.info(f"Added dataset {dataset_name}")
+    pipe.execute()
 
 
 def from_row(dataset: Datasets, tick: int, row: pd.Series) -> DatasetData:
