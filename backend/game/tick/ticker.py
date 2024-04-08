@@ -189,7 +189,6 @@ class Ticker:
         pending_orders = Order.find(
             Order.game_id==game.game_id,
             Order.order_status==OrderStatus.PENDING.value).all()
-        print("Pending orders", len(pending_orders))
         user_cancelled_orders = Order.find(
             Order.game_id==game.game_id,
             Order.order_status==OrderStatus.USER_CANCELLED.value).all()

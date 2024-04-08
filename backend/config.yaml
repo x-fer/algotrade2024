@@ -11,6 +11,9 @@ admin:
 
 testing: ${TESTING}
 debug: ${DEBUG}
+drop_tables: ${DROP_TABLES}
+fill_datasets: ${FILL_DATASETS}
+fill_tables: ${FILL_TABLES}
 
 dataset:
   datasets_path: ./data
