@@ -1,5 +1,6 @@
 from datetime import datetime
-from redis_om import  Field, JsonModel, get_redis_connection
+from db.db import get_my_redis_connection
+from redis_om import  Field, JsonModel
 
 from model.power_plant_model import PowerPlantsModel, ResourcesModel
 
@@ -24,4 +25,4 @@ class DatasetData(JsonModel):
         raise Exception()
     
     class Meta:
-        database = get_redis_connection(port=6479)
+        database = get_my_redis_connection()

@@ -94,11 +94,11 @@ class ResourceMarket:
 
         if not buyer.is_bot:
             buyer.money -= trade.filled_money
-            buyer[self.resource.name] += trade.filled_size
+            buyer.resources[self.resource] += trade.filled_size
 
         if not seller.is_bot:
             seller.money += trade.filled_money
-            seller[self.resource.name] -= trade.filled_size
+            seller.resources[self.resource] -= trade.filled_size
 
     def _get_player(self, player_id: int) -> Player:
         if self.players is None:

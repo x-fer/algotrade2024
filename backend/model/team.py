@@ -1,8 +1,9 @@
-from redis_om import Field, HashModel, get_redis_connection
+from db.db import get_my_redis_connection
+from redis_om import Field, JsonModel
 
 
-class Team(HashModel):
-    team_name: str
+class Team(JsonModel):
+    team_name: str = Field(index=True)
     team_secret: str = Field(index=True)
 
     @property
@@ -10,4 +11,4 @@ class Team(HashModel):
         return self.pk
 
     class Meta:
-        database = get_redis_connection(port=6479)
+        database = get_my_redis_connection()

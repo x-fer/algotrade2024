@@ -1,16 +1,17 @@
 
-from redis_om import  Field, JsonModel, get_redis_connection
+from db.db import get_my_redis_connection
+from redis_om import  Field, JsonModel
 from datetime import datetime
 
 
 class Game(JsonModel):
     game_name: str
-    is_contest: bool
+    is_contest: int = Field(index=True)
     dataset_id: str
-    start_time: datetime
+    start_time: datetime = Field(index=False)
     total_ticks: int
     tick_time: int
-    current_tick: int = Field(index=False, default=0)
+    current_tick: int = Field(default=0)
     is_finished: bool = Field(index=False, default=False)
 
     @property
@@ -18,4 +19,4 @@ class Game(JsonModel):
         return self.pk
 
     class Meta:
-        database = get_redis_connection(port=6479)
+        database = get_my_redis_connection()

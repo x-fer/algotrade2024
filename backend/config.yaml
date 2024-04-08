@@ -55,7 +55,7 @@ bots:
   expiration_ticks: 3
   price_change_coeff: 0.25
   extra_orders: 5
-  extra_orders_price_diff: 0.02
+  extra_orders_price_diff: 0.01
   extra_orders_volume_diff: 0.12
   final_volume_multiplier: 1
   final_price_multiplier: 1

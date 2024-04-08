@@ -1,8 +1,9 @@
+from db.db import get_my_redis_connection
 from model.power_plant_model import PowerPlantsModel, ResourcesModel
 from model.resource import Resource
 from model.power_plant_type import PowerPlantType
 from pydantic import BaseModel
-from redis_om import EmbeddedJsonModel, Field, JsonModel, get_redis_connection
+from redis_om import EmbeddedJsonModel, Field, JsonModel
 from redlock.lock import RedLock
 
 
@@ -19,8 +20,8 @@ class Player(JsonModel):
     player_name: str
     game_id: str = Field(index=True)
     team_id: str = Field(index=True)
-    is_active: bool = Field(default=True)
-    is_bot: bool = Field(default=False)
+    is_active: int = Field(default=1)
+    is_bot: int = Field(default=1)
 
     energy_price: int = Field(default=1e9)
 
@@ -35,11 +36,6 @@ class Player(JsonModel):
     @property
     def player_id(self) -> str:
         return self.pk
-
-    def __setitem__(self, key, value):
-        if isinstance(key, Resource):
-            return self.__setattr__(key.name, value)
-        self.__setattr__(key, value)
     
     def lock(self, *args):
         return RedLock(self.pk, *args)
@@ -48,4 +44,4 @@ class Player(JsonModel):
         raise Exception("Not implemented")
 
     class Meta:
-        database = get_redis_connection(port=6479)
+        database = get_my_redis_connection()

@@ -1,26 +1,36 @@
+from enum import Enum
+from db.db import get_my_redis_connection
 from model.resource import Resource
 from model.power_plant_type import PowerPlantType
 from pydantic import BaseModel
-from redis_om import EmbeddedJsonModel, Field, JsonModel, get_redis_connection
+from redis_om import EmbeddedJsonModel, Field, JsonModel
 from redlock.lock import RedLock
 
 
-class ResourcesModel(EmbeddedJsonModel):
+class EnumGetterSettr:
+    def __getitem__(self, key):
+        if isinstance(key, Enum):
+            return self.__getattribute__(key.value)
+        return self.__getattribute__(key)
+    
+    def __setitem__(self, key, value):
+        if isinstance(key, Enum):
+            return self.__setattr__(key.name, value)
+        self.__setattr__(key, value)
+
+
+class ResourcesModel(EmbeddedJsonModel, EnumGetterSettr):
     coal: int = Field(index=False, default=0)
     uranium: int = Field(index=False, default=0)
     biomass: int = Field(index=False, default=0)
     gas: int = Field(index=False, default=0)
     oil: int = Field(index=False, default=0)
 
-    def __getitem__(self, key):
-        if isinstance(key, Resource):
-            return self.__getattribute__(key.value)
-        return self.__getattribute__(key)
     class Meta:
-        database = get_redis_connection(port=6479)
+        database = get_my_redis_connection()
 
 
-class PowerPlantsModel(EmbeddedJsonModel):
+class PowerPlantsModel(EmbeddedJsonModel, EnumGetterSettr):
     coal: int = Field(index=False, default=0)
     uranium: int = Field(index=False, default=0)
     biomass: int = Field(index=False, default=0)
@@ -31,9 +41,5 @@ class PowerPlantsModel(EmbeddedJsonModel):
     solar: int = Field(index=False, default=0)
     hydro: int = Field(index=False, default=0)
 
-    def __getitem__(self, key):
-        if isinstance(key, PowerPlantType):
-            return self.__getattribute__(key.value)
-        return self.__getattribute__(key)
     class Meta:
-        database = get_redis_connection(port=6479)
+        database = get_my_redis_connection()

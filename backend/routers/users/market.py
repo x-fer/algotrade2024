@@ -4,9 +4,8 @@ from enum import Enum
 from typing import List, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from model.resource import Energy
-from model.trade import TradeDb
 from pydantic import BaseModel, Field
-from model import Order, OrderSide, OrderType, OrderStatus, Resource
+from model import Order, OrderSide, OrderStatus, Resource
 from model.game import Game
 from model.market import Market
 from model.player import Player
@@ -261,7 +260,6 @@ async def order_create_player(
     return await Order.create(
         game_id=game.game_id,
         player_id=player.player_id,
-        order_type=OrderType.LIMIT,
         order_side=order.side.value,
         order_status=OrderStatus.PENDING,
         timestamp=datetime.now(),

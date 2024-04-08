@@ -1,7 +1,7 @@
 from collections import deque
 from xheap import XHeap
 from functools import reduce
-from model import Order, OrderSide, OrderStatus, OrderType, Trade
+from model import Order, OrderSide, OrderStatus, Trade
 from logger import logger
 
 
@@ -198,10 +198,10 @@ class OrderBook():
         first_order = buy_order if buy_order.timestamp < sell_order.timestamp else sell_order
         second_order = sell_order if buy_order.timestamp < sell_order.timestamp else buy_order
 
-        if first_order.order_type != OrderType.MARKET:
-            return first_order.price
-        elif second_order.order_type != OrderType.MARKET:
-            return second_order.price
+        # if first_order.order_type != OrderType.MARKET:
+        #     return first_order.price
+        # elif second_order.order_type != OrderType.MARKET:
+        #     return second_order.price
         return self.prev_price
 
     def _get_trade_size(self, buy_order: Order, sell_order: Order):
