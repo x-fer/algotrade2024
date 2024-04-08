@@ -19,10 +19,6 @@ class DatasetData(JsonModel):
     @property
     def dataset_data_id(self) -> str:
         return self.pk
-
-    @classmethod
-    async def list_by_game_id_where_tick(cls, dataset_id, game_id, min_tick, max_tick):
-        raise Exception()
     
     class Meta:
         database = get_my_redis_connection()

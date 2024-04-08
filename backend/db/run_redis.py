@@ -50,14 +50,14 @@ def create_teams_and_games():
 
     logger.info("Creating games")
     games = [
-        Game(
-            game_name="Stalna igra",
-            is_contest=False,
-            dataset_id=datasets[0],
-            start_time=datetime.now() + timedelta(milliseconds=3000),
-            total_ticks=2300,
-            tick_time=3000
-        ),
+        # Game(
+        #     game_name="Stalna igra",
+        #     is_contest=False,
+        #     dataset_id=datasets[0],
+        #     start_time=datetime.now() + timedelta(milliseconds=3000),
+        #     total_ticks=2300,
+        #     tick_time=3000
+        # ),
         Game(
             game_name="Natjecanje",
             is_contest=True,

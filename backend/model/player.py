@@ -1,26 +1,31 @@
 from db.db import get_my_redis_connection
+from model.dataset_data import DatasetData
+from model.game import Game
+from model.order import Order
 from model.power_plant_model import PowerPlantsModel, ResourcesModel
-from model.resource import Resource
-from model.power_plant_type import PowerPlantType
 from pydantic import BaseModel
-from redis_om import EmbeddedJsonModel, Field, JsonModel
+import pydantic
+from redis_om import Field, JsonModel
 from redlock.lock import RedLock
+
+from model.power_plant_type import PowerPlantType
+from model.resource import Resource
 
 
 class Networth(BaseModel):
-    total: int = Field(index=False, default=0)
-    money: int = Field(index=False, default=0)
-    resources: ResourcesModel
-    resources_value: ResourcesModel
-    power_plants_owned: PowerPlantsModel
-    power_plants_value: PowerPlantsModel
+    total: int = pydantic.Field(..., description="Total players networth. This is your score in competition rounds!")
+    money: int
+    resources: ResourcesModel = Field(..., description="Resources owned by the player")
+    resources_value: ResourcesModel = Field(..., description="Players networth based on resources prices on the market")
+    power_plants_owned: PowerPlantsModel = Field(..., description="Power plants owned by the player")
+    power_plants_value: PowerPlantsModel = Field(..., description="Players networth based only on power plants sell prices")
 
 
 class Player(JsonModel):
     player_name: str
     game_id: str = Field(index=True)
     team_id: str = Field(index=True)
-    is_active: int = Field(default=1)
+    is_active: int = Field(default=1, index=True)
     is_bot: int = Field(default=1)
 
     energy_price: int = Field(default=1e9)
@@ -36,12 +41,42 @@ class Player(JsonModel):
     @property
     def player_id(self) -> str:
         return self.pk
-    
+
     def lock(self, *args):
         return RedLock(self.pk, *args)
 
-    async def get_networth(self, game):
-        raise Exception("Not implemented")
+    def cancel_orders(self, pipe=None):
+        Order.delete_many(
+            Order.find(Order.player_id == self.player_id).all(),
+            pipe
+        )
+
+    async def get_networth(self, game: Game):
+        # TODO: nije pod lockom jer bi kocilo tick, a ovo stalno uzimaju igraci
+        dataset_data: DatasetData = DatasetData.find(
+            (DatasetData.tick==game.current_tick) & 
+            (DatasetData.dataset_id==game.dataset_id)
+        ).first()
+        total = self.money
+        resources_value = ResourcesModel()
+        for resource in Resource:
+            resource_value = dataset_data.resource_prices[resource] * self.resources[resource]
+            resources_value[resource] = resource_value
+            total += resource_value
+        power_plants_value = PowerPlantsModel()
+        for type in PowerPlantType:
+            for i in range(1, self.power_plants_owned[type] + 1):
+                power_plants_value[type] += PowerPlantType.get_sell_price()
+            total += power_plants_value[type]
+
+        return Networth(
+            total = total,
+            money = self.money,
+            resources = self.resources,
+            resources_value = resources_value,
+            power_plants_owned = self.power_plants_owned,
+            power_plants_value = power_plants_value,
+        )
 
     class Meta:
         database = get_my_redis_connection()

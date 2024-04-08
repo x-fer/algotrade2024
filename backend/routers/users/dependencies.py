@@ -3,6 +3,7 @@ from fastapi import HTTPException, Query, Depends
 from model import Team, Player, Game
 from typing import Tuple
 from config import config
+from model.order import Order
 
 
 def team_dep(
@@ -47,6 +48,17 @@ def player_dep(
     if player.is_active is False:
         raise HTTPException(400, "This player is inactive or already has been deleted")
     return player
+
+
+def order_dep(order_id: str, game: Game = Depends(game_dep)):
+    try:
+        order = Order.get(order_id)
+    except Exception:
+        raise HTTPException(400, "Invalid order_id")
+    if game.game_id != order.game_id:
+        raise HTTPException(400, f"This order belongs to game {game.game_id}")
+    # TODO: dozvoliti da se vidi od drugih playera?
+    return order
 
 
 tick_description = "Enter negative number for relative tick e.g. -5 for current_tick-5. Leave empty for last tick."

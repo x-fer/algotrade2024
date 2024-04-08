@@ -8,11 +8,11 @@ from datetime import datetime, timedelta
 from typing import Dict, Iterator, List, Tuple
 
 from pyinstrument import Profiler
+
 from game.bots.bot import Bot
 from game.bots.resource_bot import ResourceBot
 from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide
 from game.market import ResourceMarket, EnergyMarket
-from game.bots import Bots
 from model.market import Market
 from model.resource import Energy
 from .tick_data import TickData
@@ -43,7 +43,7 @@ class Ticker:
             for game in games:
                 if game.is_finished:
                     continue
-                if game.start_time < datetime.now():
+                if game.start_time > datetime.now():
                     continue
                 if game.game_id not in self.game_data:
                     await self.start_game(game, tick_event=None)
@@ -118,10 +118,6 @@ class Ticker:
                 logger.critical(
                     f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
                 await asyncio.sleep(0.5)
-    
-    def get_player_locks(self, game: Game) -> Iterator[RedLock]:
-        players = Player.find(Player.game_id == game.game_id).all()
-        return list(map(methodcaller('lock'), players))
 
     def load_previous_oderbook(self, game_id: str):
         # in case of restart these need to be reloaded
@@ -138,29 +134,25 @@ class Ticker:
             markets[order.resource.value].orderbook.add_order(order)
 
     def delete_all_running_bots(self, game_id: int):
-        bots = Player.find(
+        bots: List[Player] = Player.find(
             (Player.game_id==game_id) & 
             (Player.is_bot==int(True))
         ).all()
-
+        pipe = Player.db().pipeline()
         for bot in bots:
-            bot.update(is_active=False)
-        
-        Order.delete_many(
-            Order.find(Order.game_id==game_id).all()
-        )
+            bot.is_active = False
+            bot.save(pipe)
+            bot.cancel_orders(pipe)
+        pipe.execute()
 
     def run_game_tick(self, game: Game):
-        # profiler =  Profiler()
+        # profiler = Profiler()
         # profiler.start()
 
         self.pipe = Order.db().pipeline()
         with ExitStack() as stack:
-            for player_lock in self.get_player_locks(game):
-                stack.enter_context(player_lock)
-
-            tick_data = self.get_tick_data(game)
-
+            players = self.get_players_and_enter_context(game, stack)
+            tick_data = self.get_tick_data(game, players)
             tick_data = self.run_markets(tick_data)
             tick_data = self.run_power_plants(tick_data)    
             tick_data, energy_sold = self.run_electricity_market(
@@ -173,25 +165,40 @@ class Ticker:
             game.current_tick += 1
             game.save(self.pipe)
             self.pipe.execute()
-        
+        # logger.info(f"{tick_data.game.current_tick} updated orders {len(tick_data.updated_orders)}")
         self.game_data[tick_data.game.game_id].bot.run(self.pipe, tick_data)
         self.pipe.execute()
 
         # profiler.stop()
         # profiler.print()
 
-    def get_tick_data(self, game: Game) -> TickData:
+    def get_players_and_enter_context(self, game: Game, stack: ExitStack) -> Dict[str, Player]:
+        players = Player.find(Player.game_id == game.game_id).all()
+        for player_lock in list(map(methodcaller('lock'), players)):
+            stack.enter_context(player_lock)
+        player_pks = map(attrgetter('pk'), players)
+        players = list(map(Player.get, player_pks))
+        players = {player.player_id: player for player in players}
+
         players = {
-            player.player_id: player
+            player.pk: player
             for player in Player.find(Player.game_id==game.game_id).all()
         }
+        return players
+
+    def get_tick_data(self, game: Game, players: Dict[str, Player]) -> TickData:
+        def is_in_players(order: Order):
+            return order.player_id in players
 
         pending_orders = Order.find(
             Order.game_id==game.game_id,
             Order.order_status==OrderStatus.PENDING.value).all()
+        pending_orders = list(filter(is_in_players, pending_orders))
+        # logger.info(f"{game.current_tick} pending orders {len(pending_orders)}")
         user_cancelled_orders = Order.find(
             Order.game_id==game.game_id,
             Order.order_status==OrderStatus.USER_CANCELLED.value).all()
+        user_cancelled_orders = list(filter(is_in_players, user_cancelled_orders))
         dataset_row = DatasetData.find(
             DatasetData.dataset_id==game.dataset_id,
             DatasetData.tick==game.current_tick).first()

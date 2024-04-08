@@ -1,10 +1,6 @@
 from enum import Enum
 from db.db import get_my_redis_connection
-from model.resource import Resource
-from model.power_plant_type import PowerPlantType
-from pydantic import BaseModel
-from redis_om import EmbeddedJsonModel, Field, JsonModel
-from redlock.lock import RedLock
+from redis_om import EmbeddedJsonModel, Field
 
 
 class EnumGetterSettr:
@@ -12,7 +8,7 @@ class EnumGetterSettr:
         if isinstance(key, Enum):
             return self.__getattribute__(key.value)
         return self.__getattribute__(key)
-    
+
     def __setitem__(self, key, value):
         if isinstance(key, Enum):
             return self.__setattr__(key.name, value)

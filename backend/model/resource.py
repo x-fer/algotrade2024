@@ -8,8 +8,10 @@ class Resource(Enum):
     GAS = "gas"
     OIL = "oil"
 
+
 class Energy(Enum):
     ENERGY = "energy"
+
 
 class ResourceOrEnergy(Enum):
     COAL = "coal"
@@ -20,6 +22,10 @@ class ResourceOrEnergy(Enum):
     ENERGY = "energy"
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, Resource) or isinstance(other, Energy) or isinstance(other, ResourceOrEnergy):
+        if (
+            isinstance(other, Resource)
+            or isinstance(other, Energy)
+            or isinstance(other, ResourceOrEnergy)
+        ):
             return self.value == other.value
         return False
