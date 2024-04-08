@@ -9,6 +9,7 @@ from model import Order, OrderSide, OrderStatus, Resource
 from model.game import Game
 from model.market import Market
 from model.player import Player
+from routers.users.model import EnergyPrice, MarketPricesResponse
 from .dependencies import (
     game_dep,
     player_dep,
@@ -21,16 +22,6 @@ from config import config
 
 
 router = APIRouter(dependencies=[Depends(check_game_active_dep)])
-
-
-class MarketPricesResponse(BaseModel):
-    tick: int = Field(..., description="tick of this data")
-    low: int = Field(..., description="lowest price of all trades (in this tick)")
-    high: int = Field(..., description="highest price of all trades")
-    open: int = Field(..., description="price of the first trade")
-    close: int = Field(..., description="price of the last trade")
-    market: int = Field(..., description="average price of all trades weighted by their volume")
-    volume: int = Field(..., description="total volume traded")
 
 
 @router.get(
@@ -47,20 +38,16 @@ async def market_prices(
     """
     start_tick, end_tick = start_end
 
-    all_prices = await Market.list_by_game_id_where_tick(
-        game_id=game.game_id,
-        min_tick=start_tick,
-        max_tick=end_tick,
-        resource=resource,
+    all_prices: List[Market] = await Market.find(
+        (Market.game_id==game.game_id) &
+        (Market.tick >= start_tick) &
+        (Market.tick <= end_tick) &
+        (Market.resource == resource.value)
     )
     all_prices_dict = defaultdict(list)
     for price in all_prices:
         all_prices_dict[price.resource].append(price)
     return all_prices_dict
-
-
-class EnergyPrice(BaseModel):
-    price: int
 
 
 @router.post(

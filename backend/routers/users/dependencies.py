@@ -5,7 +5,7 @@ from typing import Tuple
 from config import config
 
 
-async def team_dep(
+def team_dep(
     team_secret: str = Query(
         description="Team secret - given to you at the start of the competition.",
         default=None,
@@ -14,30 +14,30 @@ async def team_dep(
     if team_secret is None:
         raise HTTPException(status_code=403, detail="Missing team_secret")
     try:
-        return await Team.get(team_secret=team_secret)
+        return Team.find(Team.team_secret==team_secret).first()
     except Exception:
         raise HTTPException(status_code=403, detail="Invalid team_secret")
 
 
-async def game_dep(game_id: int) -> Game:
+def game_dep(game_id: str) -> Game:
     try:
-        return await Game.get(game_id=game_id)
+        return Game.get(game_id)
     except Exception:
         raise HTTPException(status_code=403, detail="Invalid game_id")
 
 
-async def check_game_active_dep(game: Game = Depends(game_dep)) -> None:
+def check_game_active_dep(game: Game = Depends(game_dep)) -> None:
     if game.is_finished:
         raise HTTPException(403, "Game is already finished")
     if datetime.now() < game.start_time:
         raise HTTPException(403, "Game has not started yet")
 
 
-async def player_dep(
-    player_id: int, game: Game = Depends(game_dep), team: Team = Depends(team_dep)
+def player_dep(
+    player_id: str, game: Game = Depends(game_dep), team: Team = Depends(team_dep)
 ) -> Player:
     try:
-        player = await Player.get(player_id=player_id)
+        player = Player.get(player_id)
     except Exception:
         raise HTTPException(status_code=403, detail="Invalid player_id")
     if player.team_id != team.team_id:
@@ -52,7 +52,7 @@ async def player_dep(
 tick_description = "Enter negative number for relative tick e.g. -5 for current_tick-5. Leave empty for last tick."
 
 
-async def start_end_tick_dep(
+def start_end_tick_dep(
     game: Game = Depends(game_dep),
     start_tick: int = Query(
         default=None,
