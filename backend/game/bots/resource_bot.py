@@ -62,7 +62,8 @@ class ResourceBot(Bot):
             resource_orders = orders[resource]
             resource_sum = resources_sum[resource]
 
-            filled_buy_perc, filled_sell_perc = self.get_filled_perc(resource_orders)
+            filled_buy_perc, filled_sell_perc = self.get_filled_perc(
+                resource_orders)
             volume = self.get_volume(resource_sum)
             price = self.get_price(resource, filled_buy_perc, filled_sell_perc)
             price = self.get_mixed_price(tick_data, resource, price)
@@ -199,7 +200,8 @@ class ResourceBot(Bot):
 
         for i in range(extra_orders + 1):
             new_buy_volume = self.get_i_price(buy_volume, i) / buy_volume_sum
-            new_sell_volume = self.get_i_price(sell_volume, i) / sell_volume_sum
+            new_sell_volume = self.get_i_price(
+                sell_volume, i) / sell_volume_sum
             new_buy_price = buy_price * (1 - i * extra_orders_price_diff)
             new_sell_price = sell_price * (1 + i * extra_orders_price_diff)
             await self.create_order(
@@ -267,6 +269,7 @@ class ResourceBot(Bot):
                     logger.warning(
                         f"Game ({tick_data.game.game_id}) Duplicate orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}"
                     )
+
 
 def scale(_min, _max, x):
     x = _min + (_max - _min) * x

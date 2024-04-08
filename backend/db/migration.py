@@ -1,16 +1,15 @@
-from db.db import database
 from logger import logger
 from .fill_teams import fill_bots, fill_dummy_tables
 from .fill_datasets import fill_datasets
 
 
 async def delete_tables():
-    await database.execute('TRUNCATE orders, players, games, teams, market, datasets, dataset_data CASCADE')
+    await database_.execute('TRUNCATE orders, players, games, teams, market, datasets, dataset_data CASCADE')
 
 
 async def drop_tables():
     for table_name in ["orders", "players", "games", "teams", "market", "datasets", "dataset_data"]:
-        await database.execute(f'DROP TABLE IF EXISTS {table_name} CASCADE')
+        await database_.execute(f'DROP TABLE IF EXISTS {table_name} CASCADE')
 
 
 async def run_migrations():
@@ -22,23 +21,23 @@ async def run_migrations():
 
 
 async def create_tables():
-    await database.execute('''
+    await database_.execute('''
               CREATE TABLE IF NOT EXISTS teams (
               team_id SERIAL PRIMARY KEY,
               team_name TEXT,
               team_secret TEXT UNIQUE
               )''')
 
-    await database.execute('CREATE INDEX CONCURRENTLY team_secret_idx ON teams (team_secret);')
+    await database_.execute('CREATE INDEX CONCURRENTLY team_secret_idx ON teams (team_secret);')
 
-    await database.execute('''
+    await database_.execute('''
                 CREATE TABLE IF NOT EXISTS datasets (
                 dataset_id SERIAL PRIMARY KEY,
                 dataset_name TEXT,
                 dataset_description TEXT
                 )''')
 
-    await database.execute('''
+    await database_.execute('''
               CREATE TABLE IF NOT EXISTS games (
               game_id SERIAL PRIMARY KEY,
               game_name TEXT,
@@ -52,7 +51,7 @@ async def create_tables():
               FOREIGN KEY (dataset_id) REFERENCES datasets(dataset_id)
               )''')
 
-    await database.execute('''
+    await database_.execute('''
               CREATE TABLE IF NOT EXISTS players (
               player_id SERIAL PRIMARY KEY,
               player_name TEXT,
@@ -95,7 +94,9 @@ async def create_tables():
               FOREIGN KEY (team_id) REFERENCES teams(team_id)
               )''')
 
-    await database.execute('''
+    await database_.execute('CREATE INDEX CONCURRENTLY player_idx ON players (player_id, game_id);')
+
+    await database_.execute('''
                 CREATE TABLE IF NOT EXISTS orders (
                 order_id SERIAL PRIMARY KEY,
                 game_id INT NOT NULL,
@@ -118,7 +119,10 @@ async def create_tables():
                 FOREIGN KEY (game_id) REFERENCES games(game_id)
                 )''')
 
-    await database.execute('''
+    await database_.execute('CREATE INDEX CONCURRENTLY orders_idx ON orders (order_id);')
+    await database_.execute('CREATE INDEX CONCURRENTLY orders_idx2 ON orders (game_id, order_status, player_id);')
+
+    await database_.execute('''
               CREATE TABLE IF NOT EXISTS trades (
               trade_id SERIAL PRIMARY KEY,
             
@@ -134,7 +138,7 @@ async def create_tables():
               FOREIGN KEY (sell_order_id) REFERENCES orders(order_id)
               )''')
 
-    await database.execute('''
+    await database_.execute('''
               CREATE TABLE IF NOT EXISTS market (
               game_id INT,
               tick INT,
@@ -148,9 +152,9 @@ async def create_tables():
               PRIMARY KEY (game_id, tick, resource)
               )''')
 
-    await database.execute('CREATE INDEX CONCURRENTLY tick_idx ON market (tick);')
+    await database_.execute('CREATE INDEX CONCURRENTLY tick_idx ON market (tick);')
 
-    await database.execute('''
+    await database_.execute('''
                 CREATE TABLE IF NOT EXISTS dataset_data (
                 dataset_data_id SERIAL PRIMARY KEY,
                 dataset_id INT NOT NULL,

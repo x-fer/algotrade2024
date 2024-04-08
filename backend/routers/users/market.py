@@ -16,7 +16,7 @@ from .dependencies import (
     check_game_active_dep,
     start_end_tick_dep,
 )
-from db.db import database
+from db import game_id_lock
 from routers.model import SuccessfulResponse
 from config import config
 
@@ -26,11 +26,13 @@ router = APIRouter(dependencies=[Depends(check_game_active_dep)])
 
 class MarketPricesResponse(BaseModel):
     tick: int = Field(..., description="tick of this data")
-    low: int = Field(..., description="lowest price of all trades (in this tick)")
+    low: int = Field(...,
+                     description="lowest price of all trades (in this tick)")
     high: int = Field(..., description="highest price of all trades")
     open: int = Field(..., description="price of the first trade")
     close: int = Field(..., description="price of the last trade")
-    market: int = Field(..., description="average price of all trades weighted by their volume")
+    market: int = Field(...,
+                        description="average price of all trades weighted by their volume")
     volume: int = Field(..., description="total volume traded")
 
 
@@ -80,7 +82,8 @@ async def energy_set_price_player(
     your price is competitive so you can sell it.
     """
     if price.price <= 0:
-        raise HTTPException(status_code=400, detail="Price must be greater than 0")
+        raise HTTPException(
+            status_code=400, detail="Price must be greater than 0")
 
     await Player.update(player_id=player.player_id, energy_price=price.price)
 
@@ -92,12 +95,16 @@ class OrderResponse(BaseModel):
     player_id: int
     price: int = Field(..., description="price per unit of resource")
     size: int = Field(..., description="total volume of this order")
-    tick: int = Field(..., description="tick when this order was put in the market")
-    timestamp: datetime = Field(..., description="exact time when this order was made")
+    tick: int = Field(...,
+                      description="tick when this order was put in the market")
+    timestamp: datetime = Field(...,
+                                description="exact time when this order was made")
     order_side: OrderSide
     order_status: OrderStatus
-    filled_size: int = Field(..., description="volume of this order that was already traded")
-    expiration_tick: int = Field(..., description="tick when this order will be cancelled")
+    filled_size: int = Field(...,
+                             description="volume of this order that was already traded")
+    expiration_tick: int = Field(...,
+                                 description="tick when this order will be cancelled")
 
 
 class OrderRestriction(Enum):
@@ -178,12 +185,18 @@ async def order_get_player(
 
 
 class UserOrder(BaseModel):
-    resource: Resource = Field(..., description="resource you are buying or selling")
-    price: int = Field(..., description="price per unit of resource you are buying or selling")
-    size: int = Field(..., description="ammount of resource you want to buy or sell")
-    expiration_tick: Optional[int]  = Field(None, description="exact tick in which this order will expire")
-    expiration_length: Optional[int] = Field(None, description= "number of ticks from now when this order will expire")
-    side: OrderSide = Field(..., description="BUY if you want to buy a resource, SELL if you want to sell it")
+    resource: Resource = Field(...,
+                               description="resource you are buying or selling")
+    price: int = Field(...,
+                       description="price per unit of resource you are buying or selling")
+    size: int = Field(...,
+                      description="ammount of resource you want to buy or sell")
+    expiration_tick: Optional[int] = Field(
+        None, description="exact tick in which this order will expire")
+    expiration_length: Optional[int] = Field(
+        None, description="number of ticks from now when this order will expire")
+    side: OrderSide = Field(
+        ..., description="BUY if you want to buy a resource, SELL if you want to sell it")
 
 
 @router.post(
@@ -286,7 +299,7 @@ async def order_cancel_player(
     game: Game = Depends(game_dep),
     player: Player = Depends(player_dep),
 ) -> SuccessfulResponse:
-    async with database.transaction():
+    async with game_id_lock.lock(game.game_id):
         for order_id in body.ids:
             order_to_cancel = await Order.get(order_id=order_id)
             if order_to_cancel.player_id != player.player_id:
@@ -311,13 +324,18 @@ async def order_cancel_player(
 
 class UserTrade(BaseModel):
     trade_id: int
-    buy_order_id: int = Field(..., description="order_id of buyer side in this trade")
-    sell_order_id: int = Field(..., description="order_id of seller side in this trade")
+    buy_order_id: int = Field(...,
+                              description="order_id of buyer side in this trade")
+    sell_order_id: int = Field(...,
+                               description="order_id of seller side in this trade")
     tick: int = Field(..., description="Tick when this trade took place")
 
-    filled_money: int = Field(..., description="Total value of the trade = filled_size * filled_price")
-    filled_size: int = Field(..., description="Ammount of resources that was traded")
-    filled_price: int = Field(..., description="Price at which the unit of resource was traded")
+    filled_money: int = Field(
+        ..., description="Total value of the trade = filled_size * filled_price")
+    filled_size: int = Field(...,
+                             description="Ammount of resources that was traded")
+    filled_price: int = Field(...,
+                              description="Price at which the unit of resource was traded")
 
 
 @router.get(

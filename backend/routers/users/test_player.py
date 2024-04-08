@@ -23,8 +23,9 @@ app.dependency_overrides[player_dep] = mock_player_dep
 
 @pytest.fixture(scope="session", autouse=True)
 def mock_transaction():
-    with patch("db.db.database.transaction") as mock_transaction:
-        yield mock_transaction
+    # with patch("db.db.database.transaction") as mock_transaction:
+    #     yield mock_transaction
+    pass
 
 
 def test_player_list():

@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from config import config
-from db import database
+from db import init_db
 from game.tick import Ticker
 from routers import admin_router, users_router
 import psutil
@@ -36,10 +36,9 @@ async def background_tasks():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await database.connect()
+    await init_db()
     asyncio.create_task(background_tasks())
     yield
-    await database.disconnect()
 
 
 app = FastAPI(
@@ -108,3 +107,8 @@ async def root():
 
 app.include_router(admin_router, prefix="/admin")
 app.include_router(users_router)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, workers=1)

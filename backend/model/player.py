@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from db.table import Table
 from enum import Enum
+
+from fastapi import HTTPException
 from config import config
 from model.resource import Resource
 from model.dataset_data import DatasetData
@@ -41,8 +42,12 @@ class PowerPlantType(str, Enum):
         return False if name in ["coal", "uranium", "biomass", "gas", "oil"] else True
 
 
+player_id = 0
+player_db = {}
+
+
 @dataclass
-class Player(Table):
+class Player:
     table_name = "players"
     player_id: int
     player_name: str
@@ -81,6 +86,56 @@ class Player(Table):
     wind_plants_powered: int = field(default=0)
     solar_plants_powered: int = field(default=0)
     hydro_plants_powered: int = field(default=0)
+
+    @classmethod
+    async def create(cls, **kwargs):
+        global player_id, player_db
+
+        player_id += 1
+
+        player = Player(player_id=player_id, **kwargs)
+        player_db[player_id] = player
+
+        return player_id
+
+    @classmethod
+    async def list(cls, **kwargs):
+        global player_id, player_db
+
+        return [player for player in player_db.values() if all(getattr(player, k) == v for k, v in kwargs.items())]
+
+    @classmethod
+    async def get(cls, **kwargs):
+        global player_id, player_db
+
+        out = [player for player in player_db.values() if all(
+            getattr(player, k) == v for k, v in kwargs.items())]
+
+        if len(out) == 0:
+            raise HTTPException(400, "Player does not exist")
+
+        return Player(**out[0].__dict__)
+
+    @classmethod
+    async def update(cls, player_id, **kwargs):
+        global _player_id, player_db
+
+        player = player_db[player_id]
+        for k, v in kwargs.items():
+            setattr(player, k, v)
+
+    @classmethod
+    async def update_many(cls, players):
+        global player_id, player_db
+
+        for player in players:
+            player_db[player.player_id] = player
+
+    @classmethod
+    async def count(cls, **kwargs):
+        global player_id, player_db
+
+        return len([player for player in player_db.values() if all(getattr(player, k) == v for k, v in kwargs.items())])
 
     def __getitem__(self, key):
         if isinstance(key, Resource):

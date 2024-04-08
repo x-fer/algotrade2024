@@ -1,13 +1,15 @@
 from dataclasses import dataclass
-from db.table import Table
 from model.enum_type import get_enum
 from .resource import Resource, Energy
-from db import database
+
+market_id = 0
+market_db = {}
 
 
 @dataclass
-class Market(Table):
+class Market:
     table_name = "market"
+    market_id: int
     game_id: int
     tick: int
     resource: Resource | Energy
@@ -23,24 +25,34 @@ class Market(Table):
 
     @classmethod
     async def create(cls, *args, **kwargs) -> int:
-        """
-        Input: Values for new row
-        Returns id of created row
-        """
-        return await super().create(*args, col_nums=0, **kwargs)
+        global market_id, market_db
+
+        market_id += 1
+        market = Market(market_id=market_id, *args, **kwargs)
+
+        market_db[market_id] = market
+
+        return market_id
 
     @classmethod
     async def list_by_game_id_where_tick(cls, game_id, min_tick, max_tick, resource: Resource | Energy = None):
-        resource_query = "" if resource is None else " AND resource=:resource"
-        query = f"""
-        SELECT * FROM {cls.table_name} 
-        WHERE game_id=:game_id AND tick BETWEEN :min_tick AND :max_tick{resource_query}
-        ORDER BY tick
-        """
-        values = {"game_id": game_id,
-                  "min_tick": min_tick,
-                  "max_tick": max_tick}
-        if resource is not None:
-            values["resource"] = resource.value
-        result = await database.fetch_all(query, values)
-        return [cls(**game) for game in result]
+        # resource_query = "" if resource is None else " AND resource=:resource"
+        # query = f"""
+        # SELECT * FROM {cls.table_name}
+        # WHERE game_id=:game_id AND tick BETWEEN :min_tick AND :max_tick{resource_query}
+        # ORDER BY tick
+        # """
+        # values = {"game_id": game_id,
+        #           "min_tick": min_tick,
+        #           "max_tick": max_tick}
+        # if resource is not None:
+        #     values["resource"] = resource.value
+        # result = await database.fetch_all(query, values)
+        # return [cls(**game) for game in result]
+
+        global market_db, market_id
+
+        return [market for market in market_db.values() if
+                market.game_id == game_id and
+                min_tick <= market.tick <= max_tick and
+                (resource is None or market.resource == resource)]

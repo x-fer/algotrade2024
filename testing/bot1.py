@@ -10,7 +10,7 @@ from algotrade_api import AlgotradeApi
 
 url = "localhost:8000"
 
-team_secret = "PWLQ0CET"
+team_secret = "N2YPCGXE"
 game_id = 1
 player_id = -1  # we will get this later
 
@@ -100,10 +100,10 @@ def run(x):
 
 def main():
 
-    # with Pool(25) as p:
-    #     p.map(run, range(25))
+    with Pool(25) as p:
+        p.map(run, range(25))
 
-    run(1)
+    # run(1)
 
 
 if __name__ == "__main__":

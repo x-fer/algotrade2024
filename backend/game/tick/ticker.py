@@ -1,5 +1,6 @@
 import asyncio
 from itertools import chain
+from pprint import pprint
 import sys
 import traceback
 from datetime import datetime, timedelta
@@ -13,7 +14,9 @@ from model.resource import Energy
 from model.trade import TradeDb
 from .tick_data import TickData
 from logger import logger
-from db import database
+from db import game_id_lock
+
+from pyinstrument import Profiler
 
 
 class GameData:
@@ -108,12 +111,15 @@ class Ticker:
 
                 await asyncio.sleep(to_wait)
 
-                # run the tick
-                async with database.transaction():
-                    await database.execute(
-                        "LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
+                profiler = Profiler()
+                profiler.start()
 
+                # run the tick
+                async with game_id_lock.lock(game.game_id):
                     await self.run_game_tick(game)
+
+                profiler.stop()
+                profiler.print()
 
             except Exception:
                 logger.critical(
@@ -136,13 +142,13 @@ class Ticker:
 
         for bot in bots:
             await Player.update(player_id=bot.player_id, is_active=False)
-        
+
         await Order.delete_bot_orders(game_id=game_id)
 
     async def run_game_tick(self, game: Game):
-
         logger.debug(
             f"({game.game_id}) {game.game_name}: {game.current_tick} tick")
+
         tick_data = await self.get_tick_data(game)
 
         tick_data = self.run_markets(tick_data)

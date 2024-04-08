@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import List
 from model.team import Team
 from routers.model import SuccessfulResponse
-from db import limiter, database
+from db import limiter
 import asyncio
 
 
@@ -86,7 +86,7 @@ async def game_edit(game_id: int, params: EditGameParams) -> SuccessfulResponse:
     except:
         raise HTTPException(400, "Invalid bots string")
     if params.dataset is not None:
-        Datasets.validate_string(params.dataset)
+        await Datasets.validate_string(params.dataset)
 
     if params.total_ticks is not None:
         dataset = await Game.get(game_id=game_id)

@@ -1,8 +1,8 @@
 import pytest
-from db import database, migration
-from model import Team
-from config import config
-import pytest_asyncio
+# from db import database, migration
+# from model import Team
+# from config import config
+# import pytest_asyncio
 
 
 # @pytest_asyncio.fixture(autouse=True)

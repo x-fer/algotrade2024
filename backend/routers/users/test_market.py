@@ -26,8 +26,9 @@ app.dependency_overrides[start_end_tick_dep] = mock_start_end_tick_dep
 
 @pytest.fixture(scope="session", autouse=True)
 def mock_transaction():
-    with patch("db.db.database.transaction") as mock_transaction:
-        yield mock_transaction
+    # with patch("db.db.database.transaction") as mock_transaction:
+    #     yield mock_transaction
+    pass
 
 
 def test_market_prices():

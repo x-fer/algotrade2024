@@ -12,13 +12,15 @@ datasets_path = config["dataset"]["datasets_path"]
 async def fill_datasets():
     logger.info("Filling datasets")
     for dataset in os.listdir(datasets_path):
+
         if not dataset.endswith(".csv"):
             continue
         try:
             await Datasets.get(dataset_name=dataset)
             logger.debug(f"Dataset {dataset} already created")
             continue
-        except Exception:
+        except Exception as e:
+
             pass
 
         df = pd.read_csv(f"{datasets_path}/{dataset}")
