@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta
 import os
+from typing import List
 import psutil
 from redis_om import Field, HashModel, Migrator
 from db.fill_datasets import fill_datasets
@@ -14,8 +15,9 @@ def drop_tables():
     pipe = DatasetData.db().pipeline()
     logger.info("Deleting tables")
     for cls in [DatasetData, Datasets, Order, Team, Game, Player]:
-        for pk in cls.all_pks():
-            cls.delete(pk, pipe)
+        cls.delete_many(cls.find().all(), pipe)
+        # for pk in cls.all_pks():
+        #     cls.delete(pk, pipe)
     pipe.execute()
 
 
@@ -44,24 +46,24 @@ def create_teams_and_games():
             team_secret=bots_team_secret,
         ).save()
 
-
-    datasets = list(Datasets.all_pks())
+    logger.info("Getting all pks for datasets")
+    datasets: List[Datasets] = Datasets.find().all()
     assert len(datasets) > 0
 
     logger.info("Creating games")
     games = [
-        # Game(
-        #     game_name="Stalna igra",
-        #     is_contest=False,
-        #     dataset_id=datasets[0],
-        #     start_time=datetime.now() + timedelta(milliseconds=3000),
-        #     total_ticks=2300,
-        #     tick_time=3000
-        # ),
+        Game(
+            game_name="Stalna igra",
+            is_contest=int(False),
+            dataset_id=datasets[0].dataset_id,
+            start_time=datetime.now() + timedelta(milliseconds=3000),
+            total_ticks=2300,
+            tick_time=3000
+        ),
         Game(
             game_name="Natjecanje",
-            is_contest=True,
-            dataset_id=datasets[1],
+            is_contest=int(True),
+            dataset_id=datasets[1].dataset_id,
             start_time=datetime.now() + timedelta(milliseconds=5000),
             total_ticks=1800,
             tick_time=1000,

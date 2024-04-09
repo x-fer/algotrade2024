@@ -15,16 +15,5 @@ class Market(JsonModel):
     market: int
     volume: int
 
-    def __post_init__(self):
-        self.resource = get_enum(self.resource, Resource, Energy)
-
-    # @classmethod
-    # async def create(cls, *args, **kwargs) -> int:
-    #     raise Exception()
-    
-    # @classmethod
-    # async def list_by_game_id_where_tick(cls, game_id, min_tick, max_tick, resource: Resource | Energy = None):
-    #     raise Exception()
-
     class Meta:
         database = get_my_redis_connection()

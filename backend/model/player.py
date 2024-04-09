@@ -26,7 +26,7 @@ class Player(JsonModel):
     game_id: str = Field(index=True)
     team_id: str = Field(index=True)
     is_active: int = Field(default=1, index=True)
-    is_bot: int = Field(default=1)
+    is_bot: int = Field(default=1, index=True)
 
     energy_price: int = Field(default=1e9)
 
@@ -38,18 +38,18 @@ class Player(JsonModel):
     power_plants_owned: PowerPlantsModel = Field(default_factory=PowerPlantsModel)
     power_plants_powered: PowerPlantsModel = Field(default_factory=PowerPlantsModel)
 
-    @property
-    def player_id(self) -> str:
-        return self.pk
+    player_id: str = Field(default=None)
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.player_id=self.pk
 
     def lock(self, *args):
         return RedLock(self.pk, *args)
 
     def cancel_orders(self, pipe=None):
-        Order.delete_many(
-            Order.find(Order.player_id == self.player_id).all(),
-            pipe
-        )
+        for order in Order.find(Order.player_id == self.player_id).all():
+            Order.delete(order.pk, pipe)
 
     async def get_networth(self, game: Game):
         # TODO: nije pod lockom jer bi kocilo tick, a ovo stalno uzimaju igraci

@@ -66,7 +66,7 @@ class TestCheckTrade():
         assert trade.sell_order is sell_order
         assert trade.buy_order.order_status == OrderStatus.COMPLETED
         assert trade.sell_order.order_status == OrderStatus.COMPLETED
-        assert trade.filled_money == price * size
+        assert trade.total_money == price * size
         assert trade.filled_size == size
         assert trade.tick == 1
 

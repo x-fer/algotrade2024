@@ -211,14 +211,14 @@ class ResourceBot(Bot):
                 tick,
                 resource,
                 order_side=OrderSide.BUY,
-                price=int(new_buy_price),
+                price=int(new_sell_price), #TODO premjestiti s drugim!
                 volume=int(new_buy_volume),
             )
             self.create_order(
                 tick,
                 resource,
                 order_side=OrderSide.SELL,
-                price=int(new_sell_price),
+                price=int(new_buy_price),
                 volume=int(new_sell_volume),
             )
 

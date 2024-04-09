@@ -6,10 +6,11 @@ from redlock.lock import RedLock
 class Team(JsonModel):
     team_name: str = Field(index=True)
     team_secret: str = Field(index=True)
+    team_id: str = Field(default=None)
 
-    @property
-    def team_id(self) -> str:
-        return self.pk
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.team_id=self.pk
 
     def lock(self, *args):
         return RedLock(self.pk, *args)

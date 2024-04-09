@@ -1,4 +1,5 @@
 
+from typing import Any, Optional
 from db.db import get_my_redis_connection
 from redis_om import  Field, JsonModel
 from datetime import datetime
@@ -14,9 +15,11 @@ class Game(JsonModel):
     current_tick: int = Field(default=0)
     is_finished: bool = Field(index=False, default=False)
 
-    @property
-    def game_id(self) -> str:
-        return self.pk
+    game_id: str = Field(default=None)
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.game_id=self.pk
 
     class Meta:
         database = get_my_redis_connection()

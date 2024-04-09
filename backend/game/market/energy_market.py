@@ -1,9 +1,10 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 from game.price_tracker.price_tracker import PriceTracker
 from model import Trade
 from config import config
+from model.order import Order
 from model.player import Player
 from logger import logger
 
@@ -17,7 +18,8 @@ class EnergyMarket:
         self.orders = {}
         self.trades = []
 
-    def match(self, players: Dict[int, Player], demand: int, max_price: int) -> Dict[int, int]:
+    def match(self, players: Dict[str, Player], demand: int, max_price: int) -> Dict[str, int]:
+        """Returns mapping of players to sold energy in integer"""
         max_per_player = int(demand * max_energy_per_player)
         def get_energy(player: Player):
             return max_per_player if player.energy > max_per_player else player.energy
@@ -37,11 +39,11 @@ class EnergyMarket:
             for player in player_group:
                 if group_energy_sum > demand:
                     energy_to_sell = get_energy(player) * demand / group_energy_sum
-                    print("PRINTIG 1", player.energy, energy_to_sell)
-                    print("PRINTIG  ", demand, group_energy_sum)
+                    # print("PRINTIG 1", player.energy, energy_to_sell)
+                    # print("PRINTIG  ", demand, group_energy_sum)
                 else:
                     energy_to_sell = get_energy(player)
-                    print("PRINTIG 2", player.energy, energy_to_sell)
+                    # print("PRINTIG 2", player.energy, energy_to_sell)
                 energy_to_sell = int(energy_to_sell)
                 self.create_trade(player, energy_to_sell, price)
             demand -= group_energy_sum
@@ -51,7 +53,7 @@ class EnergyMarket:
         self.price_tracker.on_end_match(self.trades)
         return self.orders
 
-    def create_trade(self, player: Player, energy, energy_price):
+    def create_trade(self, player: Player, energy: int, energy_price: int):
         player.money += energy * player.energy_price
         self.trades.append(Trade(
             buy_order=None,

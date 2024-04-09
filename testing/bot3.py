@@ -8,9 +8,9 @@ from datetime import datetime, timedelta
 from algotrade_api import AlgotradeApi
 
 
-url = "localhost:8000"
+url = "localhost:3000"
 
-team_secret = "W6OKEA13"
+team_secret = "gogi"
 game_id = 1
 player_id = -1  # we will get this later
 
@@ -27,45 +27,47 @@ def play():
         assert r.status_code == 200, r.text
         player = r.json()
 
-        print(f"Player COAL: {player['coal']}")
+        print(f"Player COAL: {player['resources']['coal']}")
         print(f"Player MONEY: {player['money']}")
 
         # list available market orders
-        r = api.get_orders()
+        r = api.get_orders(restriction="best")
         assert r.status_code == 200, r.text
+        print(r.json())
 
-        orders = r.json()["COAL"]
+        orders = r.json()["coal"]
 
-        # filter for only sell orders
-        orders = [order for order in orders if order["order_side"] == "SELL"]
-
-        # find the cheapest order
-        cheapest = sorted(orders, key=lambda x: x["price"])[0]
-        cheapest_price = cheapest["price"]
-        size = cheapest["size"]
+        best_order = orders["SELL"][0]
+        print(best_order)
+        best_price = best_order['price']
+        best_size = best_order["size"]
 
         print("buying resources")
-        print(f"Cheapest price: {cheapest_price}, size: {size}")
+        print(f"Cheapest price: {best_price}, size: {best_size}")
 
-        r = api.create_order("COAL", cheapest_price + 1000,
-                             1, "BUY", expiration_length=10)
+        r = api.create_order("coal", best_price + 1000, 1, "BUY", expiration_length=10)
         assert r.status_code == 200, r.text
 
         continue
 
 
 def run(x):
-    # each game, we must create a new player
-    # in contest mode, we can make only one
-    r = api.create_player("bot1")
-    assert r.status_code == 200, r.text
+    games = api.get_games().json()
+    print(games)
+    game = games[0]
 
-    print("Player created")
-    pprint(r.json())
+    api.set_game_id(game["game_id"])
 
-    player_id = r.json()["player_id"]
+    print("Creating player")
+    response = api.create_player()
+    print(response.json())
+    # pprint(response.json())
 
+    player_id = response.json()["player_id"]
     api.set_player_id(player_id)
+
+    print(api.get_players().json())
+
     play()
 
 

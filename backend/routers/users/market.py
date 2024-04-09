@@ -10,12 +10,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from config import config
-from db.db import database
 from model import Order, OrderSide, OrderStatus, Resource
 from model.game import Game
 from model.market import Market
 from model.player import Player
-from model.resource import Energy
+from model.resource import Energy, ResourceOrEnergy
 from model.trade import Trade
 from routers.model import SuccessfulResponse
 
@@ -129,17 +128,17 @@ def order_list(
             "bot for only bot orders / best for those with best prices"
         ),
     ),
-) -> Dict[Resource, Dict[OrderSide, List[OrderResponse]]]:
+) -> Dict[str, Dict[str, List[OrderResponse]]]:
     bots = Player.find(Player.is_bot == int(True)).all()
     bot_ids = set(map(attrgetter("pk"), bots))
 
     active_orders = Order.find(
-        (Order.game_id == game.game_id)
-        & (Order.order_status == OrderStatus.ACTIVE.value)
+        Order.game_id == game.game_id,
+        Order.order_status == OrderStatus.ACTIVE.value
     ).all()
     pending_orders = Order.find(
-        (Order.game_id == game.game_id)
-        & (Order.order_status == OrderStatus.PENDING.value)
+        Order.game_id == game.game_id,
+        Order.order_status == OrderStatus.PENDING.value
     ).all()
 
     def is_bot_order(order: Order):
@@ -154,11 +153,11 @@ def order_list(
         return orders_to_dict(bot_orders)
     elif restriction == OrderRestriction.best_orders:
         orders = orders_to_dict(all_orders)
-        for resource_orders in orders.values():
-            for order_side in resource_orders:
-                resource_orders[order_side] = reduce(
-                    is_better_order, resource_orders[order_side]
-                )
+        for resource in orders:
+            for order_side in orders[resource]:
+                orders[resource][order_side] = [reduce(
+                    is_better_order, orders[resource][order_side]
+                )]
         return orders
 
 
@@ -171,10 +170,10 @@ def is_better_order(order_1: Order, order_2: Order):
         return order_1 if order_1.price < order_2.price else order_2
 
 
-def orders_to_dict(orders: List[Order]) -> Dict[Resource, Dict[OrderSide, List[Order]]]:
+def orders_to_dict(orders: List[Order]) -> Dict[ResourceOrEnergy, Dict[OrderSide, List[Order]]]:
     orders_dict = defaultdict(lambda: defaultdict(list))
     for order in orders:
-        orders_dict[order.resource][order.order_side].append(order)
+        orders_dict[order.resource.value][order.order_side.value].append(order)
     return orders_dict
 
 
@@ -184,17 +183,17 @@ def orders_to_dict(orders: List[Order]) -> Dict[Resource, Dict[OrderSide, List[O
 )
 def order_list_player(
     game: Game = Depends(game_dep), player: Player = Depends(player_dep)
-) -> Dict[Resource, List[OrderResponse]]:
+) -> Dict[ResourceOrEnergy, List[OrderResponse]]:
     """List orders you placed in market that are still active."""
     active_orders = Order.find(
-        (Order.player_id == player.player_id)
-        & (Order.game_id == game.game_id)
-        & (Order.order_status == OrderStatus.ACTIVE.value)
+        Order.player_id == player.player_id,
+        Order.game_id == game.game_id,
+        Order.order_status == OrderStatus.ACTIVE.value
     ).all()
     pending_orders = Order.find(
-        (Order.player_id == player.player_id)
-        & (Order.game_id == game.game_id)
-        & (Order.order_status == OrderStatus.PENDING.value)
+        Order.player_id == player.player_id,
+        Order.game_id == game.game_id,
+        Order.order_status == OrderStatus.PENDING.value
     ).all()
     return orders_to_dict(active_orders + pending_orders)
 
@@ -279,13 +278,11 @@ def order_create_player(
         )
 
     total_orders_not_processed = Order.find(
-        (Order.game_id == game.game_id)
-        & (Order.player_id == player.player_id)
-        & (Order.resource == order.resource.value)
-        & (
-            (Order.order_status == OrderStatus.ACTIVE.value)
-            | (Order.order_status == OrderStatus.PENDING.value)
-        )
+        Order.game_id == game.game_id,
+        Order.player_id == player.player_id,
+        Order.resource == order.resource.value,
+        (Order.order_status == OrderStatus.ACTIVE.value)
+        | (Order.order_status == OrderStatus.PENDING.value)
     ).count()
 
     if total_orders_not_processed >= config["player"]["max_orders"]:
@@ -353,9 +350,9 @@ def order_cancel_player(
 
 
 class UserTrade(BaseModel):
-    trade_id: int
-    buy_order_id: int = Field(..., description="order_id of buyer side in this trade")
-    sell_order_id: int = Field(..., description="order_id of seller side in this trade")
+    trade_id: str
+    buy_order_id: str = Field(..., description="order_id of buyer side in this trade")
+    sell_order_id: str = Field(..., description="order_id of seller side in this trade")
     tick: int = Field(..., description="Tick when this trade took place")
 
     filled_money: int = Field(

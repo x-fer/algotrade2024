@@ -29,14 +29,11 @@ class Order(JsonModel):
 
     expiration_tick: int = Field(index=False, default=0)
 
-    @property
-    def order_id(self) -> str:
-        return self.pk
+    order_id: str = Field(default=None)
 
-    def __post_init__(self):
-        self.order_side = get_enum(self.order_side, OrderSide)
-        self.order_status = get_enum(self.order_status, OrderStatus)
-        self.resource = get_enum(self.resource, ResourceOrEnergy)
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.order_id=self.pk
 
     def __hash__(self) -> int:
         return hash(self.pk)

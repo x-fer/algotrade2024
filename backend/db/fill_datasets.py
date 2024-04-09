@@ -7,6 +7,8 @@ from logger import logger
 from redlock.lock import RedLock
 
 from model.power_plant_model import PowerPlantsModel, ResourcesModel
+from model.power_plant_type import PowerPlantType
+from model.resource import Resource
 
 
 datasets_path = config["dataset"]["datasets_path"]
@@ -53,16 +55,20 @@ def from_row(dataset: Datasets, tick: int, row: pd.Series) -> DatasetData:
         hydro=(energy_output_multipliers["hydro"] * row["HYDRO"] // 1_000_000),
     )
     resource_prices = ResourcesModel(
-        coal_price=(price_multipliers["coal"] * row["COAL_PRICE"] // 1_000_000),
-        uranium_price=(
+        coal=(price_multipliers["coal"] * row["COAL_PRICE"] // 1_000_000),
+        uranium=(
             price_multipliers["uranium"] * row["URANIUM_PRICE"] // 1_000_000
         ),
-        biomass_price=(
+        biomass=(
             price_multipliers["biomass"] * row["BIOMASS_PRICE"] // 1_000_000
         ),
-        gas_price=(price_multipliers["gas"] * row["GAS_PRICE"] // 1_000_000),
-        oil_price=(price_multipliers["oil"] * row["OIL_PRICE"] // 1_000_000),
+        gas=(price_multipliers["gas"] * row["GAS_PRICE"] // 1_000_000),
+        oil=(price_multipliers["oil"] * row["OIL_PRICE"] // 1_000_000),
     )
+    for type in PowerPlantType:
+        assert power_plants_output[type] >= 0
+    for resource in Resource:
+        assert resource_prices[resource] > 0
     return DatasetData(
         dataset_id=dataset.pk,
         tick=tick,

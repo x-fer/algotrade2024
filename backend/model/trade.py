@@ -1,6 +1,7 @@
 from typing import Optional
 from redis_om import JsonModel, Field
 
+from db.db import get_my_redis_connection
 from model.resource import ResourceOrEnergy
 
 from .order import Order
@@ -11,9 +12,9 @@ class Trade(JsonModel):
     sell_order: Optional[Order] = Field(exclude=True, default=None)
     tick: int = Field(index=True)
 
-    filled_money: int
-    filled_size: int
-    filled_price: int
+    total_money: int
+    trade_size: int
+    trade_price: int
 
     resource: ResourceOrEnergy = Field(index=True, default=None)
     buy_order_id: str = Field(index=True, default=None)
@@ -25,3 +26,6 @@ class Trade(JsonModel):
             self.buy_order_id = self.buy_order.pk
             assert self.buy_order.resource == self.sell_order.resource
             self.resource = self.buy_order.resource.value
+
+    class Meta:
+        database = get_my_redis_connection()

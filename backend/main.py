@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from config import config
 from db import limiter
 from game.tick import Ticker
-# from routers import users_router
+from routers import users_router
 import psutil
 import os
 from logger import logger
@@ -103,4 +103,4 @@ async def root():
 
 
 # app.include_router(admin_router, prefix="/admin")
-# app.include_router(users_router)
+app.include_router(users_router)

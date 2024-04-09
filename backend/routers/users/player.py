@@ -16,9 +16,8 @@ router = APIRouter(dependencies=[])
 class PlayerData(BaseModel):
     player_id: str
     player_name: str
-    game_id: int = Field(..., description="game in which this player exists")
+    game_id: str = Field(..., description="game in which this player exists")
     energy_price: int = Field(..., description="energy price set by the player")
-    game_id: str
 
     money: int
     energy: int
@@ -36,9 +35,9 @@ def player_list(
     game: Game = Depends(game_dep), team: Team = Depends(team_dep)
 ) -> List[PlayerData]:
     return Player.find(
-        (Player.game_id == game.game_id)
-        & (Player.team_id == team.team_id)
-        & (Player.is_active == int(True))
+        Player.game_id == game.game_id,
+        Player.team_id == team.team_id,
+        Player.is_active == int(True)
     ).all()
 
 
@@ -62,9 +61,9 @@ def player_create(
     """
     with team.lock():
         team_players = Player.find(
-            (Player.game_id == game.game_id)
-            & (Player.team_id == team.team_id)
-            & (Player.is_active == int(True))
+            Player.game_id == game.game_id,
+            Player.team_id == team.team_id,
+            Player.is_active == int(True)
         ).count()
         if game.is_contest and team_players >= 1:
             raise HTTPException(
@@ -81,8 +80,8 @@ def player_create(
 
         starting_money = config["player"]["starting_money"]
         return Player(
-            game_id=team.team_id,
-            team_id=game.game_id,
+            game_id=game.game_id,
+            team_id=team.team_id,
             player_name=player_name,
             money=starting_money,
         ).save()

@@ -4,7 +4,7 @@ from model import Game, Team, Player
 from routers.users.dependencies import game_dep, team_dep, check_game_active_dep, player_dep, start_end_tick_dep
 
 
-def override_game_dep(game_id: int) -> Game:
+def override_game_dep(game_id: str) -> Game:
     assert game_id == 1
     if not hasattr(override_game_dep, "contest"):
         override_game_dep.contest = True

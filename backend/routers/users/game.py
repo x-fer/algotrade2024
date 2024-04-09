@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 class GameData(BaseModel):
-    game_id: int
+    game_id: str
     game_name: str
     is_contest: bool = Field(
         ...,
@@ -95,7 +95,7 @@ class DatasetListResponseItem(BaseModel):
 )
 def dataset_list(
     start_end=Depends(start_end_tick_dep), game: Game = Depends(game_dep)
-) -> Dict[int, DatasetListResponseItem]:
+) -> Dict[str, DatasetListResponseItem]:
     start_tick, end_tick = start_end
 
     all_entries = DatasetData.find(

@@ -62,6 +62,7 @@ class Ticker:
         except Exception:
             logger.critical(
                 f"Failed ending game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+            await asyncio.sleep(1)
 
     async def start_game(self, game: Game, tick_event=None):
         self.tick_event = tick_event
@@ -81,6 +82,7 @@ class Ticker:
         except Exception:
             logger.critical(
                 f"Failed creating game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+            await asyncio.sleep(1)
 
     async def run_game(self, game: Game, iters=None):
         for i in range(iters or sys.maxsize):
@@ -117,7 +119,7 @@ class Ticker:
             except Exception:
                 logger.critical(
                     f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1)
 
     def load_previous_oderbook(self, game_id: str):
         # in case of restart these need to be reloaded
@@ -133,17 +135,18 @@ class Ticker:
             markets = self.game_data[game_id].markets
             markets[order.resource.value].orderbook.add_order(order)
 
-    def delete_all_running_bots(self, game_id: int):
+    def delete_all_running_bots(self, game_id: str):
         bots: List[Player] = Player.find(
-            (Player.game_id==game_id) & 
-            (Player.is_bot==int(True))
-        ).all()
+            Player.game_id==game_id,
+            Player.is_bot==int(True)
+            ).all()
         pipe = Player.db().pipeline()
         for bot in bots:
-            bot.is_active = False
-            bot.save(pipe)
-            bot.cancel_orders(pipe)
-        pipe.execute()
+            with bot.lock():
+                bot.is_active = False
+                bot.save(pipe)
+                bot.cancel_orders(pipe)
+                pipe.execute()
 
     def run_game_tick(self, game: Game):
         # profiler = Profiler()
@@ -265,14 +268,14 @@ class Ticker:
 
     def run_electricity_market(self, tick_data: TickData,
                                energy_market: EnergyMarket
-                               ) -> Tuple[TickData, Dict[int, int]]:
+                               ) -> Tuple[TickData, Dict[str, int]]:
         energy_sold = energy_market.match(
             tick_data.players, tick_data.dataset_row.energy_demand,
             tick_data.dataset_row.max_energy_price)
         return tick_data, energy_sold
 
-    def save_electricity_orders(self, game: Game, players: Dict[int, Player],
-                                      energy_sold: Dict[int, int], tick: int):
+    def save_electricity_orders(self, game: Game, players: Dict[str, Player],
+                                      energy_sold: Dict[str, int], tick: int):
         for player_id, energy in energy_sold.items():
             Order(
                 game_id=game.game_id,

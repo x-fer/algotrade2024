@@ -22,7 +22,7 @@ router = APIRouter()
 class CreateGameParams(BaseModel):
     game_name: str
     contest: bool
-    dataset_id: int
+    dataset_id: str
     start_time: datetime
     total_ticks: int
     tick_time: int
@@ -57,13 +57,13 @@ async def game_list() -> List[Game]:
 
 @router.get("/game/{game_id}/player/list")
 @limiter.exempt
-async def player_list(game_id: int) -> List[Player]:
+async def player_list(game_id: str) -> List[Player]:
     return await Player.list(game_id=game_id)
 
 
 @router.post("/game/{game_id}/delete")
 @limiter.exempt
-async def game_delete(game_id: int) -> SuccessfulResponse:
+async def game_delete(game_id: str) -> SuccessfulResponse:
     # TODO ne baca exception ako je vec zavrsena
     await Game.update(game_id=game_id, is_finished=True)
     return SuccessfulResponse()
