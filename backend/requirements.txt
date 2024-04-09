@@ -12,7 +12,6 @@ asyncpg==0.29.0
 uvicorn==0.26.0
 coverage==7.4.0
 coredis==4.16.0
-redis==5.0.1
 slowapi==0.1.9
 httpx==0.26.0
 websockets==12.0

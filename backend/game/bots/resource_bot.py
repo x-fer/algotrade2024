@@ -67,7 +67,8 @@ class ResourceBot(Bot):
             resource_orders = orders[resource]
             resource_sum = resources_sum[resource]
 
-            filled_buy_perc, filled_sell_perc = self.get_filled_perc(resource_orders)
+            filled_buy_perc, filled_sell_perc = self.get_filled_perc(
+                resource_orders)
             volume = self.get_volume(resource_sum)
             price = self.get_price(resource, filled_buy_perc, filled_sell_perc)
             price = self.get_mixed_price(tick_data, resource, price)
@@ -84,14 +85,16 @@ class ResourceBot(Bot):
         return True
 
     def create_player(self, tick_data: TickData):
-        team: Team = Team.find(Team.team_secret==config["bots"]["team_secret"]).first()
+        team: Team = Team.find(
+            Team.team_secret == config["bots"]["team_secret"]).first()
         self.player_id = Player(
             player_name="resource_bot",
             game_id=tick_data.game.game_id,
             team_id=team.team_id,
             is_bot=True,
         ).save().player_id
-        logger.game_log(tick_data.game.game_id, f"creating bot {self.player_id}")
+        logger.game_log(tick_data.game.game_id,
+                        f"creating bot {self.player_id}")
         self.game_id = tick_data.game.game_id
 
     def get_resources_sum(self, tick_data: TickData) -> Dict[Resource, int]:
@@ -160,9 +163,9 @@ class ResourceBot(Bot):
         if self.last_tick is None:
             return []
         orders_list: List[Order] = Order.find(
-            (Order.player_id==self.player_id) & 
-            (Order.tick==self.last_tick)
-            ).all()
+            (Order.player_id == self.player_id) &
+            (Order.tick == self.last_tick)
+        ).all()
         orders = {resource: [] for resource in Resource}
         for order in orders_list:
             orders[order.resource].append(order)
@@ -208,7 +211,8 @@ class ResourceBot(Bot):
 
         for i in range(extra_orders + 1):
             new_buy_volume = self.get_i_price(buy_volume, i) / buy_volume_sum
-            new_sell_volume = self.get_i_price(sell_volume, i) / sell_volume_sum
+            new_sell_volume = self.get_i_price(
+                sell_volume, i) / sell_volume_sum
             new_buy_price = buy_price * (1 - i * extra_orders_price_diff)
             new_sell_price = sell_price * (1 + i * extra_orders_price_diff)
             self.create_order(
@@ -258,9 +262,9 @@ class ResourceBot(Bot):
             order_count = dict()
             for resource in Resource:
                 order_count[resource] = Order.find(
-                    Order.game_id==tick_data.game.game_id,
-                    Order.player_id==self.player_id,
-                    Order.resource==resource.value,
+                    Order.game_id == tick_data.game.game_id,
+                    Order.player_id == self.player_id,
+                    Order.resource == resource.value,
                 ).count()
         if not self.should_create_orders(tick_data):
             if log_when_no_orders:
@@ -276,6 +280,7 @@ class ResourceBot(Bot):
                     logger.warning(
                         f"Game ({tick_data.game.game_id}) Duplicate orders for bot ({self.player_id}) in tick {tick_data.game.current_tick}, resource {resource.name}"
                     )
+
 
 def scale(_min, _max, x):
     x = _min + (_max - _min) * x

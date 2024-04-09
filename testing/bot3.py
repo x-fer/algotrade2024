@@ -11,8 +11,8 @@ from algotrade_api import AlgotradeApi
 
 url = "localhost:3000"
 
-team_secret = "gogi"
-game_id = 1
+team_secret = "1IM56G5I"
+game_id = "01HV2CQJ19BF2T1Z8Q8MZ7W319"
 player_id = -1  # we will get this later
 
 api = AlgotradeApi(url, team_secret, game_id, player_id)
@@ -48,9 +48,11 @@ def play():
             except:
                 continue
 
-            print(f"{player['player_id']} Buying {resource.value} price: {best_price}, size: {best_size}")
+            print(
+                f"{player['player_id']} Buying {resource.value} price: {best_price}, size: {best_size}")
 
-            r = api.create_order("coal", best_price + 1000, 1, "buy", expiration_length=10)
+            r = api.create_order("coal", best_price + 1000,
+                                 1, "buy", expiration_length=10)
             assert r.status_code == 200, r.text
 
             continue

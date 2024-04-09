@@ -1,13 +1,14 @@
 import asyncio
+import json
 import time
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from config import config
 from db import limiter
 from game.tick import Ticker
-from routers import users_router
+from routers import users_router, admin_router
 import psutil
 import os
 from logger import logger
@@ -19,6 +20,8 @@ Migrator().run()
 
 
 tick_event = asyncio.Event()
+
+
 async def run_game_ticks():
     parent_process = psutil.Process(os.getppid())
     children = parent_process.children(
@@ -102,5 +105,5 @@ async def root():
     return {"message": "Hello World"}
 
 
-# app.include_router(admin_router, prefix="/admin")
+app.include_router(admin_router, prefix="/admin")
 app.include_router(users_router)

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from db import limiter
-# from . import dataset, team, game, player
 from config import config
 from routers.model import SuccessfulResponse
+from . import dataset, team, game, player
 
 
 def admin_dep(admin_secret: str = Query(description="Admin secret", default=None)):
@@ -23,7 +23,7 @@ router = APIRouter(dependencies=[Depends(admin_dep)], include_in_schema=False)
 #     return SuccessfulResponse()
 
 
-# router.include_router(player.router)
-# router.include_router(dataset.router)
-# router.include_router(game.router)
-# router.include_router(team.router)
+router.include_router(player.router)
+router.include_router(dataset.router)
+router.include_router(game.router)
+router.include_router(team.router)

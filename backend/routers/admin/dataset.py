@@ -4,7 +4,7 @@ from typing import List
 from model import DatasetData
 
 from db import limiter
-from model.datasets import Datasets
+from model import Datasets, DatasetData
 
 
 router = APIRouter()
@@ -14,7 +14,7 @@ router = APIRouter()
 @limiter.exempt
 async def dataset_list() -> List[Datasets]:
     return [
-        {**asdict(x),
-         "max_ticks": await DatasetData.count(dataset_id=x.dataset_id)
-         } for x in await Datasets.list()
+        {**x.dict(),
+         "max_ticks":  DatasetData.find(DatasetData.dataset_id == x.dataset_id).count()
+         } for x in Datasets.find().all()
     ]

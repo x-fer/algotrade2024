@@ -10,7 +10,7 @@ class Team(JsonModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        self.team_id=self.pk
+        self.team_id = self.pk
 
     def lock(self, *args):
         return RedLock(self.pk, *args)

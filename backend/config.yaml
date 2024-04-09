@@ -11,9 +11,9 @@ admin:
 
 testing: ${TESTING}
 debug: ${DEBUG}
-drop_tables: ${DROP_TABLES}
-fill_datasets: ${FILL_DATASETS}
-fill_tables: ${FILL_TABLES}
+drop_tables: 1
+fill_datasets: 1
+fill_tables: 1
 log_level: ${LOG_LEVEL}
 
 dataset:

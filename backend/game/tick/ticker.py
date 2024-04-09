@@ -2,6 +2,7 @@ import asyncio
 from contextlib import ExitStack
 from itertools import chain
 from operator import attrgetter, methodcaller
+from pprint import pprint
 import sys
 import traceback
 from datetime import datetime, timedelta
@@ -86,7 +87,8 @@ class Ticker:
 
     async def run_game(self, game: Game, iters=None):
         for i in range(iters or sys.maxsize):
-            game = Game.get(game.game_id)
+            game = Game.get(game.pk)
+
             try:
                 if self.tick_event is not None:
                     await self.tick_event.wait()
@@ -94,6 +96,9 @@ class Ticker:
 
                 if game.current_tick >= game.total_ticks:
                     await self.end_game(game)
+                    return
+
+                if game.is_finished:
                     return
 
                 # wait until the tick should start
@@ -109,7 +114,7 @@ class Ticker:
                         f"{game.game_id} {game.game_name} has short waiting time: {to_wait}s in tick ({game.current_tick}), catching up or possible overload")
 
                 await asyncio.sleep(to_wait)
-                
+
                 start_time = datetime.now()
                 self.run_game_tick(game)
                 interval = (datetime.now() - start_time).total_seconds()
@@ -128,20 +133,22 @@ class Ticker:
         queue_orders: List[Order] = Order.find(
             Order.game_id == game_id,
             Order.order_status == OrderStatus.IN_QUEUE.value).all()
-        logger.game_log(game_id, f"reloading IN_QUEUE orders {len(queue_orders)}")
+        logger.game_log(
+            game_id, f"reloading IN_QUEUE orders {len(queue_orders)}")
         active_orders = Order.find(
-            Order.game_id==game_id,
-            Order.order_status==OrderStatus.ACTIVE.value).all()
-        logger.game_log(game_id, f"reloading ACTIVE orders {len(active_orders)}")
+            Order.game_id == game_id,
+            Order.order_status == OrderStatus.ACTIVE.value).all()
+        logger.game_log(
+            game_id, f"reloading ACTIVE orders {len(active_orders)}")
         for order in chain(active_orders, queue_orders):
             markets = self.game_data[game_id].markets
             markets[order.resource.value].orderbook.add_order(order)
 
     def delete_all_running_bots(self, game_id: str):
         bots: List[Player] = Player.find(
-            Player.game_id==game_id,
-            Player.is_bot==int(True)
-            ).all()
+            Player.game_id == game_id,
+            Player.is_bot == int(True)
+        ).all()
         pipe = Player.db().pipeline()
         for bot in bots:
             with bot.lock():
@@ -161,7 +168,7 @@ class Ticker:
             players = self.get_players_and_enter_context(game, stack)
             tick_data = self.get_tick_data(game, players)
             tick_data = self.run_markets(tick_data)
-            tick_data = self.run_power_plants(tick_data)    
+            tick_data = self.run_power_plants(tick_data)
             tick_data, energy_sold = self.run_electricity_market(
                 tick_data, self.game_data[game.game_id].energy_market)
 
@@ -170,10 +177,15 @@ class Ticker:
             self.save_tick_data(tick_data)
             self.save_market_data(tick_data)
             game.current_tick += 1
+
+            is_finished = Game.get(game.pk).is_finished
+            game.update(is_finished=is_finished)
             game.save(self.pipe)
             self.pipe.execute()
-        logger.game_log(tick_data.game.game_id, f"updated orders {len(tick_data.updated_orders)}")
-        logger.game_log(tick_data.game.game_id, f"updated trades {len(tick_data.tick_trades)}")
+        logger.game_log(tick_data.game.game_id,
+                        f"updated orders {len(tick_data.updated_orders)}")
+        logger.game_log(tick_data.game.game_id,
+                        f"updated trades {len(tick_data.tick_trades)}")
         self.game_data[tick_data.game.game_id].bot.run(self.pipe, tick_data)
         self.pipe.execute()
 
@@ -190,7 +202,7 @@ class Ticker:
 
         players = {
             player.pk: player
-            for player in Player.find(Player.game_id==game.game_id).all()
+            for player in Player.find(Player.game_id == game.game_id).all()
         }
         return players
 
@@ -199,17 +211,18 @@ class Ticker:
             return order.player_id in players
 
         pending_orders = Order.find(
-            Order.game_id==game.game_id,
-            Order.order_status==OrderStatus.PENDING.value).all()
+            Order.game_id == game.game_id,
+            Order.order_status == OrderStatus.PENDING.value).all()
         pending_orders = list(filter(is_in_players, pending_orders))
         logger.game_log(game.game_id, f"pending orders {len(pending_orders)}")
         user_cancelled_orders = Order.find(
-            Order.game_id==game.game_id,
-            Order.order_status==OrderStatus.USER_CANCELLED.value).all()
-        user_cancelled_orders = list(filter(is_in_players, user_cancelled_orders))
+            Order.game_id == game.game_id,
+            Order.order_status == OrderStatus.USER_CANCELLED.value).all()
+        user_cancelled_orders = list(
+            filter(is_in_players, user_cancelled_orders))
         dataset_row = DatasetData.find(
-            DatasetData.dataset_id==game.dataset_id,
-            DatasetData.tick==game.current_tick).first()
+            DatasetData.dataset_id == game.dataset_id,
+            DatasetData.tick == game.current_tick).first()
         markets = self.game_data[game.game_id].markets
 
         tick_data = TickData(
@@ -217,7 +230,8 @@ class Ticker:
             players=players,
             markets=markets,
             energy_market=self.game_data[game.game_id].energy_market,
-            bots=[self.game_data[game.game_id].bot], #TODO pretvoriti u jednog bota
+            # TODO pretvoriti u jednog bota
+            bots=[self.game_data[game.game_id].bot],
             pending_orders=pending_orders,
             user_cancelled_orders=user_cancelled_orders,
             dataset_row=dataset_row
@@ -267,7 +281,8 @@ class Ticker:
                 if not type.is_renewable():
                     to_consume = min(to_consume, player.resources[type])
                     player.resources[type] -= to_consume
-                player.energy += to_consume * tick_data.dataset_row.power_plants_output[type]
+                player.energy += to_consume * \
+                    tick_data.dataset_row.power_plants_output[type]
 
         return tick_data
 
@@ -280,7 +295,7 @@ class Ticker:
         return tick_data, energy_sold
 
     def save_electricity_orders(self, game: Game, players: Dict[str, Player],
-                                      energy_sold: Dict[str, int], tick: int):
+                                energy_sold: Dict[str, int], tick: int):
         for player_id, energy in energy_sold.items():
             Order(
                 game_id=game.game_id,
@@ -300,7 +315,8 @@ class Ticker:
 
     def save_tick_data(self, tick_data: TickData):
         list(map(methodcaller('save', self.pipe), tick_data.players.values()))
-        list(map(methodcaller('save', self.pipe), tick_data.updated_orders.values()))
+        list(map(methodcaller('save', self.pipe),
+             tick_data.updated_orders.values()))
         list(map(methodcaller('save', self.pipe), tick_data.tick_trades))
 
     def save_market_data(self, tick_data: TickData):

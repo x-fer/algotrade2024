@@ -38,9 +38,9 @@ def create_teams_and_games():
     bots_team_name = config["bots"]["team_name"]
     bots_team_secret = config["bots"]["team_secret"]
     if Team.find(
-        Team.team_name==bots_team_name,
-        Team.team_secret==bots_team_secret,
-        ).count() > 0:
+        Team.team_name == bots_team_name,
+        Team.team_secret == bots_team_secret,
+    ).count() > 0:
         logger.info("Bots team already created")
     else:
         logger.info("Creating bots team")
@@ -63,14 +63,14 @@ def create_teams_and_games():
         #     total_ticks=2300,
         #     tick_time=3000
         # ),
-        Game(
-            game_name="Natjecanje",
-            is_contest=int(False), #TODO
-            dataset_id=datasets[1].dataset_id,
-            start_time=datetime.now() + timedelta(milliseconds=5000),
-            total_ticks=1800,
-            tick_time=1000,
-        )
+        # Game(
+        #     game_name="Natjecanje",
+        #     is_contest=int(False), #TODO
+        #     dataset_id=datasets[1].dataset_id,
+        #     start_time=datetime.now() + timedelta(milliseconds=5000),
+        #     total_ticks=1800,
+        #     tick_time=1000,
+        # )
     ]
     for game in games:
         game.save()
