@@ -84,6 +84,7 @@ def player_create(
             team_id=team.team_id,
             player_name=player_name,
             money=starting_money,
+            is_bot=int(False)
         ).save()
 
 

@@ -55,6 +55,9 @@ class ResourceBot(Bot):
         self._log_if_no_or_duplicate(tick_data)
         if not self.should_create_orders(tick_data):
             return
+        logger.info(
+            f"      {self.game_id} Bot creating orders in tick {tick_data.game.current_tick} (last {self.last_tick})"
+        )
 
         self.last_tick = tick_data.game.current_tick
         resources_sum = self.get_resources_sum(tick_data)
@@ -88,6 +91,7 @@ class ResourceBot(Bot):
             team_id=team.team_id,
             is_bot=True,
         ).save().player_id
+        logger.game_log(tick_data.game.game_id, f"creating bot {self.player_id}")
         self.game_id = tick_data.game.game_id
 
     def get_resources_sum(self, tick_data: TickData) -> Dict[Resource, int]:
@@ -211,14 +215,14 @@ class ResourceBot(Bot):
                 tick,
                 resource,
                 order_side=OrderSide.BUY,
-                price=int(new_sell_price), #TODO premjestiti s drugim!
+                price=int(new_buy_price),
                 volume=int(new_buy_volume),
             )
             self.create_order(
                 tick,
                 resource,
                 order_side=OrderSide.SELL,
-                price=int(new_buy_price),
+                price=int(new_sell_price),
                 volume=int(new_sell_volume),
             )
 

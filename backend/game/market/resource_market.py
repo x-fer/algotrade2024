@@ -88,12 +88,15 @@ class ResourceMarket:
         buyer_id = trade.buy_order.player_id
         seller_id = trade.sell_order.player_id
 
+        # Check trade prevents this from being None
         buyer = self._get_player(buyer_id)
         seller = self._get_player(seller_id)
 
-        # TODO
-        # if buyer.is_bot and seller.is_bot:
-        #     logger.warning(f"Trading between two bots in game ({self.game_id}): {buyer_id}-{seller_id}, resource {trade.buy_order.resource.name}, size {trade.trade_size}, price {trade.trade_price}")
+        if buyer.is_bot and seller.is_bot:
+            logger.warning(f"Trading between two bots {buyer.player_name} {buyer_id}({buyer.game_id}) and {seller.player_name} {seller_id}({seller.game_id}) in game ({self.game_id}). This is probably due to invalid reseting of the game.")
+            if buyer_id != seller_id:
+                logger.critical(f"Trading between two different bots {buyer.player_name} {buyer_id}({buyer.game_id}) and {seller.player_name} {seller_id}({seller.game_id}) in game ({self.game_id}). This is probably due to invalid reseting of the game.")
+            
 
         if not buyer.is_bot:
             buyer.money -= trade.total_money

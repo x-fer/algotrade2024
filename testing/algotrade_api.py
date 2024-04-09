@@ -4,29 +4,29 @@ import requests
 
 
 class Resource(Enum):
-    energy = "ENERGY"
-    coal = "COAL"
-    uranium = "URANIUM"
-    biomass = "BIOMASS"
-    gas = "GAS"
-    oil = "OIL"
+    energy = "energy"
+    coal = "coal"
+    uranium = "uranium"
+    biomass = "biomass"
+    gas = "gas"
+    oil = "oil"
 
 
 class PowerPlant(Enum):
-    COAL = "COAL"
-    URANIUM = "URANIUM"
-    BIOMASS = "BIOMASS"
-    GAS = "GAS"
-    OIL = "OIL"
-    GEOTHERMAL = "GEOTHERMAL"
-    WIND = "WIND"
-    SOLAR = "SOLAR"
-    HYDRO = "HYDRO"
+    COAL = "coal"
+    URANIUM = "uranium"
+    BIOMASS = "biomass"
+    GAS = "gas"
+    OIL = "oil"
+    GEOTHERMAL = "geothermal"
+    WIND = "wind"
+    SOLAR = "solar"
+    HYDRO = "hydro"
 
 
 class OrderSide(Enum):
-    BUY = "BUY"
-    SELL = "SELL"
+    BUY = "buy"
+    SELL = "sell"
 
 
 class AlgotradeApi:

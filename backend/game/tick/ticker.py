@@ -52,7 +52,7 @@ class Ticker:
 
     async def end_game(self, game: Game):
         try:
-            logger.info(f"Ending game ({game.game_id}) {game.game_name}")
+            logger.info(f"Ending game {game.game_id} {game.game_name}")
             # TODO: check if this works
             game.update(is_finished=True)
             if self.game_data.get(game.game_id) is not None:
@@ -61,14 +61,14 @@ class Ticker:
 
         except Exception:
             logger.critical(
-                f"Failed ending game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+                f"Failed ending game {game.game_id} (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
             await asyncio.sleep(1)
 
     async def start_game(self, game: Game, tick_event=None):
         self.tick_event = tick_event
         try:
             logger.info(
-                f"Starting game ({game.game_id}) {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
+                f"Starting game {game.game_id} {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
 
             self.delete_all_running_bots(game.game_id)
 
@@ -81,7 +81,7 @@ class Ticker:
 
         except Exception:
             logger.critical(
-                f"Failed creating game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+                f"Failed creating game {game.game_id} (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
             await asyncio.sleep(1)
 
     async def run_game(self, game: Game, iters=None):
@@ -106,7 +106,7 @@ class Ticker:
 
                 if to_wait < 0.1 and game.current_tick > 0:
                     logger.warning(
-                        f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}s in tick ({game.current_tick}), catching up or possible overload")
+                        f"{game.game_id} {game.game_name} has short waiting time: {to_wait}s in tick ({game.current_tick}), catching up or possible overload")
 
                 await asyncio.sleep(to_wait)
                 
@@ -114,24 +114,26 @@ class Ticker:
                 self.run_game_tick(game)
                 interval = (datetime.now() - start_time).total_seconds()
                 logger.info(
-                    f"{interval:.6} Ticking game ({game.game_id}) {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
+                    f"{interval:.6} Ticking game {game.game_id} {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
 
             except Exception:
                 logger.critical(
-                    f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
+                    f"{game.game_id} {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
                 await asyncio.sleep(1)
 
     def load_previous_oderbook(self, game_id: str):
         # in case of restart these need to be reloaded
         # IN_QUEUE = "IN_QUEUE"
         # ACTIVE = "ACTIVE"
-        orders: List[Order] = Order.find(
+        queue_orders: List[Order] = Order.find(
             Order.game_id == game_id,
             Order.order_status == OrderStatus.IN_QUEUE.value).all()
-        orders += Order.find(
+        logger.game_log(game_id, f"reloading IN_QUEUE orders {len(queue_orders)}")
+        active_orders = Order.find(
             Order.game_id==game_id,
             Order.order_status==OrderStatus.ACTIVE.value).all()
-        for order in orders:
+        logger.game_log(game_id, f"reloading ACTIVE orders {len(active_orders)}")
+        for order in chain(active_orders, queue_orders):
             markets = self.game_data[game_id].markets
             markets[order.resource.value].orderbook.add_order(order)
 
@@ -145,7 +147,9 @@ class Ticker:
             with bot.lock():
                 bot.is_active = False
                 bot.save(pipe)
-                bot.cancel_orders(pipe)
+                canceled = bot.cancel_orders(pipe)
+                logger.info(
+                    f"      {bot.game_id} Deleting bot {bot.player_name} {bot.player_id} and his orders ({canceled})")
                 pipe.execute()
 
     def run_game_tick(self, game: Game):
@@ -168,7 +172,8 @@ class Ticker:
             game.current_tick += 1
             game.save(self.pipe)
             self.pipe.execute()
-        # logger.info(f"{tick_data.game.current_tick} updated orders {len(tick_data.updated_orders)}")
+        logger.game_log(tick_data.game.game_id, f"updated orders {len(tick_data.updated_orders)}")
+        logger.game_log(tick_data.game.game_id, f"updated trades {len(tick_data.tick_trades)}")
         self.game_data[tick_data.game.game_id].bot.run(self.pipe, tick_data)
         self.pipe.execute()
 
@@ -197,7 +202,7 @@ class Ticker:
             Order.game_id==game.game_id,
             Order.order_status==OrderStatus.PENDING.value).all()
         pending_orders = list(filter(is_in_players, pending_orders))
-        # logger.info(f"{game.current_tick} pending orders {len(pending_orders)}")
+        logger.game_log(game.game_id, f"pending orders {len(pending_orders)}")
         user_cancelled_orders = Order.find(
             Order.game_id==game.game_id,
             Order.order_status==OrderStatus.USER_CANCELLED.value).all()

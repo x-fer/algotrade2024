@@ -25,8 +25,8 @@ class Player(JsonModel):
     player_name: str
     game_id: str = Field(index=True)
     team_id: str = Field(index=True)
-    is_active: int = Field(default=1, index=True)
-    is_bot: int = Field(default=1, index=True)
+    is_active: int = Field(default=int(True), index=True)
+    is_bot: int = Field(default=int(False), index=True)
 
     energy_price: int = Field(default=1e9)
 
@@ -47,9 +47,9 @@ class Player(JsonModel):
     def lock(self, *args):
         return RedLock(self.pk, *args)
 
-    def cancel_orders(self, pipe=None):
-        for order in Order.find(Order.player_id == self.player_id).all():
-            Order.delete(order.pk, pipe)
+    def cancel_orders(self, pipe=None) -> int:
+        """Returns number of canceled orders"""
+        return Order.delete_many(Order.find(Order.player_id == self.player_id).all(), pipe)
 
     async def get_networth(self, game: Game):
         # TODO: nije pod lockom jer bi kocilo tick, a ovo stalno uzimaju igraci

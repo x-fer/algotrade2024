@@ -3,7 +3,7 @@ server:
   host: 0.0.0.0
 
 redis:
-  port: 6479
+  port: 6379
   host: localhost
 
 admin:
@@ -14,6 +14,7 @@ debug: ${DEBUG}
 drop_tables: ${DROP_TABLES}
 fill_datasets: ${FILL_DATASETS}
 fill_tables: ${FILL_TABLES}
+log_level: ${LOG_LEVEL}
 
 dataset:
   datasets_path: ./data
@@ -41,10 +42,11 @@ dataset:
   energy_demand_multiplier: 30000
 
 player:
-  max_players_per_team: 10
+  max_players_per_team: 100
   starting_money: 50_000_000
   max_orders: 20
   max_energy_per_player: 0.4
+  log_top_players: 10
 
 bots:
   team_name: bots

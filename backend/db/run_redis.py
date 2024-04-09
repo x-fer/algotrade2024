@@ -15,9 +15,12 @@ def drop_tables():
     pipe = DatasetData.db().pipeline()
     logger.info("Deleting tables")
     for cls in [DatasetData, Datasets, Order, Team, Game, Player]:
-        cls.delete_many(cls.find().all(), pipe)
-        # for pk in cls.all_pks():
-        #     cls.delete(pk, pipe)
+        try:
+            cls.delete_many(cls.find().all(), pipe)
+        except Exception:
+            logger.warning(f"Class {cls.__name__} probably changed in model")
+            for pk in cls.all_pks():
+                cls.delete(pk, pipe)
     pipe.execute()
 
 
@@ -52,17 +55,17 @@ def create_teams_and_games():
 
     logger.info("Creating games")
     games = [
-        Game(
-            game_name="Stalna igra",
-            is_contest=int(False),
-            dataset_id=datasets[0].dataset_id,
-            start_time=datetime.now() + timedelta(milliseconds=3000),
-            total_ticks=2300,
-            tick_time=3000
-        ),
+        # Game(
+        #     game_name="Stalna igra",
+        #     is_contest=int(False),
+        #     dataset_id=datasets[0].dataset_id,
+        #     start_time=datetime.now() + timedelta(milliseconds=3000),
+        #     total_ticks=2300,
+        #     tick_time=3000
+        # ),
         Game(
             game_name="Natjecanje",
-            is_contest=int(True),
+            is_contest=int(False), #TODO
             dataset_id=datasets[1].dataset_id,
             start_time=datetime.now() + timedelta(milliseconds=5000),
             total_ticks=1800,
