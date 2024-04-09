@@ -2,6 +2,7 @@ import logging
 import logging.handlers
 from operator import attrgetter
 import types
+from typing import List, Tuple
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -38,3 +39,20 @@ class GameLogger(logging.Logger):
 
 logger.game_log = types.MethodType(GameLogger.game_log, logger)
 logger: GameLogger
+
+
+def get_player_text(x):
+    player_id, score = x
+    return f"({player_id}, {score})"
+
+class ScoreLogger:
+    def log(self, game_id: str, game_name: str, tick: int | str, scores: List[Tuple[str, int]]):
+        file_name = f"scores/{game_id}_{game_name}.txt"
+        try:
+            with open(file_name, "a+", encoding="utf8") as file:
+                text = ', '.join(map(get_player_text, scores))
+                file.write(f"{tick}, [{text}]\n")
+        except Exception as e:
+            logger.warning(f"Error writing score to file {file_name} for tick {tick}", e)
+
+score_logger = ScoreLogger()
