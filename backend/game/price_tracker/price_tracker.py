@@ -41,7 +41,7 @@ class PriceTracker:
 
         for trade in trades:
             price = trade.trade_price
-            money_sum += trade.total_money
+            money_sum += trade.total_price
             money_size += trade.trade_size
 
             if self.high is None:

@@ -225,9 +225,13 @@ class Ticker:
             scores=scores)
 
     def get_players_and_enter_context(self, game: Game, stack: ExitStack) -> Dict[str, Player]:
-        players = Player.find(Player.game_id == game.game_id).all()
-        for player_lock in list(map(methodcaller('lock'), players)):
-            stack.enter_context(player_lock)
+        players: List[Player] = Player.find(Player.game_id == game.game_id).all()
+        for player in players:
+            try:
+                stack.enter_context(player.lock())
+            except Exception:
+                logger.critical(f"Error getting lock for player {player.player_name} {player.player_id} in game {player.game_id}")
+
         player_pks = map(attrgetter('pk'), players)
         players = list(map(Player.get, player_pks))
         players = {player.player_id: player for player in players}

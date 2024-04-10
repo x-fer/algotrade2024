@@ -67,7 +67,7 @@ class TestCheckTrade():
         assert trade.sell_order is sell_order
         assert trade.buy_order.order_status == OrderStatus.COMPLETED
         assert trade.sell_order.order_status == OrderStatus.COMPLETED
-        assert trade.total_money == price * size
+        assert trade.total_price == price * size
         assert trade.trade_price == price
         assert trade.trade_size == size
         assert trade.tick == 1
@@ -253,7 +253,7 @@ def test_prev_price(get_order):
     orderbook.match(tick=1)
 
     assert len(trades) == 1
-    assert trades[0].total_money == 5 * 50
+    assert trades[0].total_price == 5 * 50
 
 
 def test_invalid_callback_type():

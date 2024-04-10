@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from datetime import datetime, timedelta
+from operator import attrgetter
 from typing import Dict, List
 
 from fastapi import APIRouter, Depends
@@ -9,6 +10,7 @@ from model import Game
 from model.dataset_data import DatasetData
 from model.power_plant_model import PowerPlantsApiModel, ResourcesApiModel
 from routers.users.dependencies import game_dep, start_end_tick_dep
+
 
 router = APIRouter()
 
@@ -40,7 +42,9 @@ def server_time() -> datetime:
     response_description="List of games",
 )
 def game_list() -> List[GameData]:
-    return Game.find().sort_by("start_time").all()
+    games = Game.find().all()
+    games.sort(key=attrgetter("start_time"))
+    return games
 
 
 class GameTimeData(GameData):

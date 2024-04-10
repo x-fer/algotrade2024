@@ -9,7 +9,7 @@ from model.resource import ResourceOrEnergy
 class Trade(JsonModel):
     tick: int = Field(index=True)
 
-    total_money: int
+    total_price: int
     trade_size: int
     trade_price: int
 

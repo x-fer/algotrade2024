@@ -15,11 +15,6 @@ from logger import logger
 from docs import tags_metadata, short_description
 from redis_om import Migrator
 from fastapi.middleware.cors import CORSMiddleware
-import sys
-
-
-if "pytest" not in sys.modules:
-    Migrator().run()
 
 
 tick_event = asyncio.Event()
@@ -44,6 +39,7 @@ async def run_game_ticks():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    Migrator().run()
     asyncio.create_task(run_game_ticks())
     yield
 
@@ -62,7 +58,7 @@ app.state.limiter = limiter
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins="*",
+    allow_origins="Access-Control-Allow-Origin",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]

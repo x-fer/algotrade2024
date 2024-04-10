@@ -73,7 +73,7 @@ class ResourceMarket:
         elif buyer.is_bot:
             can_buy = True
         else:
-            can_buy = buyer.money >= trade.total_money
+            can_buy = buyer.money >= trade.total_price
 
         if seller is None:
             can_sell = False
@@ -97,11 +97,11 @@ class ResourceMarket:
                 logger.critical(f"Trading between two different bots {buyer.player_name} {buyer_id}({buyer.game_id}) and {seller.player_name} {seller_id}({seller.game_id}) in game ({self.game_id}). This is probably due to invalid reseting of the game.")
 
         if not buyer.is_bot:
-            buyer.money -= trade.total_money
+            buyer.money -= trade.total_price
             buyer.resources[self.resource] += trade.trade_size
 
         if not seller.is_bot:
-            seller.money += trade.total_money
+            seller.money += trade.total_price
             seller.resources[self.resource] -= trade.trade_size
 
     def _get_player(self, player_id: str) -> Player:
