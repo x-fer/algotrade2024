@@ -11,7 +11,7 @@ class EnumGetterSettr:
 
     def __setitem__(self, key, value):
         if isinstance(key, Enum):
-            return self.__setattr__(key.name, value)
+            return self.__setattr__(key.value, value)
         self.__setattr__(key, value)
 
 

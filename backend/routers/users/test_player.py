@@ -9,7 +9,7 @@ import pytest
 from fixtures.fixtures import *
 from routers.users.dependencies import game_dep, team_dep, check_game_active_dep, player_dep
 
-from routers.users.fixtures import mock_check_game_active_dep, override_game_dep, override_team_dep, mock_player_dep
+from routers.users.fixtures import mock_check_game_active_dep, override_game_dep, override_team_dep, mock_player_dep, set_mock_find
 
 app = FastAPI()
 client = TestClient(app)
@@ -26,11 +26,6 @@ app.dependency_overrides[player_dep] = mock_player_dep
 def mock_transaction():
     with patch("model.Player.lock") as mock_transaction:
         yield mock_transaction
-
-
-def set_mock_find(mock: MagicMock, method: str, return_value):
-    mock.return_value = MagicMock()
-    setattr(mock.return_value, method, MagicMock(return_value=return_value))
 
 
 def test_player_list():

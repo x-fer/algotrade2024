@@ -1,4 +1,5 @@
 from datetime import datetime
+from unittest.mock import MagicMock
 from fastapi import Query, Depends
 from model import Game, Team, Player
 from routers.users.dependencies import game_dep, team_dep, check_game_active_dep, player_dep, start_end_tick_dep
@@ -38,3 +39,8 @@ def mock_start_end_tick_dep(game: Game = Depends(game_dep),
         mock_start_end_tick_dep.call_count = 0
     mock_start_end_tick_dep.call_count += 1
     return start_end_tick_dep(game, start_tick, end_tick)
+
+
+def set_mock_find(mock: MagicMock, method: str, return_value):
+    mock.return_value = MagicMock()
+    setattr(mock.return_value, method, MagicMock(return_value=return_value))
