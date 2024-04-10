@@ -1,7 +1,8 @@
-import pytest
 from datetime import datetime
-from model import Order, OrderSide, OrderType, OrderStatus, Resource
-import pandas as pd
+
+import pytest
+
+from model import Order, OrderSide, OrderStatus, OrderType, Resource
 
 
 @pytest.fixture
@@ -13,7 +14,7 @@ def sample_order():
         price=50,
         size=100,
         tick=1,
-        timestamp=pd.Timestamp.now(),
+        timestamp=datetime.now(),
         order_side=OrderSide.BUY,
         order_type=OrderType.LIMIT,
         order_status=OrderStatus.PENDING,
@@ -32,7 +33,7 @@ def test_order_initialization(sample_order):
     assert sample_order.price == 50
     assert sample_order.size == 100
     assert sample_order.tick == 1
-    assert isinstance(sample_order.timestamp, pd.Timestamp)
+    assert isinstance(sample_order.timestamp, datetime)
     assert sample_order.order_side == OrderSide.BUY
     assert sample_order.order_type == OrderType.LIMIT
     assert sample_order.order_status == OrderStatus.PENDING

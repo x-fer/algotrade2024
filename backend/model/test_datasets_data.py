@@ -18,6 +18,11 @@ def sample_dataset_data():
         wind=40,
         solar=60,
         hydro=25,
+        coal_price=100,
+        uranium_price=50,
+        biomass_price=30,
+        gas_price=80,
+        oil_price=70,
         energy_demand=300,
         max_energy_price=70
     )
@@ -39,6 +44,11 @@ def test_dataset_data_initialization(sample_dataset_data):
     assert sample_dataset_data.hydro == 25
     assert sample_dataset_data.energy_demand == 300
     assert sample_dataset_data.max_energy_price == 70
+    assert sample_dataset_data.coal_price == 100
+    assert sample_dataset_data.uranium_price == 50
+    assert sample_dataset_data.biomass_price == 30
+    assert sample_dataset_data.gas_price == 80
+    assert sample_dataset_data.oil_price == 70
 
 
 def test_dataset_data_indexing(sample_dataset_data):
@@ -53,3 +63,8 @@ def test_dataset_data_indexing(sample_dataset_data):
     assert sample_dataset_data['Hydro'] == 25
     assert sample_dataset_data['energy_demand'] == 300
     assert sample_dataset_data['max_energy_price'] == 70
+    assert sample_dataset_data['coal_price'] == 100
+    assert sample_dataset_data['uranium_price'] == 50
+    assert sample_dataset_data['biomass_price'] == 30
+    assert sample_dataset_data['gas_price'] == 80
+    assert sample_dataset_data['oil_price'] == 70

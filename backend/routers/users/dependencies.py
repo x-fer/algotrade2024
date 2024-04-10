@@ -1,43 +1,116 @@
+from datetime import datetime
 from fastapi import HTTPException, Query, Depends
-from model import Team, Player, PowerPlant, Game
+from model import Team, Player, Game
+from typing import Tuple
+from config import config
 
 
-async def game_id(game_id: int) -> int:
-    try:
-        # TODO: add check if game is started
-        return (await Game.get(game_id=game_id)).game_id
-    except:
-        raise HTTPException(status_code=403, detail="Invalid game_id")
-
-
-async def team_id(team_secret: str = Query(description="Team secret", default=None)) -> int:
+async def team_dep(
+    team_secret: str = Query(
+        description="Team secret - given to you at the start of the competition.",
+        default=None,
+    ),
+) -> Team:
     if team_secret is None:
         raise HTTPException(status_code=403, detail="Missing team_secret")
     try:
-        return (await Team.get(team_secret=team_secret)).team_id
-    except:
+        return await Team.get(team_secret=team_secret)
+    except Exception:
         raise HTTPException(status_code=403, detail="Invalid team_secret")
 
 
-async def player(player_id: int, game_id: int = Depends(game_id), team_id: int = Depends(team_id)) -> Player:
+async def game_dep(game_id: int) -> Game:
+    try:
+        return await Game.get(game_id=game_id)
+    except Exception:
+        raise HTTPException(status_code=403, detail="Invalid game_id")
+
+
+async def check_game_active_dep(game: Game = Depends(game_dep)) -> None:
+    if game.is_finished:
+        raise HTTPException(403, "Game is already finished")
+    if datetime.now() < game.start_time:
+        raise HTTPException(403, "Game has not started yet")
+
+
+async def player_dep(
+    player_id: int, game: Game = Depends(game_dep), team: Team = Depends(team_dep)
+) -> Player:
     try:
         player = await Player.get(player_id=player_id)
-    except:
+    except Exception:
         raise HTTPException(status_code=403, detail="Invalid player_id")
-    if player.team_id != team_id:
+    if player.team_id != team.team_id:
         raise HTTPException(403, "This player doesn't belong to your team")
-    if player.game_id != game_id:
+    if player.game_id != game.game_id:
         raise HTTPException(400, f"This player is in game {player.game_id}")
-    if player.is_active == False:
-        raise HTTPException(400, f"This player is inactive")
+    if player.is_active is False:
+        raise HTTPException(400, "This player is inactive or already has been deleted")
     return player
 
 
-async def power_plant(power_plant_id: int, player: Player = Depends(player)) -> PowerPlant:
-    try:
-        power_plant = await PowerPlant.get(power_plant_id=power_plant_id)
-    except:
-        raise HTTPException(status_code=403, detail="Invalid power_plant_id")
-    if power_plant.player_id != player.player_id:
-        raise HTTPException(400, "This power plant doesn't belong to you")
-    return power_plant
+tick_description = "Enter negative number for relative tick e.g. -5 for current_tick-5. Leave empty for last tick."
+
+
+async def start_end_tick_dep(
+    game: Game = Depends(game_dep),
+    start_tick: int = Query(
+        default=None,
+        description=f"Starting tick for this query. {tick_description}",
+    ),
+    end_tick: int = Query(
+        default=None,
+        description=f"End tick for this query. {tick_description}",
+    ),
+) -> Tuple[int, int]:
+    if start_tick is None and end_tick is None:
+        current_tick = game.current_tick - 1
+        start_tick = current_tick
+        end_tick = current_tick
+    if start_tick is None:
+        start_tick = end_tick
+    if end_tick is None:
+        end_tick = start_tick
+
+    if start_tick < 0:
+        start_tick = max(0, game.current_tick + start_tick)
+    if end_tick < 0:
+        end_tick = max(0, game.current_tick + end_tick)
+
+    if game.current_tick == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Game just started (it is tick=0), no data to return",
+        )
+
+    if start_tick < 0 or end_tick < 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Start ({start_tick}) and end ({end_tick}) tick must both be greater than 0",
+        )
+
+    if end_tick < start_tick:
+        raise HTTPException(
+            status_code=400, detail="End tick must be greater than start tick"
+        )
+
+    if start_tick >= game.current_tick:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Start tick must be less than current tick (current_tick={game.current_tick})",
+        )
+
+    if end_tick >= game.current_tick:
+        raise HTTPException(
+            status_code=400,
+            detail=f"End tick must be less than current tick (current_tick={game.current_tick})",
+        )
+
+    max_ticks_in_request = config["dataset"]["max_ticks_in_request"]
+    if end_tick - start_tick > max_ticks_in_request:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot request more than {max_ticks_in_request} ticks at once",
+        )
+
+    return start_tick, end_tick

@@ -3,13 +3,14 @@ from unittest.mock import MagicMock, patch
 from datetime import datetime
 from game.tick import Ticker, GameData
 from model import Game
-from game.bots import DummyBot, ResourceBot
-from game.fixtures.fixtures import *
+from game.bots import ResourceBot
+from fixtures.fixtures import *
+from game.bots import ResourceBot
+from fixtures.fixtures import *
 
 
 @pytest.mark.asyncio
 async def test_run_bots(get_tick_data):
-    # Create sample game
     game = Game(
         game_id=1,
         game_name="Sample Game",
@@ -18,7 +19,7 @@ async def test_run_bots(get_tick_data):
         total_ticks=10,
         is_finished=False,
         dataset_id=1,
-        bots="dummy:3",
+        bots="resource_bot:3",
         tick_time=1000,
         is_contest=False
     )
@@ -28,21 +29,13 @@ async def test_run_bots(get_tick_data):
         3: MagicMock()
     }
 
-    # Create sample bots
-    bots = [DummyBot(), DummyBot(), DummyBot()]
-    # Mock the Bot.run method
-    with patch.object(DummyBot, 'run') as mock_run:
-        # Create a Ticker instance
+    with patch.object(ResourceBot, 'run') as mock_run:
         ticker = Ticker()
 
-        # Set the bots for the game
-        ticker.game_data[game.game_id] = GameData(game, players)
-        tick_data = get_tick_data(power_plants={}, markets={}, players={})
+        ticker.game_data[game.game_id] = GameData(game)
+        tick_data = get_tick_data(markets={}, players=players)
 
-        # Run the method being tested
         await ticker.run_bots(tick_data)
 
-        # Assertions
-        # Ensure Bot.run is called once for each bot
-        assert mock_run.call_count == len(bots)
-        mock_run.assert_called_with(tick_data)  # Ensure Bot.run is called with no arguments
+        assert mock_run.call_count == 1
+        mock_run.assert_called_with(tick_data)

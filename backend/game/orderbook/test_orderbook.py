@@ -1,10 +1,8 @@
-from config import config
 from unittest.mock import Mock
-
 from model.order_types import OrderType
 from .orderbook import OrderBook
 from model import OrderSide, OrderStatus, Trade
-from game.fixtures.orderbook_fixtures import *
+from fixtures.orderbook_fixtures import *
 
 
 class TestCancelTrade():
@@ -16,7 +14,7 @@ class TestCancelTrade():
                               size=50, order_side=OrderSide.BUY, tick=1)
 
         orderbook.add_order(buy_order)
-        orderbook.match(timestamp=1)
+        orderbook.match(tick=1)
 
         assert len(orderbook.buy_side) == 1
         assert buy_order.order_status == OrderStatus.ACTIVE
@@ -30,15 +28,15 @@ class TestCancelTrade():
         orderbook = OrderBook()
         orderbook.register_callback('on_cancel', sample_mock.some_method)
         buy_order = get_order(player_id=1, price=5, size=50,
-                              order_side=OrderSide.BUY, expiration=2, tick=1)
+                              order_side=OrderSide.BUY, expiration=4, tick=1)
 
         orderbook.add_order(buy_order)
-        orderbook.match(timestamp=1)
+        orderbook.match(tick=1)
 
         sample_mock.some_method.assert_not_called()
         assert len(orderbook.buy_side) == 1
         assert buy_order.order_status == OrderStatus.ACTIVE
-        orderbook.match(timestamp=5)
+        orderbook.match(tick=5)
         assert len(orderbook.buy_side) == 0
         sample_mock.some_method.assert_called_with(buy_order)
         assert buy_order.order_status == OrderStatus.EXPIRED
@@ -60,7 +58,7 @@ class TestCheckTrade():
         orderbook.add_order(buy_order)
         orderbook.add_order(sell_order)
 
-        orderbook.match(timestamp=1)
+        orderbook.match(tick=1)
 
         assert len(orderbook.match_trades) == 1
         trade: Trade = orderbook.match_trades[0]
@@ -70,7 +68,7 @@ class TestCheckTrade():
         assert trade.sell_order.order_status == OrderStatus.COMPLETED
         assert trade.filled_money == price * size
         assert trade.filled_size == size
-        assert trade.timestamp == 1
+        assert trade.tick == 1
 
     def test_when_both_false(self, get_order):
         check_trade = lambda *kwargs: {'can_buy': False, 'can_sell': False}
@@ -85,7 +83,7 @@ class TestCheckTrade():
         orderbook.add_order(buy_order)
         orderbook.add_order(sell_order)
 
-        orderbook.match(timestamp=1)
+        orderbook.match(tick=1)
 
         assert len(orderbook.match_trades) == 0
         assert len(orderbook.buy_side) == 0
@@ -110,7 +108,7 @@ class TestCheckTrade():
         orderbook.add_order(buy_order)
         orderbook.add_order(sell_order)
 
-        orderbook.match(timestamp=1)
+        orderbook.match(tick=1)
 
         assert len(orderbook.match_trades) == 0
         assert len(orderbook.buy_side) == 1
@@ -130,7 +128,7 @@ class TestCheckTrade():
         orderbook.add_order(get_order(player_id=2, price=5,
                             size=50, order_side=OrderSide.SELL, tick=1))
 
-        orderbook.match(timestamp=1)
+        orderbook.match(tick=1)
 
         assert len(orderbook.match_trades) == 1
 
@@ -227,7 +225,7 @@ def test_second_order_is_market_order(get_order):
     orderbook.add_order(first_order)
     orderbook.add_order(second_order)
 
-    orderbook.match(timestamp=1)
+    orderbook.match(tick=1)
 
     assert len(trades) == 1
 
@@ -248,12 +246,10 @@ def test_prev_price(get_order):
     orderbook.add_order(first_order)
     orderbook.add_order(second_order)
 
-    orderbook.match(timestamp=1)
+    orderbook.match(tick=1)
 
     assert len(trades) == 1
     assert trades[0].filled_price == 10
-
-# test invalid callback types
 
 
 def test_invalid_callback_type():

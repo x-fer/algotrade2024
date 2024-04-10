@@ -1,11 +1,13 @@
 import pandas as pd
 from matplotlib import pyplot as plt
+import sys
 
-df = pd.read_csv("data/out.csv")
+df = pd.read_csv(sys.argv[1])
+
 
 # Date as index
-df["Date"] = pd.to_datetime(df["Date"])
-df = df.set_index("Date")
+df["date"] = pd.to_datetime(df["date"])
+df = df.set_index("date")
 
 # drop NaN
 
@@ -16,3 +18,6 @@ for col in df.columns:
     df[col].plot()
     plt.title(col)
     plt.show()
+
+    # plt.savefig(f"ivan/{col}.png")
+    # plt.clf()

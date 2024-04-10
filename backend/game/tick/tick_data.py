@@ -1,19 +1,21 @@
 from dataclasses import dataclass, field
-from model import Player, PowerPlant, Game, Order
-from game.market import ResourceMarket
+from typing import Dict, List
+from model import Player, Game, Order, DatasetData
+from game.market import ResourceMarket, EnergyMarket
 from game.bots.bot import Bot
 
 
 @dataclass
 class TickData:
     game: Game
-    players: dict[int, Player]
-    power_plants: dict[int, list[PowerPlant]]
-    markets: dict[int, ResourceMarket]
-    bots: list[Bot]
+    players: Dict[int, Player]
+    markets: Dict[str, ResourceMarket]
+    energy_market: EnergyMarket
+    bots: List[Bot]
 
-    dataset_row: dict = field(default_factory=dict)
+    dataset_row: DatasetData
 
-    pending_orders: list[Order] = field(default_factory=list)
-    user_cancelled_orders: list[Order] = field(default_factory=list)
-    updated_orders: dict[int, Order] = field(default_factory=dict)
+    pending_orders: List[Order] = field(default_factory=list)
+    user_cancelled_orders: List[Order] = field(default_factory=list)
+    updated_orders: Dict[int, Order] = field(default_factory=dict)
+    tick_trades: Dict[int, Order] = field(default_factory=list)

@@ -1,100 +1,22 @@
-from copy import deepcopy
-from pprint import pprint
 import pytest
-from game.tick import TickData
-from game.fixtures.fixtures import *
-from model.order_types import OrderSide, OrderStatus
-from model.player import Player
+from model import PowerPlantType
+from game.tick.tick_fixtures import *
+from game.tick import Ticker, TickData
 
 
-def test_run_power_plants_no_resource(get_tick_data, get_ticker, get_player, get_power_plant):
+@pytest.mark.asyncio
+async def test_run_power_plants(sample_game, sample_players, sample_game_data,
+                                tick_data: TickData, sample_dataset_row):
+    ticker = Ticker()
+    ticker.game_data[sample_game.game_id] = sample_game_data
+    tick_data.dataset_row = sample_dataset_row
 
-    player1 = get_player(money=1000, coal=0, energy=0)
-    player_dict = get_player_dict([player1])
+    updated_tick_data = ticker.run_power_plants(tick_data)
 
-    power_plant1 = get_power_plant(
-        player_id=player1.player_id, type=PowerPlantType.COAL, powered_on=True)
-
-    tick_data = get_tick_data(power_plants={
-                              player1.player_id: [power_plant1]},
-                              markets=[],
-                              players=player_dict)
-
-    ticker = get_ticker(players=player_dict)
-
-    ticker.run_power_plants(tick_data)
-
-    assert player1.energy == 0
-    assert power_plant1.temperature == 0.0
-    assert power_plant1.powered_on == False
-
-
-def test_run_power_plants_heating_up(get_tick_data, get_ticker, get_player, get_power_plant):
-
-    player1 = get_player(money=1000, coal=1, energy=0)
-    player_dict = get_player_dict([player1])
-
-    power_plant1 = get_power_plant(
-        player_id=player1.player_id, type=PowerPlantType.COAL, powered_on=True)
-
-    tick_data = get_tick_data(power_plants={
-                              player1.player_id: [power_plant1]},
-                              markets=[],
-                              players=player_dict)
-
-    ticker = get_ticker(players=player_dict)
-
-    ticker.run_power_plants(tick_data)
-
-    assert player1.energy == 0
-    assert player1.coal == 0
-    assert power_plant1.temperature == PowerPlantType.COAL.get_new_temp(
-        0.0, True)
-    assert power_plant1.powered_on == True
-
-
-def test_run_power_plants_producing(get_tick_data, get_ticker, get_player, get_power_plant):
-    player1 = get_player(money=1000, coal=1, energy=0)
-    player_dict = get_player_dict([player1])
-
-    power_plant1 = get_power_plant(
-        player_id=player1.player_id, type=PowerPlantType.COAL, powered_on=True, temperature=1.0)
-
-    tick_data = get_tick_data(power_plants={
-        player1.player_id: [power_plant1]},
-        markets=[],
-        players=player_dict)
-
-    ticker = get_ticker(players=player_dict)
-
-    ticker.run_power_plants(tick_data)
-
-    assert player1.energy == power_plant1.get_produced_energy(
-        tick_data.dataset_row)
-    assert player1.coal == 0
-    assert power_plant1.temperature == PowerPlantType.COAL.get_new_temp(
-        1.0, True)
-    assert power_plant1.powered_on == True
-
-
-def test_run_power_plants_renewable(get_tick_data, get_ticker, get_player, get_power_plant):
-    player1 = get_player(money=0, energy=0)
-    player_dict = get_player_dict([player1])
-
-    power_plant1 = get_power_plant(
-        player_id=player1.player_id, type=PowerPlantType.WIND, powered_on=True, temperature=1.0)
-
-    tick_data = get_tick_data(power_plants={
-        player1.player_id: [power_plant1]},
-        markets=[],
-        players=player_dict)
-
-    ticker = get_ticker(players=player_dict)
-
-    ticker.run_power_plants(tick_data)
-
-    assert player1.energy == power_plant1.get_produced_energy(
-        tick_data.dataset_row)
-    assert power_plant1.temperature == PowerPlantType.WIND.get_new_temp(
-        1.0, True)
-    assert power_plant1.powered_on == True
+    for player_id, player in updated_tick_data.players.items():
+        total_energy = sum([
+            player[plant_type.name.lower() + "_plants_powered"] *
+            plant_type.get_produced_energy(updated_tick_data.dataset_row)
+            for plant_type in PowerPlantType
+        ])
+        assert player.energy == total_energy

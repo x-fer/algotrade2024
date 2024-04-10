@@ -2,7 +2,8 @@ server:
   port: 8000
   host: 0.0.0.0
 
-datasets_path: ./data
+redis:
+  port: 6379
 
 database:
   url: postgresql://postgres:postgres@localhost:5432/mydatabase
@@ -10,71 +11,73 @@ database:
 test_database:
   url: postgresql://postgres:postgres@localhost:5432/test_database
 
-game:
-  tick_interval: 1
+admin:
+  secret: mojkljuc
+
+testing: ${TESTING}
+debug: ${DEBUG}
+
+dataset:
+  datasets_path: ./data
+  max_ticks_in_request: 100
+  
+  price_multiplier:
+    coal: 20000
+    uranium: 120000
+    biomass: 60000
+    gas: 50700
+    oil: 60000
+    energy: 500
+
+  energy_output_multiplier:
+    coal: 115
+    uranium: 1500
+    biomass: 130
+    gas: 300
+    oil: 380
+    geothermal: 30
+    wind: 40
+    solar: 35
+    hydro: 130
+
+  energy_demand_multiplier: 30000
 
 player:
-  starting_money: 15000
+  max_players_per_team: 10
+  starting_money: 50_000_000
+  max_orders: 20
+  max_energy_per_player: 0.4
 
 bots:
   team_name: bots
   team_secret: oiajsdpifjapsndkcapis
   resource_sum: 1000
-  default_volume: 100
-  min_volume: 20
-  max_volume: 600
-  min_price: 1
+  default_volume: 200
+  min_volume: 50
+  max_volume: 400
+  min_price: -100
   max_price: 100
-  max_price_change: 20
-  expiration_ticks: 5
-  price_change_coeff: 0.05
-
-max_energy_per_player: 0.2
+  expiration_ticks: 3
+  price_change_coeff: 0.25
+  extra_orders: 5
+  extra_orders_price_diff: 0.02
+  extra_orders_volume_diff: 0.12
+  final_volume_multiplier: 1
+  final_price_multiplier: 1
+  log_when_no_orders: ${LOG_BOTS}
 
 power_plant:
   resources_per_tick: 1
-  sell_coeff: 0.5
+  price_coeff: 0.5
+  sell_coeff: 0.7
 
   base_prices:
-    coal: 3000
-    uranium: 250000
-    biomass: 5000
-    gas: 7000
-    oil: 10000
-    geothermal: 25000
-    wind: 10000
-    solar: 10000
-    hydro: 100000
-
-  warmup_coeff:
-    coal: 1.06
-    uranium: 1.04
-    biomass: 1.12
-    gas: 1.07
-    oil: 1.47
-    geothermal: 1.07
-    wind: 3
-    solar: 3
-    hydro: 1.31
-
-  cooldown_coeff:
-    coal: 0.84
-    uranium: 0.66
-    biomass: 0.78
-    gas: 0.55
-    oil: 0.45
-    geothermal: 0.7
-    wind: 0.1
-    solar: 0.05
-    hydro: 0.3
-
-  dataset_rows:
-    coal: null
-    uranium: null
-    biomass: null
-    gas: null
-    oil: null
-    geothermal: geo
-    wind: wind
-    solar: solar
-    hydro: hydro
+    coal: 3025000
+    uranium: 97500000
+    biomass: 9680000
+    gas: 9704000
+    oil: 9680000
+    geothermal: 4000000
+    wind: 2000000
+    solar: 1000000
+    hydro: 12007999
