@@ -82,7 +82,7 @@ async def test_run_tick_manager_game_not_started(ticker):
             patch('game.tick.Ticker.start_game', new=mock_start_game), \
             patch('game.tick.Ticker.end_game', new=mock_end_game):
         set_mock_find(find_mock, "all", mock_game_list)
-    
+
         await ticker.run_tick_manager(1)
 
         mock_start_game.assert_not_called()
@@ -98,7 +98,7 @@ async def test_end_game(ticker):
     ticker.game_data["1"] = Mock()
     ticker.game_futures["1"] = Mock()
 
-    mock_game_update = AsyncMock()
+    mock_game_update = Mock()
 
     with patch('model.Game.update', new=mock_game_update):
         await ticker.end_game(game)
@@ -116,8 +116,8 @@ async def test_start_game(ticker):
                     current_tick=10, total_ticks=10, is_finished=False)
 
     with patch('game.tick.Ticker.delete_all_running_bots') as delete_all_running_bots_mock, \
-        patch('game.tick.Ticker.load_previous_oderbook') as load_previous_oderbook_mock, \
-        patch('game.tick.Ticker.run_game') as run_game_mock:
+            patch('game.tick.Ticker.load_previous_oderbook') as load_previous_oderbook_mock, \
+            patch('game.tick.Ticker.run_game') as run_game_mock:
         await ticker.start_game(game)
 
         delete_all_running_bots_mock.assert_called_once_with("1")

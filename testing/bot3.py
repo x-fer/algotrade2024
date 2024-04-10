@@ -9,10 +9,10 @@ import algotrade_api
 from algotrade_api import AlgotradeApi
 
 
-url = "localhost:3000"
+url = "localhost:8000"
 
-team_secret = "1IM56G5I"
-game_id = "01HV2CQJ19BF2T1Z8Q8MZ7W319"
+team_secret = "F9OUM3LF"
+game_id = "01HV3VG6RNF27TPR6QBPFSYET3"
 player_id = -1  # we will get this later
 
 api = AlgotradeApi(url, team_secret, game_id, player_id)
