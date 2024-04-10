@@ -318,8 +318,10 @@ class Ticker:
                                energy_market: EnergyMarket
                                ) -> Tuple[TickData, Dict[str, int]]:
         energy_sold = energy_market.match(
-            tick_data.players, tick_data.dataset_row.energy_demand,
-            tick_data.dataset_row.max_energy_price)
+            players=tick_data.players, 
+            tick=tick_data.game.current_tick,
+            demand=tick_data.dataset_row.energy_demand,
+            max_price=tick_data.dataset_row.max_energy_price)
         return tick_data, energy_sold
 
     def save_electricity_orders(self, game: Game, players: Dict[str, Player],

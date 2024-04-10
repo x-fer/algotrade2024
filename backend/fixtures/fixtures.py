@@ -8,22 +8,23 @@ from game.tick import TickData, Ticker
 from game.tick.ticker import GameData
 from model import Game, Order, OrderSide, Player, Resource
 from model.dataset_data import DatasetData
+from model.power_plant_model import PowerPlantsModel, ResourcesModel
 
 
 @pytest.fixture
 def team_id():
-    return 1
+    return "1"
 
 
 @pytest.fixture
 def game_id():
-    return 1
+    return "1"
 
 
 @pytest.fixture
 def game():
     return Game(
-        game_id=1,
+        pk="1",
         game_name=f"game_{game_id}",
         is_contest=False,
         bots="",
@@ -84,26 +85,30 @@ def get_tick_data(game, energy_market):
             game=game,
             bots=[],
             dataset_row=DatasetData(
-                dataset_data_id=1,
-                dataset_id=1,
+                dataset_data_id="1",
+                dataset_id="1",
                 date=datetime.now(),
                 tick=1,
-                coal=coal,
-                uranium=2,
-                biomass=3,
-                gas=4,
-                oil=5,
-                coal_price=coal,
-                uranium_price=2,
-                biomass_price=3,
-                gas_price=4,
-                oil_price=5,
-                geothermal=6,
-                wind=7,
-                solar=8,
-                hydro=9,
                 energy_demand=energy_demand,
                 max_energy_price=max_energy_price,
+                resource_prices = ResourcesModel(
+                    coal_price=coal,
+                    uranium_price=2,
+                    biomass_price=3,
+                    gas_price=4,
+                    oil_price=5,
+                ),
+                power_plants_output= PowerPlantsModel(
+                    coal=coal,
+                    uranium=2,
+                    biomass=3,
+                    gas=4,
+                    oil=5,
+                    geothermal=6,
+                    wind=7,
+                    solar=8,
+                    hydro=9,
+                ),
             ),
             markets=markets,
             players=players,
@@ -136,7 +141,7 @@ def get_player(game_id, team_id):
     def _get_player(**kwargs) -> Player:
         nonlocal player_id
         player = Player(
-            player_id=player_id,
+            pk=str(player_id),
             player_name=f"player_{player_id}",
             team_id=team_id,
             game_id=game_id,
@@ -155,7 +160,7 @@ def get_player_in_game(team_id):
     def _get_player_in_game(**kwargs) -> Player:
         nonlocal player_id
         player = Player(
-            player_id=player_id,
+            pk=str(player_id),
             player_name=f"player_{player_id}",
             team_id=team_id,
             **kwargs,
@@ -171,19 +176,19 @@ def get_order():
     order_id = 0
 
     def _get_order(
-        player_id: int, price: int, size: int, order_side: OrderSide, tick: int
+        player_id: str, price: int, size: int, order_side: OrderSide, tick: int
     ) -> Order:
         nonlocal order_id
         order = Order(
-            order_id=order_id,
-            game_id=1,
+            pk=str(order_id),
+            game_id="1",
             timestamp=datetime.now(),
             player_id=player_id,
-            resource=Resource.COAL,
+            resource=Resource.COAL.value,
             price=price,
             tick=tick,
             size=size,
-            order_side=order_side,
+            order_side=order_side.value,
             expiration_tick=5,
         )
         order_id += 1
@@ -192,7 +197,7 @@ def get_order():
     return _get_order
 
 
-def get_player_dict(players: List[Player]) -> Dict[int, Player]:
+def get_player_dict(players: List[Player]) -> Dict[str, Player]:
     return {player.player_id: player for player in players}
 
 
