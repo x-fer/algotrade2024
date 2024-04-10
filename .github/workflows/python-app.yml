@@ -18,6 +18,14 @@ jobs:
     defaults:
       run:
         working-directory: ./backend
+    services:
+      redis:
+        image: redis/redis-stack-server:latest
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python 3.10
@@ -29,12 +37,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest
         pip install -r requirements.txt
-    - name: Start Redis
-      uses: supercharge/redis-github-action@1.4.0
-      with:
-        redis-version: ${{ matrix.redis-version }}
-        redis-port: 6379
-        redis-container-name: redis-stack-server
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
