@@ -13,7 +13,6 @@ import psutil
 import os
 from logger import logger
 from docs import tags_metadata, short_description
-from redis_om import Migrator
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -39,7 +38,6 @@ async def run_game_ticks():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Migrator().run()
     asyncio.create_task(run_game_ticks())
     yield
 
