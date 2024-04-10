@@ -20,8 +20,10 @@ def test_run_game_tick(
             patch.object(Game, 'get', return_value=sample_game), \
             patch.object(Game, 'update'), \
             patch.object(Game, 'save'), \
-            patch.object(ResourceBot, 'run'):
+            patch.object(ResourceBot, 'run'), \
+            patch.object(Ticker, 'get_players_and_enter_context') as find_player:
 
+        find_player.return_value = tick_data.players
         ticker = Ticker()
         ticker.game_data[sample_game.game_id] = sample_game_data
         old_tick = sample_game.current_tick
@@ -29,7 +31,7 @@ def test_run_game_tick(
         ticker.run_game_tick(sample_game)
 
         assert sample_game.current_tick == old_tick + 1
-        Ticker.get_tick_data.assert_called_once_with(sample_game, {})
+        Ticker.get_tick_data.assert_called_once_with(sample_game, tick_data.players)
         Ticker.run_markets.assert_called_once()
         Ticker.run_power_plants.assert_called_once()
         Ticker.run_electricity_market.assert_called_once()
