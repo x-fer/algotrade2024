@@ -4,6 +4,7 @@ import SelectResourceBar from "./SelectResourceBar";
 import instance from "../../api/apiInstance";
 import { DataContext } from "../DataProvider";
 import BuySell from "./BuySell";
+import EnergySell from "./EnergySell";
 
 const OrderBox = () => {
   const { gameId, playerId, teamSecret } = useContext(DataContext);
@@ -40,8 +41,14 @@ const OrderBox = () => {
           selectedResource={selectedResource}
           setSelectedResource={setSelectedResource}
         />
-
-        <BuySell handleButtonClick={handleButtonClick} register={register} />
+        {selectedResource !== "ELECTRICITY" ? (
+          <BuySell handleButtonClick={handleButtonClick} register={register} />
+        ) : (
+          <EnergySell
+            handleButtonClick={handleButtonClick}
+            register={register}
+          />
+        )}
       </div>
     </form>
   );

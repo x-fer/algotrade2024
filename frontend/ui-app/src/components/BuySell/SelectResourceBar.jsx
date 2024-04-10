@@ -4,8 +4,10 @@ import Oil from "../../assets/oil.png";
 import Gas from "../../assets/gas.png";
 import Coal from "../../assets/coal.png";
 import Biomass from "../../assets/corn.png";
+import Electricity from "../../assets/electricity.png";
 
 const Resources = [
+  { name: "Electricity", image: Electricity, type: "ELECTRICITY" },
   { name: "Biomass", image: Biomass, type: "BIOMASS" },
   { name: "Coal", image: Coal, type: "COAL" },
   { name: "Gas", image: Gas, type: "GAS" },
@@ -21,20 +23,20 @@ const SelectResourceButton = ({
 }) => {
   return (
     <button
-      className={`bg-tertiary  hover:bg-seconday border-[3px] text-white text-xl p-2 rounded-3xl mx-0.5  ${
+      className={`bg-tertiary  hover:bg-seconday border-[3px] text-white text-xl p-4 rounded-3xl  ${
         active ? "border-red" : "border-tertiary"
       }`}
       type="button"
       onClick={() => setSelectedResource(resource)}
     >
-      <img src={image} alt={resource} width={40} height={40} />
+      <img src={image} alt={resource} width={50} height={50} />
     </button>
   );
 };
 
 const SelectResourceBar = ({ selectedResource, setSelectedResource }) => {
   return (
-    <div className="flex justify-around">
+    <div className="flex justify-between">
       {Resources.map((item) => (
         <SelectResourceButton
           key={item.name}

@@ -21,7 +21,7 @@ const OrdersListItem = ({ order }) => {
   };
 
   return (
-    <div className="flex justify-between items-center p-2 rounded-3xl bg-secondary text-white">
+    <div className="flex justify-between items-center p-2 rounded-3xl bg-secondary text-white shadow-xl">
       <div className="flex justify-between  ml-2">
         <p>
           {order.quantity} {order.name} at {order.price}&nbsp; [{order.side[0]}]

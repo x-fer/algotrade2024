@@ -18,7 +18,7 @@ const StatusBar = () => {
   });
 
   return (
-    <div className="flex justify-around p-4 rounded-3xl bg-primary text-white gap-6">
+    <div className="flex justify-around p-4 rounded-3xl gap-6 bg-primary text-white shadow-xl">
       <StatusBarItem ammount={10230} unit="€" />
       <StatusBarItem ammount={230} unit="biomass" />
       <StatusBarItem ammount={870} unit="coal" />
