@@ -36,13 +36,13 @@ class PriceTracker:
         money_size = 0
 
         if len(trades) != 0:
-            self.open = trades[0].filled_price
-            self.close = trades[-1].filled_price
+            self.open = trades[0].trade_price
+            self.close = trades[-1].trade_price
 
         for trade in trades:
-            price = trade.filled_price
-            money_sum += trade.filled_money
-            money_size += trade.filled_size
+            price = trade.trade_price
+            money_sum += trade.total_price
+            money_size += trade.trade_size
 
             if self.high is None:
                 self.high = price

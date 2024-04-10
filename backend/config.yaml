@@ -4,18 +4,18 @@ server:
 
 redis:
   port: 6379
-
-database:
-  url: postgresql://postgres:postgres@localhost:5432/mydatabase
-
-test_database:
-  url: postgresql://postgres:postgres@localhost:5432/test_database
+  host: localhost
 
 admin:
   secret: mojkljuc
 
 testing: ${TESTING}
 debug: ${DEBUG}
+drop_tables: ${DROP_TABLES}
+fill_datasets: ${FILL_DATASETS}
+fill_tables: ${FILL_TABLES}
+log_level: ${LOG_LEVEL}
+log_networth_delay: ${NETWORTH_TICKS}
 
 dataset:
   datasets_path: ./data
@@ -47,6 +47,7 @@ player:
   starting_money: 50_000_000
   max_orders: 20
   max_energy_per_player: 0.4
+  log_top_players: 10
 
 bots:
   team_name: bots
@@ -59,9 +60,9 @@ bots:
   max_price: 100
   expiration_ticks: 3
   price_change_coeff: 0.25
-  extra_orders: 5
-  extra_orders_price_diff: 0.02
-  extra_orders_volume_diff: 0.12
+  extra_orders: 4
+  extra_orders_price_diff: 0.01
+  extra_orders_volume_diff: 0.1
   final_volume_multiplier: 1
   final_price_multiplier: 1
   log_when_no_orders: ${LOG_BOTS}

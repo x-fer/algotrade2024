@@ -1,89 +1,96 @@
 import asyncio
+from contextlib import ExitStack
 from itertools import chain
+from operator import attrgetter, methodcaller
+from pprint import pprint
 import sys
 import traceback
 from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
+from typing import Dict, Iterator, List, Tuple
+
+from pyinstrument import Profiler
+
 from game.bots.bot import Bot
-from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide, OrderType
+from game.bots.resource_bot import ResourceBot
+from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide
 from game.market import ResourceMarket, EnergyMarket
-from game.bots import Bots
 from model.market import Market
 from model.resource import Energy
-from model.trade import TradeDb
+from model.team import Team
 from .tick_data import TickData
-from logger import logger
-from db import database
+from logger import logger, score_logger
+from config import config
+from redlock.lock import RedLock
 
 
 class GameData:
     def __init__(self, game: Game):
-        self.markets: Dict[int, ResourceMarket] = {
+        self.markets: Dict[str, ResourceMarket] = {
             resource.value: ResourceMarket(resource, game.game_id)
             for resource in Resource
         }
         self.energy_market = EnergyMarket()
-        self.bots: List[Bot] = Bots.create_bots("resource_bot:1")
+        self.bot: Bot = ResourceBot()
 
 
 class Ticker:
     def __init__(self):
-        self.game_data: Dict[int, GameData] = {}
-        self.game_futures: Dict[int, asyncio.Future] = {}
+        self.game_data: Dict[str, GameData] = {}
+        self.game_futures: Dict[str, asyncio.Future] = {}
         self.tick_event = None
 
     async def run_tick_manager(self, iters=None, tick_event=None):
         for i in range(iters or sys.maxsize):
-            games = await Game.list()
+            games: List[Game] = Game.find().all()
 
             for game in games:
                 if game.is_finished:
                     continue
-
-                if datetime.now() < game.start_time:
+                if game.start_time > datetime.now():
                     continue
-
                 if game.game_id not in self.game_data:
                     await self.start_game(game, tick_event=None)
                     continue
-
             await asyncio.sleep(0.1)
 
     async def end_game(self, game: Game):
         try:
-            logger.info(
-                f"Ending game ({game.game_id}) {game.game_name}")
-            await Game.update(game_id=game.game_id, is_finished=True)
+            logger.info(f"Ending game {game.game_id} {game.game_name}")
+            # TODO: check if this works
+            game.update(is_finished=True)
             if self.game_data.get(game.game_id) is not None:
                 del self.game_data[game.game_id]
                 self.game_futures[game.game_id].cancel()
 
         except Exception:
             logger.critical(
-                f"Failed ending game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+                f"Failed ending game {game.game_id} (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+            await asyncio.sleep(1)
 
     async def start_game(self, game: Game, tick_event=None):
         self.tick_event = tick_event
         try:
             logger.info(
-                f"Starting game ({game.game_id}) {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
+                f"Starting game {game.game_id} {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
 
-            await self.delete_all_running_bots(game.game_id)
+            self.delete_all_running_bots(game.game_id)
 
             self.game_data[game.game_id] = GameData(game)
 
-            await self.load_previous_oderbook(game.game_id)
+            self.load_previous_oderbook(game.game_id)
 
             self.game_futures[game.game_id] = asyncio.create_task(
                 self.run_game(game), name=f"game_{game.game_id}")
 
         except Exception:
             logger.critical(
-                f"Failed creating game ({game.game_id}) (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+                f"Failed creating game {game.game_id} (tick {game.current_tick}) with error:\n{traceback.format_exc()}")
+            await asyncio.sleep(1)
 
     async def run_game(self, game: Game, iters=None):
         for i in range(iters or sys.maxsize):
-            game = await Game.get(game_id=game.game_id)
+            game = Game.get(game.pk)
+
             try:
                 if self.tick_event is not None:
                     await self.tick_event.wait()
@@ -91,6 +98,9 @@ class Ticker:
 
                 if game.current_tick >= game.total_ticks:
                     await self.end_game(game)
+                    return
+
+                if game.is_finished:
                     return
 
                 # wait until the tick should start
@@ -103,73 +113,152 @@ class Ticker:
 
                 if to_wait < 0.1 and game.current_tick > 0:
                     logger.warning(
-                        f"({game.game_id}) {game.game_name} has short waiting time: {to_wait}s in tick ({game.current_tick}), catching up or possible overload")
-                    await asyncio.sleep(0.1)
+                        f"{game.game_id} {game.game_name} has short waiting time: {to_wait}s in tick ({game.current_tick}), catching up or possible overload")
 
                 await asyncio.sleep(to_wait)
 
-                # run the tick
-                async with database.transaction():
-                    await database.execute(
-                        "LOCK TABLE orders, players IN SHARE ROW EXCLUSIVE MODE")
-
-                    await self.run_game_tick(game)
+                start_time = datetime.now()
+                self.run_game_tick(game)
+                interval = (datetime.now() - start_time).total_seconds()
+                logger.info(
+                    f"{interval:.6} Ticking game {game.game_id} {game.game_name} with tick {game.current_tick}/{game.total_ticks}")
 
             except Exception:
                 logger.critical(
-                    f"({game.game_id}) {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
+                    f"{game.game_id} {game.game_name} (tick {game.current_tick}) failed with error:\n{traceback.format_exc()}")
+                await asyncio.sleep(1)
 
-    async def load_previous_oderbook(self, game_id: int):
+    def load_previous_oderbook(self, game_id: str):
         # in case of restart these need to be reloaded
         # IN_QUEUE = "IN_QUEUE"
         # ACTIVE = "ACTIVE"
-        orders = await Order.list(game_id=game_id,
-                                  order_status=OrderStatus.IN_QUEUE.value)
-        orders += await Order.list(game_id=game_id,
-                                   order_status=OrderStatus.ACTIVE.value)
-        for order in orders:
+        queue_orders: List[Order] = Order.find(
+            Order.game_id == game_id,
+            Order.order_status == OrderStatus.IN_QUEUE.value).all()
+        logger.game_log(
+            game_id, f"reloading IN_QUEUE orders {len(queue_orders)}")
+        active_orders = Order.find(
+            Order.game_id == game_id,
+            Order.order_status == OrderStatus.ACTIVE.value).all()
+        logger.game_log(
+            game_id, f"reloading ACTIVE orders {len(active_orders)}")
+        for order in chain(active_orders, queue_orders):
             markets = self.game_data[game_id].markets
             markets[order.resource.value].orderbook.add_order(order)
 
-    async def delete_all_running_bots(self, game_id: int):
-        bots = await Player.list(game_id=game_id, is_bot=True)
-
+    def delete_all_running_bots(self, game_id: str):
+        bots: List[Player] = Player.find(
+            Player.game_id == game_id,
+            Player.is_bot == int(True)
+        ).all()
+        pipe = Player.db().pipeline()
         for bot in bots:
-            await Player.update(player_id=bot.player_id, is_active=False)
-        
-        await Order.delete_bot_orders(game_id=game_id)
+            with bot.lock():
+                bot.is_active = False
+                bot.save(pipe)
+                canceled = bot.cancel_orders(pipe)
+                logger.info(
+                    f"      {bot.game_id} Deleting bot {bot.player_name} {bot.player_id} and his orders ({canceled})")
+                pipe.execute()
 
-    async def run_game_tick(self, game: Game):
+    def run_game_tick(self, game: Game):
+        # profiler = Profiler()
+        # profiler.start()
 
-        logger.debug(
-            f"({game.game_id}) {game.game_name}: {game.current_tick} tick")
-        tick_data = await self.get_tick_data(game)
+        self.pipe = Order.db().pipeline()
+        with ExitStack() as stack:
+            players = self.get_players_and_enter_context(game, stack)
+            tick_data = self.get_tick_data(game, players)
+            tick_data = self.run_markets(tick_data)
+            tick_data = self.run_power_plants(tick_data)
+            tick_data, energy_sold = self.run_electricity_market(
+                tick_data, self.game_data[game.game_id].energy_market)
 
-        tick_data = self.run_markets(tick_data)
+            self.save_electricity_orders(
+                game, tick_data.players, energy_sold, game.current_tick)
+            self.save_tick_data(tick_data)
+            self.save_market_data(tick_data)
+            game.current_tick += 1
 
-        tick_data = self.run_power_plants(tick_data)
+            is_finished = Game.get(game.pk).is_finished
+            game.update(is_finished=is_finished)
+            game.save(self.pipe)
+            self.pipe.execute()
 
-        tick_data, energy_sold = self.run_electricity_market(
-            tick_data, self.game_data[game.game_id].energy_market)
+            if (game.current_tick % config['log_networth_delay'] == 0):
+                self._log_networth(game)
+        logger.game_log(tick_data.game.game_id,
+                        f"updated orders {len(tick_data.updated_orders)}")
+        logger.game_log(tick_data.game.game_id,
+                        f"updated trades {len(tick_data.tick_trades)}")
 
-        await self.save_electricity_orders(
-            game, tick_data.players, energy_sold, game.current_tick)
+        self.game_data[tick_data.game.game_id].bot.run(self.pipe, tick_data)
+        self.pipe.execute()
 
-        await self.save_tick_data(tick_data)
-        await self.save_market_data(tick_data)
-        await Game.update(game_id=game.game_id, current_tick=game.current_tick + 1)
-        tick_data.game.current_tick += 1
-        await self.run_bots(tick_data)
+        # profiler.stop()
+        # profiler.print()
+    def _log_networth(self, game: Game):
+        players: List[Player] = Player.find(
+            Player.game_id == game.game_id,
+            Player.is_bot == int(False)
+        ).all()
+        dataset_data = DatasetData.find(
+            (DatasetData.tick == game.current_tick) &
+            (DatasetData.dataset_id == game.dataset_id)
+        ).first()
+        teams: List[Team] = Team.find().all()
+        teams: Dict[str, Team] = {team.pk: team for team in teams}
 
-    async def get_tick_data(self, game: Game) -> TickData:
+        def get_name(player: Player):
+            team_name = teams[player.team_id].team_name
+            return f"{team_name}/{player.player_name}"
+
+        def get_score_name(player: Player):
+            name = get_name(player)
+            score = player.get_networth(game, dataset_data).total
+            return (name, score)
+        scores = list(map(get_score_name, players))
+        score_logger.log(
+            game_id=game.game_id,
+            game_name=game.game_name,
+            tick=game.current_tick,
+            scores=scores)
+
+    def get_players_and_enter_context(self, game: Game, stack: ExitStack) -> Dict[str, Player]:
+        players: List[Player] = Player.find(Player.game_id == game.game_id).all()
+        for player in players:
+            try:
+                stack.enter_context(player.lock())
+            except Exception:
+                logger.critical(f"Error getting lock for player {player.player_name} {player.player_id} in game {player.game_id}")
+
+        player_pks = map(attrgetter('pk'), players)
+        players = list(map(Player.get, player_pks))
+        players = {player.player_id: player for player in players}
+
         players = {
-            player.player_id: player
-            for player in await Player.list(game_id=game.game_id)
+            player.pk: player
+            for player in Player.find(Player.game_id == game.game_id).all()
         }
+        return players
 
-        pending_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.PENDING)
-        user_cancelled_orders = await Order.list(game_id=game.game_id, order_status=OrderStatus.USER_CANCELLED)
-        dataset_row = await DatasetData.get(dataset_id=game.dataset_id, tick=game.current_tick)
+    def get_tick_data(self, game: Game, players: Dict[str, Player]) -> TickData:
+        def is_in_players(order: Order):
+            return order.player_id in players
+
+        pending_orders = Order.find(
+            Order.game_id == game.game_id,
+            Order.order_status == OrderStatus.PENDING.value).all()
+        pending_orders = list(filter(is_in_players, pending_orders))
+        logger.game_log(game.game_id, f"pending orders {len(pending_orders)}")
+        user_cancelled_orders = Order.find(
+            Order.game_id == game.game_id,
+            Order.order_status == OrderStatus.USER_CANCELLED.value).all()
+        user_cancelled_orders = list(
+            filter(is_in_players, user_cancelled_orders))
+        dataset_row = DatasetData.find(
+            DatasetData.dataset_id == game.dataset_id,
+            DatasetData.tick == game.current_tick).first()
         markets = self.game_data[game.game_id].markets
 
         tick_data = TickData(
@@ -177,12 +266,12 @@ class Ticker:
             players=players,
             markets=markets,
             energy_market=self.game_data[game.game_id].energy_market,
-            bots=self.game_data[game.game_id].bots,
+            # TODO pretvoriti u jednog bota
+            bots=[self.game_data[game.game_id].bot],
             pending_orders=pending_orders,
             user_cancelled_orders=user_cancelled_orders,
             dataset_row=dataset_row
         )
-
         return tick_data
 
     def run_markets(self, tick_data: TickData) -> TickData:
@@ -210,12 +299,9 @@ class Ticker:
 
             tick_data.updated_orders.update(updated)
 
-        tick_data.tick_trades = []
         for market in tick_data.markets.values():
             tick_data.tick_trades.extend(
                 market.get_last_tick_trades())
-        tick_data.tick_trades = list(map(
-            TradeDb.from_trade, tick_data.tick_trades))
 
         return tick_data
 
@@ -226,35 +312,32 @@ class Ticker:
             player.energy = 0
 
             for type in PowerPlantType:
-                to_consume = player[type.name.lower() + "_plants_powered"]
+                to_consume = player.power_plants_powered[type]
 
                 if not type.is_renewable():
-                    to_consume = min(to_consume, player[type.name.lower()])
-                    player[type.name.lower()] -= to_consume
-
-                player.energy += to_consume * type.get_produced_energy(
-                    tick_data.dataset_row)
+                    to_consume = min(to_consume, player.resources[type])
+                    player.resources[type] -= to_consume
+                player.energy += to_consume * \
+                    tick_data.dataset_row.power_plants_output[type]
 
         return tick_data
 
     def run_electricity_market(self, tick_data: TickData,
                                energy_market: EnergyMarket
-                               ) -> Tuple[TickData, Dict[int, int]]:
+                               ) -> Tuple[TickData, Dict[str, int]]:
         energy_sold = energy_market.match(
-            tick_data.players, tick_data.dataset_row.energy_demand,
-            tick_data.dataset_row.max_energy_price)
-
+            players=tick_data.players,
+            tick=tick_data.game.current_tick,
+            demand=tick_data.dataset_row.energy_demand,
+            max_price=tick_data.dataset_row.max_energy_price)
         return tick_data, energy_sold
 
-    async def save_electricity_orders(self, game: Game, players: Dict[int, Player],
-                                      energy_sold: Dict[int, int], tick: int):
-        electricity_orders = []
+    def save_electricity_orders(self, game: Game, players: Dict[str, Player],
+                                energy_sold: Dict[str, int], tick: int):
         for player_id, energy in energy_sold.items():
-            electricity_orders.append(Order(
-                order_id=0,
+            Order(
                 game_id=game.game_id,
                 player_id=player_id,
-                order_type=OrderType.LIMIT,
                 order_side=OrderSide.SELL,
                 timestamp=datetime.now(),
                 order_status=OrderStatus.COMPLETED,
@@ -265,24 +348,24 @@ class Ticker:
                 filled_money=players[player_id].energy_price * energy,
                 filled_price=players[player_id].energy_price,
                 expiration_tick=tick,
-                resource=Energy.energy.value
-            ))
-        await Order.create_many(electricity_orders)
+                resource=Energy.ENERGY.value
+            ).save(self.pipe)
 
-    async def save_tick_data(self, tick_data: TickData):
-        await Player.update_many(tick_data.players.values())
-        await Order.update_many(tick_data.updated_orders.values())
-        await TradeDb.create_many(tick_data.tick_trades)
+    def save_tick_data(self, tick_data: TickData):
+        list(map(methodcaller('save', self.pipe), tick_data.players.values()))
+        list(map(methodcaller('save', self.pipe),
+             tick_data.updated_orders.values()))
+        list(map(methodcaller('save', self.pipe), tick_data.tick_trades))
 
-    async def save_market_data(self, tick_data: TickData):
+    def save_market_data(self, tick_data: TickData):
         tick = tick_data.game.current_tick
         game_id = tick_data.game.game_id
 
         for resource, market in chain(
                 tick_data.markets.items(),
-                [(Energy.energy.value, tick_data.energy_market)]):
+                [(Energy.ENERGY.value, tick_data.energy_market)]):
             price_tracker = market.price_tracker
-            await Market.create(
+            Market(
                 game_id=game_id,
                 tick=tick,
                 resource=resource,
@@ -292,10 +375,4 @@ class Ticker:
                 close=price_tracker.get_close(),
                 market=price_tracker.get_average(),
                 volume=price_tracker.get_volume()
-            )
-
-    async def run_bots(self, tick_data: TickData):
-        bots: List[Bot] = self.game_data[tick_data.game.game_id].bots
-
-        for bot in bots:
-            await bot.run(tick_data)
+            ).save(self.pipe)

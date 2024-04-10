@@ -4,99 +4,80 @@ from model import Datasets, DatasetData
 from datetime import datetime
 from config import config
 from logger import logger
+from redlock.lock import RedLock
+
+from model.power_plant_model import PowerPlantsModel, ResourcesModel
+from model.power_plant_type import PowerPlantType
+from model.resource import Resource
 
 
 datasets_path = config["dataset"]["datasets_path"]
+price_multipliers = config["dataset"]["price_multiplier"]
+energy_output_multipliers = config["dataset"]["energy_output_multiplier"]
+energy_demand_multiplier = config["dataset"]["energy_demand_multiplier"]
 
 
-async def fill_datasets():
+def fill_datasets():
     logger.info("Filling datasets")
-    for dataset in os.listdir(datasets_path):
-        if not dataset.endswith(".csv"):
+    pipe = DatasetData.db().pipeline()
+    for dataset_name in os.listdir(datasets_path):
+        if not dataset_name.endswith(".csv"):
             continue
-        try:
-            await Datasets.get(dataset_name=dataset)
-            logger.debug(f"Dataset {dataset} already created")
+        if Datasets.find(Datasets.dataset_name == dataset_name).count() > 0:
+            logger.info(f"Dataset {dataset_name} already created")
             continue
-        except Exception:
-            pass
 
-        df = pd.read_csv(f"{datasets_path}/{dataset}")
+        df = pd.read_csv(f"{datasets_path}/{dataset_name}")
 
-        # TODO: asserts, async transaction - ne zelimo da se dataset kreira ako faila kreiranje redaka
-        dataset_id = await Datasets.create(dataset_name=dataset, dataset_description="Opis")
+        dataset = Datasets(dataset_name=dataset_name, dataset_description="Opis")
+        dataset.save()
 
-        price_multipliers = config["dataset"]["price_multiplier"]
-        energy_output_multipliers = config["dataset"]["energy_output_multiplier"]
-        energy_demand_multiplier = config["dataset"]["energy_demand_multiplier"]
-
-        # date,COAL,URANIUM,BIOMASS,GAS,OIL,GEOTHERMAL,WIND,SOLAR,HYDRO,ENERGY_DEMAND,MAX_ENERGY_PRICE
         tick = 0
-        dataset_data = []
-        for index, row in df.iterrows():
-            dataset_data.append(DatasetData(
-                dataset_data_id=0,
-                dataset_id=dataset_id,
-                tick=tick,
-                date=datetime.strptime(
-                    row["date"], "%Y-%m-%d %H:%M:%S"),
-                coal=(
-                    energy_output_multipliers["coal"] *
-                    row["COAL"] // 1_000_000),
-                uranium=(
-                    energy_output_multipliers["uranium"] *
-                    row["URANIUM"] // 1_000_000),
-                biomass=(
-                    energy_output_multipliers["biomass"] *
-                    row["BIOMASS"] // 1_000_000),
-                gas=(
-                    energy_output_multipliers["gas"] *
-                    row["GAS"] // 1_000_000),
-                oil=(
-                    energy_output_multipliers["oil"] *
-                    row["OIL"] // 1_000_000),
-                geothermal=(
-                    energy_output_multipliers["geothermal"] *
-                    row["GEOTHERMAL"] // 1_000_000),
-                wind=(
-                    energy_output_multipliers["wind"] *
-                    row["WIND"] // 1_000_000),
-                solar=(
-                    energy_output_multipliers["solar"] *
-                    row["SOLAR"] // 1_000_000),
-                hydro=(
-                    energy_output_multipliers["hydro"] *
-                    row["HYDRO"] // 1_000_000),
-                energy_demand=(
-                    energy_demand_multiplier *
-                    row["ENERGY_DEMAND"] // 1_000_000),
-                max_energy_price=(
-                    price_multipliers["energy"] *
-                    row["MAX_ENERGY_PRICE"] // 1_000_000),
-                coal_price=(
-                    price_multipliers["coal"] *
-                    row["COAL_PRICE"] // 1_000_000),
-                uranium_price=(
-                    price_multipliers["uranium"] *
-                    row["URANIUM_PRICE"] // 1_000_000),
-                biomass_price=(
-                    price_multipliers["biomass"] *
-                    row["BIOMASS_PRICE"] // 1_000_000),
-                gas_price=(
-                    price_multipliers["gas"] *
-                    row["GAS_PRICE"] // 1_000_000),
-                oil_price=(
-                    price_multipliers["oil"] *
-                    row["OIL_PRICE"] // 1_000_000),
-            ))
+        for _, row in df.iterrows():
+            from_row(dataset, tick, row).save(pipe)
             tick += 1
+        logger.info(f"Added dataset {dataset_name}")
+    pipe.execute()
 
-        for x in dataset_data:
-            assert x.coal_price > -config["bots"]["min_price"]
-            assert x.uranium_price > -config["bots"]["min_price"]
-            assert x.biomass_price > -config["bots"]["min_price"]
-            assert x.gas_price > -config["bots"]["min_price"]
-            assert x.oil_price > -config["bots"]["min_price"]
 
-        await DatasetData.create_many(dataset_data)
-        logger.info(f"Added dataset {dataset}")
+def from_row(dataset: Datasets, tick: int, row: pd.Series) -> DatasetData:
+    power_plants_output = PowerPlantsModel(
+        coal=(energy_output_multipliers["coal"] * row["COAL"] // 1_000_000),
+        uranium=(energy_output_multipliers["uranium"] * row["URANIUM"] // 1_000_000),
+        biomass=(energy_output_multipliers["biomass"] * row["BIOMASS"] // 1_000_000),
+        gas=(energy_output_multipliers["gas"] * row["GAS"] // 1_000_000),
+        oil=(energy_output_multipliers["oil"] * row["OIL"] // 1_000_000),
+        geothermal=(
+            energy_output_multipliers["geothermal"] * row["GEOTHERMAL"] // 1_000_000
+        ),
+        wind=(energy_output_multipliers["wind"] * row["WIND"] // 1_000_000),
+        solar=(energy_output_multipliers["solar"] * row["SOLAR"] // 1_000_000),
+        hydro=(energy_output_multipliers["hydro"] * row["HYDRO"] // 1_000_000),
+    )
+    resource_prices = ResourcesModel(
+        coal=(price_multipliers["coal"] * row["COAL_PRICE"] // 1_000_000),
+        uranium=(
+            price_multipliers["uranium"] * row["URANIUM_PRICE"] // 1_000_000
+        ),
+        biomass=(
+            price_multipliers["biomass"] * row["BIOMASS_PRICE"] // 1_000_000
+        ),
+        gas=(price_multipliers["gas"] * row["GAS_PRICE"] // 1_000_000),
+        oil=(price_multipliers["oil"] * row["OIL_PRICE"] // 1_000_000),
+    )
+    for type in PowerPlantType:
+        assert power_plants_output[type] >= 0
+    for resource in Resource:
+        assert resource_prices[resource] > 0
+    return DatasetData(
+        dataset_id=dataset.pk,
+        tick=tick,
+        date=datetime.strptime(row["date"], "%Y-%m-%d %H:%M:%S"),
+        
+        energy_demand=(energy_demand_multiplier * row["ENERGY_DEMAND"] // 1_000_000),
+        max_energy_price=(
+            price_multipliers["energy"] * row["MAX_ENERGY_PRICE"] // 1_000_000
+        ),
+        power_plants_output = power_plants_output,
+        resource_prices = resource_prices
+    )

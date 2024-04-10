@@ -7,6 +7,8 @@ from unittest.mock import Mock
 from fixtures.fixtures import *
 import tracemalloc
 
+from routers.users.fixtures import set_mock_find
+
 
 tracemalloc.start()
 
@@ -17,7 +19,7 @@ def ticker():
 
 
 def get_game(start_time, current_tick, total_ticks, is_finished):
-    return Game(game_id=1, game_name="Game1",
+    return Game(pk="1", game_name="Game1",
                 is_finished=is_finished,
                 start_time=start_time,
                 current_tick=current_tick,
@@ -35,9 +37,10 @@ async def test_run_tick_manager(ticker):
     mock_start_game = AsyncMock()
     mock_end_game = AsyncMock()
 
-    with patch('model.Game.list', new=mock_game_list), \
+    with patch('model.Game.find') as find_mock, \
             patch('game.tick.Ticker.start_game', new=mock_start_game), \
             patch('game.tick.Ticker.end_game', new=mock_end_game):
+        set_mock_find(find_mock, "all", mock_game_list)
 
         await ticker.run_tick_manager(1)
 
@@ -55,9 +58,10 @@ async def test_run_tick_manager_game_finished(ticker):
     mock_start_game = AsyncMock()
     mock_end_game = AsyncMock()
 
-    with patch('model.Game.list', new=mock_game_list), \
+    with patch('model.Game.find') as find_mock, \
             patch('game.tick.Ticker.start_game', new=mock_start_game), \
             patch('game.tick.Ticker.end_game', new=mock_end_game):
+        set_mock_find(find_mock, "all", mock_game_list)
         await ticker.run_tick_manager(1)
 
         mock_start_game.assert_not_called()
@@ -74,9 +78,11 @@ async def test_run_tick_manager_game_not_started(ticker):
     mock_start_game = AsyncMock()
     mock_end_game = AsyncMock()
 
-    with patch('model.Game.list', new=mock_game_list), \
+    with patch('model.Game.find') as find_mock, \
             patch('game.tick.Ticker.start_game', new=mock_start_game), \
             patch('game.tick.Ticker.end_game', new=mock_end_game):
+        set_mock_find(find_mock, "all", mock_game_list)
+
         await ticker.run_tick_manager(1)
 
         mock_start_game.assert_not_called()
@@ -89,21 +95,19 @@ async def test_end_game(ticker):
     game = get_game(start_time=datetime.now() - timedelta(seconds=1),
                     current_tick=10, total_ticks=10, is_finished=False)
 
-    ticker.game_data[1] = Mock()
-    ticker.game_futures[1] = Mock()
+    ticker.game_data["1"] = Mock()
+    ticker.game_futures["1"] = Mock()
 
-    mock_game_update = AsyncMock()
+    mock_game_update = Mock()
 
     with patch('model.Game.update', new=mock_game_update):
-
         await ticker.end_game(game)
 
-        mock_game_update.assert_called_once_with(
-            game_id=1, is_finished=True)
+        mock_game_update.assert_called_once_with(is_finished=True)
 
-        assert 1 not in ticker.game_data
+        assert "1" not in ticker.game_data
 
-        ticker.game_futures[1].cancel.assert_called_once()
+        ticker.game_futures["1"].cancel.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -116,7 +120,7 @@ async def test_start_game(ticker):
             patch('game.tick.Ticker.run_game') as run_game_mock:
         await ticker.start_game(game)
 
-        delete_all_running_bots_mock.assert_called_once_with(1)
+        delete_all_running_bots_mock.assert_called_once_with("1")
         run_game_mock.assert_called_once()
         load_previous_oderbook_mock.assert_called_once()
 
@@ -129,18 +133,14 @@ async def test_run_game(ticker):
     game = get_game(start_time=datetime.now() - timedelta(seconds=1),
                     current_tick=9, total_ticks=10, is_finished=False)
 
-    with patch('model.Game.get') as mock_get, \
-            patch('databases.Database.transaction') as mock_transaction, \
-            patch('databases.Database.execute') as mock_execute, \
+    with patch('model.Game.get', return_value=game) as mock_get, \
             patch('game.tick.Ticker.run_game_tick') as mock_run_game_tick, \
             patch('asyncio.sleep') as mock_sleep:
-
-        mock_get.return_value = game
 
         ticker.run_game_tick = MagicMock()
 
         await ticker.run_game(game, iters=1)
 
-        mock_get.assert_called_once_with(game_id=1)
+        mock_get.assert_called_once_with("1")
 
         ticker.run_game_tick.assert_called_once_with(game)

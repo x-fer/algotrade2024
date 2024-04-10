@@ -3,9 +3,10 @@ from fastapi import HTTPException, Query, Depends
 from model import Team, Player, Game
 from typing import Tuple
 from config import config
+from model.order import Order
 
 
-async def team_dep(
+def team_dep(
     team_secret: str = Query(
         description="Team secret - given to you at the start of the competition.",
         default=None,
@@ -14,45 +15,56 @@ async def team_dep(
     if team_secret is None:
         raise HTTPException(status_code=403, detail="Missing team_secret")
     try:
-        return await Team.get(team_secret=team_secret)
+        return Team.find(Team.team_secret==team_secret).first()
     except Exception:
         raise HTTPException(status_code=403, detail="Invalid team_secret")
 
 
-async def game_dep(game_id: int) -> Game:
+def game_dep(game_id: str) -> Game:
     try:
-        return await Game.get(game_id=game_id)
+        return Game.get(game_id)
     except Exception:
         raise HTTPException(status_code=403, detail="Invalid game_id")
 
 
-async def check_game_active_dep(game: Game = Depends(game_dep)) -> None:
+def check_game_active_dep(game: Game = Depends(game_dep)) -> None:
     if game.is_finished:
         raise HTTPException(403, "Game is already finished")
     if datetime.now() < game.start_time:
         raise HTTPException(403, "Game has not started yet")
 
 
-async def player_dep(
-    player_id: int, game: Game = Depends(game_dep), team: Team = Depends(team_dep)
+def player_dep(
+    player_id: str, game: Game = Depends(game_dep), team: Team = Depends(team_dep)
 ) -> Player:
     try:
-        player = await Player.get(player_id=player_id)
+        player = Player.get(player_id)
     except Exception:
         raise HTTPException(status_code=403, detail="Invalid player_id")
     if player.team_id != team.team_id:
         raise HTTPException(403, "This player doesn't belong to your team")
     if player.game_id != game.game_id:
         raise HTTPException(400, f"This player is in game {player.game_id}")
-    if player.is_active is False:
+    if not player.is_active:
         raise HTTPException(400, "This player is inactive or already has been deleted")
     return player
+
+
+def order_dep(order_id: str, game: Game = Depends(game_dep)):
+    try:
+        order = Order.get(order_id)
+    except Exception:
+        raise HTTPException(400, "Invalid order_id")
+    if game.game_id != order.game_id:
+        raise HTTPException(400, f"This order belongs to game {game.game_id}")
+    # TODO: dozvoliti da se vidi od drugih playera?
+    return order
 
 
 tick_description = "Enter negative number for relative tick e.g. -5 for current_tick-5. Leave empty for last tick."
 
 
-async def start_end_tick_dep(
+def start_end_tick_dep(
     game: Game = Depends(game_dep),
     start_tick: int = Query(
         default=None,

@@ -21,3 +21,6 @@ yaml.add_constructor('!path', path_constructor)
 with open("config.yaml", "r") as file:
     config = yaml.load(file, Loader=yaml.FullLoader)
     config["in_tests"] = False
+
+if config['log_networth_delay'] is None:
+    config['log_networth_delay'] = 1

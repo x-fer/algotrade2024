@@ -21,29 +21,31 @@ class CreateTeam(BaseModel):
 
 @router.post("/team/create")
 @limiter.exempt
-async def team_create(params: CreateTeam) -> Team:
+def team_create(params: CreateTeam) -> Team:
     team_secret = id_generator()
     team_name = params.team_name
-    team_id = await Team.create(team_name=team_name, team_secret=team_secret)
-    return Team(
-        team_id=team_id,
-        team_secret=team_secret,
-        team_name=team_name
-    )
+
+    # team_id = await Team.create(team_name=team_name, team_secret=team_secret)
+    t = Team(team_name=team_name, team_secret=team_secret)
+    t.save()
+
+    return t
 
 
 @router.get("/team/list")
 @limiter.exempt
-async def team_list() -> List[Team]:
-    return await Team.list()
+def team_list() -> List[Team]:
+    return Team.find().all()
 
 
-@router.get("/team/{team_id}/delete")
+@router.post("/team/{team_id}/delete")
 @limiter.exempt
-async def team_delete(team_id: int) -> SuccessfulResponse:
-    team_id = await Team.delete(team_id=team_id)
+def team_delete(team_id: str) -> SuccessfulResponse:
+    # team_id = await Team.delete(team_id=team_id)
 
-    if team_id is None:
+    if Team.find(Team.team_id == team_id).count() == 0:
         raise HTTPException(status_code=400, detail="Team not found")
+
+    Team.find(Team.team_id == team_id).delete()
 
     return SuccessfulResponse()

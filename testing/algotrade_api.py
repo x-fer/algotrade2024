@@ -4,29 +4,29 @@ import requests
 
 
 class Resource(Enum):
-    energy = "ENERGY"
-    coal = "COAL"
-    uranium = "URANIUM"
-    biomass = "BIOMASS"
-    gas = "GAS"
-    oil = "OIL"
+    energy = "energy"
+    coal = "coal"
+    uranium = "uranium"
+    biomass = "biomass"
+    gas = "gas"
+    oil = "oil"
 
 
 class PowerPlant(Enum):
-    COAL = "COAL"
-    URANIUM = "URANIUM"
-    BIOMASS = "BIOMASS"
-    GAS = "GAS"
-    OIL = "OIL"
-    GEOTHERMAL = "GEOTHERMAL"
-    WIND = "WIND"
-    SOLAR = "SOLAR"
-    HYDRO = "HYDRO"
+    COAL = "coal"
+    URANIUM = "uranium"
+    BIOMASS = "biomass"
+    GAS = "gas"
+    OIL = "oil"
+    GEOTHERMAL = "geothermal"
+    WIND = "wind"
+    SOLAR = "solar"
+    HYDRO = "hydro"
 
 
 class OrderSide(Enum):
-    BUY = "BUY"
-    SELL = "SELL"
+    BUY = "buy"
+    SELL = "sell"
 
 
 class AlgotradeApi:
@@ -117,13 +117,12 @@ class AlgotradeApi:
         return requests.post(f"http://{self.URL}/game/{self.game_id}/player/{self.player_id}/orders/create",
                              params={"team_secret": self.team_secret}, json=body)
 
-    def cancel_orders(self, ids):
-        return requests.post(f"http://{self.URL}/game/{self.game_id}/player/{self.player_id}/orders/cancel",
-                             params={"team_secret": self.team_secret},
-                             json={"ids": ids})
+    def cancel_order(self, id):
+        return requests.get(f"http://{self.URL}/game/{self.game_id}/player/{self.player_id}/orders/{id}/cancel",
+                             params={"team_secret": self.team_secret})
 
     def get_trades(self, start_tick=None, end_tick=None, resource=None):
-        url = f"http://{URL}/game/{self.game_id}/player/{self.player_id}/trades"
+        url = f"http://{self.URL}/game/{self.game_id}/player/{self.player_id}/trades"
         params = {"team_secret": self.team_secret}
         if start_tick:
             params["start_tick"] = start_tick

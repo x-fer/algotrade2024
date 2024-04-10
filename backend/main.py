@@ -1,23 +1,26 @@
 import asyncio
+import json
 import time
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, WebSocket
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 from config import config
-from db import database
+from db import limiter
 from game.tick import Ticker
-from routers import admin_router, users_router
+from routers import users_router, admin_router
 import psutil
 import os
 from logger import logger
 from docs import tags_metadata, short_description
+from redis_om import Migrator
+from fastapi.middleware.cors import CORSMiddleware
 
-# used in integration tests, only when single threaded
+
 tick_event = asyncio.Event()
 
 
-async def background_tasks():
+async def run_game_ticks():
     parent_process = psutil.Process(os.getppid())
     children = parent_process.children(
         recursive=True)
@@ -36,10 +39,9 @@ async def background_tasks():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await database.connect()
-    asyncio.create_task(background_tasks())
+    Migrator().run()
+    asyncio.create_task(run_game_ticks())
     yield
-    await database.disconnect()
 
 
 app = FastAPI(
@@ -48,14 +50,19 @@ app = FastAPI(
     description=short_description,
     openapi_tags=tags_metadata,
     lifespan=lifespan,
-    # docs_url=None
+    # docs_url="https://github.com/x-fer/algotrade2024-docs" #TODO
 )
 
-# app.state.limiter = limiter
+app.state.limiter = limiter
 
-# app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins="Access-Control-Allow-Origin",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 
 @app.exception_handler(Exception)

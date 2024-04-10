@@ -7,6 +7,6 @@ class Bot():
         self.game_id = None
 
     @abc.abstractmethod
-    async def run(self, *args, **kwargs) -> None:
+    def run(self, *args, **kwargs) -> None:
         pass
 
