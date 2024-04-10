@@ -5,13 +5,14 @@ import requests
 from pprint import pprint
 from datetime import datetime, timedelta
 
+import algotrade_api
 from algotrade_api import AlgotradeApi
 
 
 url = "localhost:8000"
 
-team_secret = "W6OKEA13"
-game_id = 1
+team_secret = "F9OUM3LF"
+game_id = "01HV3VG6RNF27TPR6QBPFSYET3"
 player_id = -1  # we will get this later
 
 api = AlgotradeApi(url, team_secret, game_id, player_id)
@@ -20,61 +21,69 @@ api = AlgotradeApi(url, team_secret, game_id, player_id)
 def play():
     while True:
         # tick time is 1 second
-        sleep(1)
+        sleep(0.9)
 
         # we get our player stats
         r = api.get_player()
         assert r.status_code == 200, r.text
         player = r.json()
 
-        print(f"Player COAL: {player['coal']}")
-        print(f"Player MONEY: {player['money']}")
+        # print(f"Player COAL: {player['resources']['coal']}")
+        print(f"{player['player_id']} money: {player['money']}")
+        # print(player['resources'])
 
         # list available market orders
-        r = api.get_orders()
+        r = api.get_orders(restriction="best")
         assert r.status_code == 200, r.text
+        # print(r.json())
+        rjson = r.json()
 
-        orders = r.json()["COAL"]
+        for resource in algotrade_api.Resource:
+            try:
+                orders = rjson[resource.value]
+                best_order = orders["sell"][0]
+                # print(best_order)
+                best_price = best_order['price']
+                best_size = best_order["size"]
+            except:
+                continue
 
-        # filter for only sell orders
-        orders = [order for order in orders if order["order_side"] == "SELL"]
+            print(
+                f"{player['player_id']} Buying {resource.value} price: {best_price}, size: {best_size}")
 
-        # find the cheapest order
-        cheapest = sorted(orders, key=lambda x: x["price"])[0]
-        cheapest_price = cheapest["price"]
-        size = cheapest["size"]
+            r = api.create_order("coal", best_price + 1000,
+                                 1, "buy", expiration_length=10)
+            assert r.status_code == 200, r.text
 
-        print("buying resources")
-        print(f"Cheapest price: {cheapest_price}, size: {size}")
-
-        r = api.create_order("COAL", cheapest_price + 1000,
-                             1, "BUY", expiration_length=10)
-        assert r.status_code == 200, r.text
-
-        continue
+            continue
 
 
 def run(x):
-    # each game, we must create a new player
-    # in contest mode, we can make only one
-    r = api.create_player("bot1")
-    assert r.status_code == 200, r.text
+    games = api.get_games().json()
+    print(games)
+    game = games[0]
 
-    print("Player created")
-    pprint(r.json())
+    api.set_game_id(game["game_id"])
 
-    player_id = r.json()["player_id"]
+    print("Creating player")
+    response = api.create_player()
+    print(response.json())
+    # pprint(response.json())
 
+    player_id = response.json()["player_id"]
     api.set_player_id(player_id)
+
+    print(api.get_players().json())
+
     play()
 
 
 def main():
 
-    # with Pool(25) as p:
-    #     p.map(run, range(25))
+    with Pool(5) as p:
+        p.map(run, range(5))
 
-    run(1)
+    # run(1)
 
 
 if __name__ == "__main__":

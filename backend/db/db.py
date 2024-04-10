@@ -1,8 +1,9 @@
-from databases import Database
+from redis_om import get_redis_connection
 from config import config
 
 
-if config['testing']:
-    database = Database(config['test_database']['url'])
-else:
-    database = Database(config['database']['url'])
+redis_port = config["redis"]["port"]
+
+
+def get_my_redis_connection():
+    return get_redis_connection(port=redis_port)

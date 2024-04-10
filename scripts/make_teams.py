@@ -16,7 +16,7 @@ teams = [
 games = [
     {"game_name": "game1",
      "contest": False,
-     "dataset_name": "df_2431_2011-11-06 03:30:00_2012-02-15 09:30:00.csv",
+     "dataset_name": "dataset.csv",
      "start_time": (datetime.now() + timedelta(seconds=5)).isoformat(),
      "total_ticks": 1000,
      "tick_time": 1000},
@@ -55,6 +55,7 @@ def list_games():
 
 if __name__ == "__main__":
     datasets = get_datasets()
+    print(datasets)
 
     for game in games:
         assert any(
@@ -70,6 +71,8 @@ if __name__ == "__main__":
             if dataset["dataset_name"] == game["dataset_name"]
         ][0]
         del game["dataset_name"]
+
+        print(game)
 
         make_game(game)
 

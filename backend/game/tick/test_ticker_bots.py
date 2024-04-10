@@ -35,7 +35,9 @@ async def test_run_bots(get_tick_data):
         ticker.game_data[game.game_id] = GameData(game)
         tick_data = get_tick_data(markets={}, players=players)
 
-        await ticker.run_bots(tick_data)
+        pipe = MagicMock()
+
+        ticker.game_data[game.game_id].bot.run(pipe, tick_data)
 
         assert mock_run.call_count == 1
-        mock_run.assert_called_with(tick_data)
+        mock_run.assert_called_with(pipe, tick_data)

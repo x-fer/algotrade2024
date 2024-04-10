@@ -58,7 +58,7 @@ sell_coeff = 0.7
 
 start_money = 50_000_000
 
-monopole = 0.3
+monopole = 0.4
 
 
 def get_plant_price(has_plants, resource):
@@ -100,8 +100,8 @@ def main():
 
         df = df[:1800]
 
-        # for resource in ["COAL", "URANIUM", "BIOMASS", "GAS", "OIL", "WIND", "SOLAR", "HYDRO"]:
-        for resource in ["WIND"]:
+        for resource in ["COAL", "URANIUM", "BIOMASS", "GAS", "OIL", "WIND", "SOLAR", "HYDRO"]:
+        # for resource in ["WIND"]:
             money = start_money
             burned_total = 0
             has_plants = 0
@@ -113,8 +113,8 @@ def main():
                 max_energy_price = (x["MAX_ENERGY_PRICE"] *
                                     price_multiplier["energy"] // 1000000)
 
-                # energy_price = max_energy_price * 0.90
-                energy_price = np.random.randint(400, 500)
+                energy_price = max_energy_price * 0.90
+                # energy_price = np.random.randint(400, 500)
 
                 energy_output = energy_output_multiplier[
                     resource.lower()
@@ -147,7 +147,6 @@ def main():
             print("Resource:", resource,
                   "Has plants:", has_plants,
                   "Networth/start:", get_networth(df, money, has_plants, resource) / start_money)
-
         print()
 
 

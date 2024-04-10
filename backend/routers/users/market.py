@@ -1,25 +1,30 @@
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import List, Dict, Optional
+from functools import reduce
+from itertools import chain
+from operator import attrgetter
+from typing import Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from model.resource import Energy
-from model.trade import TradeDb
 from pydantic import BaseModel, Field
-from model import Order, OrderSide, OrderType, OrderStatus, Resource
+
+from config import config
+from model import Order, OrderSide, OrderStatus, Resource
 from model.game import Game
 from model.market import Market
 from model.player import Player
+from model.resource import Energy, ResourceOrEnergy
+from model.trade import Trade
+from routers.model import SuccessfulResponse
+
 from .dependencies import (
-    game_dep,
-    player_dep,
     check_game_active_dep,
+    game_dep,
+    order_dep,
+    player_dep,
     start_end_tick_dep,
 )
-from db.db import database
-from routers.model import SuccessfulResponse
-from config import config
-
 
 router = APIRouter(dependencies=[Depends(check_game_active_dep)])
 
@@ -30,14 +35,16 @@ class MarketPricesResponse(BaseModel):
     high: int = Field(..., description="highest price of all trades")
     open: int = Field(..., description="price of the first trade")
     close: int = Field(..., description="price of the last trade")
-    market: int = Field(..., description="average price of all trades weighted by their volume")
+    market: int = Field(
+        ..., description="average price of all trades weighted by their volume"
+    )
     volume: int = Field(..., description="total volume traded")
 
 
 @router.get(
     "/game/{game_id}/market/prices", summary="Get market data for previous ticks."
 )
-async def market_prices(
+def market_prices(
     start_end=Depends(start_end_tick_dep),
     resource: Resource | Energy = Query(default=None),
     game: Game = Depends(game_dep),
@@ -48,12 +55,15 @@ async def market_prices(
     """
     start_tick, end_tick = start_end
 
-    all_prices = await Market.list_by_game_id_where_tick(
-        game_id=game.game_id,
-        min_tick=start_tick,
-        max_tick=end_tick,
-        resource=resource,
-    )
+    query = [
+        Market.game_id == game.game_id,
+        Market.tick >= start_tick,
+        Market.tick <= end_tick,
+    ]
+    if resource is not None:
+        query.append(Market.resource == resource.value)
+
+    all_prices: List[Market] = Market.find(*query)
     all_prices_dict = defaultdict(list)
     for price in all_prices:
         all_prices_dict[price.resource].append(price)
@@ -68,7 +78,7 @@ class EnergyPrice(BaseModel):
     "/game/{game_id}/player/{player_id}/energy/set_price",
     summary="Set price at which you will sell your electricity",
 )
-async def energy_set_price_player(
+def energy_set_price_player(
     price: EnergyPrice,
     game: Game = Depends(game_dep),
     player: Player = Depends(player_dep),
@@ -82,22 +92,27 @@ async def energy_set_price_player(
     if price.price <= 0:
         raise HTTPException(status_code=400, detail="Price must be greater than 0")
 
-    await Player.update(player_id=player.player_id, energy_price=price.price)
+    with player.lock():
+        player.update(energy_price=price.price)
 
     return SuccessfulResponse()
 
 
 class OrderResponse(BaseModel):
-    order_id: int
-    player_id: int
+    order_id: str
+    player_id: str
     price: int = Field(..., description="price per unit of resource")
     size: int = Field(..., description="total volume of this order")
     tick: int = Field(..., description="tick when this order was put in the market")
     timestamp: datetime = Field(..., description="exact time when this order was made")
     order_side: OrderSide
     order_status: OrderStatus
-    filled_size: int = Field(..., description="volume of this order that was already traded")
-    expiration_tick: int = Field(..., description="tick when this order will be cancelled")
+    filled_size: int = Field(
+        ..., description="volume of this order that was already traded"
+    )
+    expiration_tick: int = Field(
+        ..., description="tick when this order will be cancelled"
+    )
 
 
 class OrderRestriction(Enum):
@@ -107,7 +122,7 @@ class OrderRestriction(Enum):
 
 
 @router.get("/game/{game_id}/orders", summary="Get orders in this game.")
-async def order_list(
+def order_list(
     game: Game = Depends(game_dep),
     restriction: OrderRestriction = Query(
         default=OrderRestriction.all_orders,
@@ -116,30 +131,56 @@ async def order_list(
             "bot for only bot orders / best for those with best prices"
         ),
     ),
-) -> Dict[Resource, List[OrderResponse]]:
+) -> Dict[str, Dict[str, List[OrderResponse]]]:
+    bots = Player.find(Player.is_bot == int(True)).all()
+    bot_ids = set(map(attrgetter("pk"), bots))
+
+    active_orders = Order.find(
+        Order.game_id == game.game_id,
+        Order.order_status == OrderStatus.ACTIVE.value
+    ).all()
+    pending_orders = Order.find(
+        Order.game_id == game.game_id,
+        Order.order_status == OrderStatus.PENDING.value
+    ).all()
+
+    def is_bot_order(order: Order):
+        return order.player_id in bot_ids
+
+    all_orders = active_orders + list(filter(is_bot_order, pending_orders))
+
     if restriction == OrderRestriction.all_orders:
-        orders = await Order.list_orders_by_game_id(
-            game_id=game.game_id
-        )
+        return orders_to_dict(all_orders)
     elif restriction == OrderRestriction.bot_orders:
-        orders = await Order.list_bot_orders_by_game_id(
-            game_id=game.game_id,
-        )
+        bot_orders = list(filter(is_bot_order, chain(pending_orders, active_orders)))
+        return orders_to_dict(bot_orders)
     elif restriction == OrderRestriction.best_orders:
-        best_buy_order = await Order.list_best_orders_by_game_id(
-            game_id=game.game_id, order_side=OrderSide.BUY
-        )
-        best_sell_order = await Order.list_best_orders_by_game_id(
-            game_id=game.game_id, order_side=OrderSide.SELL
-        )
-        orders = best_buy_order + best_sell_order
-    return orders_to_dict(orders)
+        orders = orders_to_dict(all_orders)
+        for resource in orders:
+            for order_side in orders[resource]:
+                orders[resource][order_side] = [reduce(
+                    is_better_order, orders[resource][order_side]
+                )]
+        return orders
 
 
-def orders_to_dict(orders: List[Order]) -> Dict[Resource, List[Order]]:
-    orders_dict = defaultdict(list)
+def is_better_order(order_1: Order, order_2: Order):
+    if order_1.order_side != order_2.order_side:
+        raise Exception("This is because order sides don't match and shouldn't happen")
+    if order_1.order_side == OrderSide.BUY:
+        return order_1 if order_1.price > order_2.price else order_2
+    else:
+        return order_1 if order_1.price < order_2.price else order_2
+
+
+def orders_to_dict(orders: List[Order]) -> Dict[ResourceOrEnergy, Dict[OrderSide, List[Order]]]:
+    orders_dict = dict()
     for order in orders:
-        orders_dict[order.resource].append(order)
+        if order.resource.value not in orders_dict:
+            orders_dict[order.resource.value] = dict()
+        if order.order_side.value not in orders_dict[order.resource.value]:
+            orders_dict[order.resource.value][order.order_side.value] = list()
+        orders_dict[order.resource.value][order.order_side.value].append(order)
     return orders_dict
 
 
@@ -147,20 +188,20 @@ def orders_to_dict(orders: List[Order]) -> Dict[Resource, List[Order]]:
     "/game/{game_id}/player/{player_id}/orders",
     summary="Get only your orders in this game",
 )
-async def order_list_player(
+def order_list_player(
     game: Game = Depends(game_dep), player: Player = Depends(player_dep)
-) -> Dict[Resource, List[OrderResponse]]:
+) -> Dict[str, Dict[str, List[OrderResponse]]]:
     """List orders you placed in market that are still active."""
-    active_orders = await Order.list(
-        game_id=game.game_id,
-        player_id=player.player_id,
-        order_status=OrderStatus.ACTIVE.value,
-    )
-    pending_orders = await Order.list(
-        game_id=game.game_id,
-        player_id=player.player_id,
-        order_status=OrderStatus.PENDING.value,
-    )
+    active_orders = Order.find(
+        Order.player_id == player.player_id,
+        Order.game_id == game.game_id,
+        Order.order_status == OrderStatus.ACTIVE.value
+    ).all()
+    pending_orders = Order.find(
+        Order.player_id == player.player_id,
+        Order.game_id == game.game_id,
+        Order.order_status == OrderStatus.PENDING.value
+    ).all()
     return orders_to_dict(active_orders + pending_orders)
 
 
@@ -168,33 +209,41 @@ async def order_list_player(
     "/game/{game_id}/player/{player_id}/orders/{order_id}",
     summary="Get order details for given order_id",
 )
-async def order_get_player(
-    order_id: int, game: Game = Depends(game_dep), player: Player = Depends(player_dep)
+def order_get_player(
+    order: Order = Depends(order_dep),
+    game: Game = Depends(game_dep),
+    player: Player = Depends(player_dep),
 ) -> OrderResponse:
-    order = await Order.get(
-        order_id=order_id, game_id=game.game_id, player_id=player.player_id
-    )
     return order
 
 
 class UserOrder(BaseModel):
     resource: Resource = Field(..., description="resource you are buying or selling")
-    price: int = Field(..., description="price per unit of resource you are buying or selling")
+    price: int = Field(
+        ..., description="price per unit of resource you are buying or selling"
+    )
     size: int = Field(..., description="ammount of resource you want to buy or sell")
-    expiration_tick: Optional[int]  = Field(None, description="exact tick in which this order will expire")
-    expiration_length: Optional[int] = Field(None, description= "number of ticks from now when this order will expire")
-    side: OrderSide = Field(..., description="BUY if you want to buy a resource, SELL if you want to sell it")
+    expiration_tick: Optional[int] = Field(
+        None, description="exact tick in which this order will expire"
+    )
+    expiration_length: Optional[int] = Field(
+        None, description="number of ticks from now when this order will expire"
+    )
+    side: OrderSide = Field(
+        ...,
+        description="BUY if you want to buy a resource, SELL if you want to sell it",
+    )
 
 
 @router.post(
     "/game/{game_id}/player/{player_id}/orders/create",
     summary="Create a new order on the market",
 )
-async def order_create_player(
+def order_create_player(
     order: UserOrder,
     game: Game = Depends(game_dep),
     player: Player = Depends(player_dep),
-) -> int:
+) -> str:
     f"""
     - If side is buy, price is maximum price you will accept.
     - If side is sell, price is minimum price at which you will sell.
@@ -235,9 +284,13 @@ async def order_create_player(
             status_code=400, detail=f"Size ({order.size}) must be greater than 0"
         )
 
-    total_orders_not_processed = await Order.count_player_orders(
-        game_id=game.game_id, player_id=player.player_id, resource=order.resource
-    )
+    total_orders_not_processed = Order.find(
+        Order.game_id == game.game_id,
+        Order.player_id == player.player_id,
+        Order.resource == order.resource.value,
+        (Order.order_status == OrderStatus.ACTIVE.value)
+        | (Order.order_status == OrderStatus.PENDING.value)
+    ).count()
 
     if total_orders_not_processed >= config["player"]["max_orders"]:
         raise HTTPException(
@@ -245,7 +298,7 @@ async def order_create_player(
             detail=f'Maximum {config["player"]["max_orders"]} orders can be active at a time',
         )
 
-    resources = player[order.resource]
+    resources = player.resources[order.resource]
     cost = order.price * order.size
     if order.side is OrderSide.SELL and resources < order.size:
         raise HTTPException(
@@ -258,73 +311,71 @@ async def order_create_player(
             detail=f"Not enough money: has ({player.money}), order_cost({cost}) = size({order.size})*price({order.price})",
         )
 
-    return await Order.create(
-        game_id=game.game_id,
-        player_id=player.player_id,
-        order_type=OrderType.LIMIT,
-        order_side=order.side.value,
-        order_status=OrderStatus.PENDING,
-        timestamp=datetime.now(),
-        price=order.price,
-        size=order.size,
-        tick=game.current_tick,
-        expiration_tick=order.expiration_tick,
-        resource=order.resource,
+    return (
+        Order(
+            game_id=game.game_id,
+            player_id=player.player_id,
+            order_side=order.side.value,
+            order_status=OrderStatus.PENDING,
+            timestamp=datetime.now(),
+            price=order.price,
+            size=order.size,
+            tick=game.current_tick,
+            expiration_tick=order.expiration_tick,
+            resource=order.resource.value,
+        )
+        .save()
+        .pk
     )
 
 
-class OrderCancel(BaseModel):
-    ids: List[int]
-
-
-@router.post(
-    "/game/{game_id}/player/{player_id}/orders/cancel",
-    summary="Cancel the list of orders",
+@router.get(
+    "/game/{game_id}/player/{player_id}/orders/{order_id}/cancel",
+    summary="Cancel the order",
 )
-async def order_cancel_player(
-    body: OrderCancel,
+def order_cancel_player(
+    order: Order = Depends(order_dep),
     game: Game = Depends(game_dep),
     player: Player = Depends(player_dep),
 ) -> SuccessfulResponse:
-    async with database.transaction():
-        for order_id in body.ids:
-            order_to_cancel = await Order.get(order_id=order_id)
-            if order_to_cancel.player_id != player.player_id:
-                raise HTTPException(
-                    status_code=400, detail="You can only cancel your own orders"
-                )
-            elif order_to_cancel.order_status == OrderStatus.PENDING.value:
-                await Order.update(
-                    order_id=order_id, order_status=OrderStatus.CANCELLED.value
-                )
-            elif order_to_cancel.order_status == OrderStatus.ACTIVE.value:
-                await Order.update(
-                    order_id=order_id, order_status=OrderStatus.USER_CANCELLED.value
-                )
-            else:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Only pending or active orders can be cancelled",
-                )
+    with player.lock():
+        order_to_cancel = Order.get(order.order_id)
+        if order_to_cancel.player_id != player.player_id:
+            raise HTTPException(
+                status_code=400, detail="You can only cancel your own orders"
+            )
+        elif order_to_cancel.order_status == OrderStatus.PENDING.value:
+            Order.update(order_status=OrderStatus.CANCELLED.value)
+        elif order_to_cancel.order_status == OrderStatus.ACTIVE.value:
+            Order.update(order_status=OrderStatus.USER_CANCELLED.value)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Only pending or active orders can be cancelled",
+            )
     return SuccessfulResponse()
 
 
 class UserTrade(BaseModel):
-    trade_id: int
-    buy_order_id: int = Field(..., description="order_id of buyer side in this trade")
-    sell_order_id: int = Field(..., description="order_id of seller side in this trade")
+    trade_id: str
+    buy_order_id: str = Field(..., description="order_id of buyer side in this trade")
+    sell_order_id: str = Field(..., description="order_id of seller side in this trade")
     tick: int = Field(..., description="Tick when this trade took place")
 
-    filled_money: int = Field(..., description="Total value of the trade = filled_size * filled_price")
+    filled_money: int = Field(
+        ..., description="Total value of the trade = filled_size * filled_price"
+    )
     filled_size: int = Field(..., description="Ammount of resources that was traded")
-    filled_price: int = Field(..., description="Price at which the unit of resource was traded")
+    filled_price: int = Field(
+        ..., description="Price at which the unit of resource was traded"
+    )
 
 
 @router.get(
     "/game/{game_id}/player/{player_id}/trades",
     summary="Get your matched trades for previous ticks",
 )
-async def get_trades_player(
+def get_trades_player(
     start_end=Depends(start_end_tick_dep),
     player: Player = Depends(player_dep),
     resource: Resource = Query(default=None),
@@ -335,18 +386,16 @@ async def get_trades_player(
     """
     start_tick, end_tick = start_end
 
-    buy_trades = await TradeDb.list_buy_trades_by_player_id(
-        player_id=player.player_id,
-        min_tick=start_tick,
-        max_tick=end_tick,
-        resource=resource,
+    condition = (
+        (Trade.tick <= end_tick)
+        & (Trade.tick >= end_tick)
+        & (Trade.resource == resource.value)
     )
-    sell_trades = await TradeDb.list_sell_trades_by_player_id(
-        player_id=player.player_id,
-        min_tick=start_tick,
-        max_tick=end_tick,
-        resource=resource,
-    )
+
+    buy_trades = Trade.find((Trade.buy_order_id == player.player_id) & condition).all()
+    sell_trades = Trade.find(
+        (Trade.sell_order_id == player.player_id) & condition
+    ).all()
     return {
         OrderSide.BUY: buy_trades,
         OrderSide.SELL: sell_trades,

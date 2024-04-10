@@ -1,7 +1,7 @@
 from collections import deque
 from xheap import XHeap
 from functools import reduce
-from model import Order, OrderSide, OrderStatus, OrderType, Trade
+from model import Order, OrderSide, OrderStatus, Trade
 from logger import logger
 
 
@@ -76,7 +76,7 @@ class OrderBook():
         for order_id in list(self.map_to_heaps.keys()):
             self.cancel_order(order_id)
 
-    def cancel_order(self, order_id: int):
+    def cancel_order(self, order_id: str):
         if order_id not in self.map_to_heaps:
             raise ValueError(f"Order with id {order_id} not found")
         order: Order = self.map_to_heaps[order_id]
@@ -85,7 +85,7 @@ class OrderBook():
         self._invoke_callbacks('on_order_update', order)
         self._remove_order(order_id)
 
-    def _remove_order(self, order_id: int):
+    def _remove_order(self, order_id: str):
         order: Order = self.map_to_heaps[order_id]
 
         self.expire_heap.remove(order)
@@ -156,12 +156,17 @@ class OrderBook():
     def _match_one(self, buy_order: Order, sell_order: Order, tick: int):
         trade_price = self._get_trade_price(buy_order, sell_order)
         trade_size = self._get_trade_size(buy_order, sell_order)
-        filled_money = trade_price * trade_size
+        total_money = trade_price * trade_size
 
-        trade_before = Trade(buy_order, sell_order, tick,
-                             filled_money, trade_size, trade_price)
+        trade = Trade(
+            tick=tick,
+            total_money=total_money,
+            trade_size=trade_size,
+            trade_price=trade_price)
+        trade.buy_order = buy_order
+        trade.sell_order = sell_order
 
-        status = self._invoke_callbacks('check_trade', trade_before)
+        status = self._invoke_callbacks('check_trade', trade)
 
         status_reduced = reduce(
             lambda x, y: {i: x[i] and y[i] for i in x},
@@ -173,8 +178,8 @@ class OrderBook():
             buy_order.filled_size += trade_size
             sell_order.filled_size += trade_size
 
-            buy_order.filled_money += filled_money
-            sell_order.filled_money += filled_money
+            buy_order.filled_money += total_money
+            sell_order.filled_money += total_money
 
             buy_order.filled_price = buy_order.filled_money / buy_order.filled_size
             sell_order.filled_price = sell_order.filled_money / sell_order.filled_size
@@ -185,8 +190,6 @@ class OrderBook():
             self._remove_if_filled(buy_order.order_id)
             self._remove_if_filled(sell_order.order_id)
 
-            trade = Trade(buy_order, sell_order, tick,
-                          filled_money, trade_size, trade_price)
             self._invoke_callbacks('on_trade', trade)
             self.match_trades.append(trade)
         if not status_reduced['can_buy']:
@@ -196,19 +199,19 @@ class OrderBook():
 
     def _get_trade_price(self, buy_order: Order, sell_order: Order):
         first_order = buy_order if buy_order.timestamp < sell_order.timestamp else sell_order
-        second_order = sell_order if buy_order.timestamp < sell_order.timestamp else buy_order
-
-        if first_order.order_type != OrderType.MARKET:
-            return first_order.price
-        elif second_order.order_type != OrderType.MARKET:
-            return second_order.price
-        return self.prev_price
+        # second_order = sell_order if buy_order.timestamp < sell_order.timestamp else buy_order
+        # Komentar
+        # if first_order.order_type != OrderType.MARKET:
+        return first_order.price
+        # elif second_order.order_type != OrderType.MARKET:
+        #     return second_order.price
+        # return self.prev_price
 
     def _get_trade_size(self, buy_order: Order, sell_order: Order):
         return min(buy_order.size - buy_order.filled_size,
                    sell_order.size - sell_order.filled_size)
 
-    def _remove_if_filled(self, order_id: int):
+    def _remove_if_filled(self, order_id: str):
         order: Order = self.map_to_heaps[order_id]
         if order.filled_size == order.size:
             order.order_status = OrderStatus.COMPLETED

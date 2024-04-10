@@ -1,136 +1,83 @@
-from dataclasses import dataclass, field
-from db.table import Table
-from enum import Enum
-from config import config
-from model.resource import Resource
+from db.db import get_my_redis_connection
 from model.dataset_data import DatasetData
+from model.game import Game
+from model.order import Order
+from model.power_plant_model import PowerPlantsModel, ResourcesModel
+from pydantic import BaseModel
+import pydantic
+from redis_om import Field, JsonModel
+from redlock.lock import RedLock
+
+from model.power_plant_type import PowerPlantType
+from model.resource import Resource
 
 
-class PowerPlantType(str, Enum):
-    COAL = "COAL"
-    URANIUM = "URANIUM"
-    BIOMASS = "BIOMASS"
-    GAS = "GAS"
-    OIL = "OIL"
-    GEOTHERMAL = "GEOTHERMAL"
-    WIND = "WIND"
-    SOLAR = "SOLAR"
-    HYDRO = "HYDRO"
-
-    def get_name(self):
-        return self.name.lower()
-
-    def get_base_price(self):
-        return config["power_plant"]["base_prices"][self.get_name()]
-
-    def get_plant_price(self, power_plant_count: int):
-        return int(self.get_base_price() * (1 + 0.03 * (power_plant_count ** 2) + 0.1 * power_plant_count))
-
-    def get_sell_price(self, power_plant_count: int):
-        plant_price = self.get_plant_price(power_plant_count - 1)
-        sell_plant_price = round(
-            plant_price * config["power_plant"]["sell_coeff"])
-
-        return sell_plant_price
-
-    def get_produced_energy(self, dataset_row: dict):
-        return dataset_row[self.get_name()]
-
-    def is_renewable(self):
-        name = self.get_name()
-        return False if name in ["coal", "uranium", "biomass", "gas", "oil"] else True
+class Networth(BaseModel):
+    total: int = pydantic.Field(0, description="Total players networth. This is your score in competition rounds!")
+    money: int = pydantic.Field(0)
+    resources: ResourcesModel = pydantic.Field(default_factory=ResourcesModel, description="Resources owned by the player")
+    resources_value: ResourcesModel = pydantic.Field(default_factory=ResourcesModel, description="Players networth based on resources prices on the market")
+    power_plants_owned: PowerPlantsModel = pydantic.Field(default_factory=PowerPlantsModel, description="Power plants owned by the player")
+    power_plants_value: PowerPlantsModel = pydantic.Field(default_factory=PowerPlantsModel, description="Players networth based only on power plants sell prices")
 
 
-@dataclass
-class Player(Table):
-    table_name = "players"
-    player_id: int
+class Player(JsonModel):
     player_name: str
-    game_id: int
-    team_id: int
-    is_active: bool = field(default=True)
-    is_bot: bool = field(default=False)
+    game_id: str = Field(index=True)
+    team_id: str = Field(index=True)
+    is_active: int = Field(default=int(True), index=True)
+    is_bot: int = Field(default=int(False), index=True)
 
-    energy_price: int = field(default=1e9)
+    energy_price: int = Field(default=1e9)
 
-    money: int = field(default=0)
-    energy: int = field(default=0)
+    money: int = Field(default=0)
+    energy: int = Field(default=0)
 
-    coal: int = field(default=0)
-    uranium: int = field(default=0)
-    biomass: int = field(default=0)
-    gas: int = field(default=0)
-    oil: int = field(default=0)
+    resources: ResourcesModel = Field(default_factory=ResourcesModel)
 
-    coal_plants_owned: int = field(default=0)
-    uranium_plants_owned: int = field(default=0)
-    biomass_plants_owned: int = field(default=0)
-    gas_plants_owned: int = field(default=0)
-    oil_plants_owned: int = field(default=0)
-    geothermal_plants_owned: int = field(default=0)
-    wind_plants_owned: int = field(default=0)
-    solar_plants_owned: int = field(default=0)
-    hydro_plants_owned: int = field(default=0)
+    power_plants_owned: PowerPlantsModel = Field(default_factory=PowerPlantsModel)
+    power_plants_powered: PowerPlantsModel = Field(default_factory=PowerPlantsModel)
 
-    coal_plants_powered: int = field(default=0)
-    uranium_plants_powered: int = field(default=0)
-    biomass_plants_powered: int = field(default=0)
-    gas_plants_powered: int = field(default=0)
-    oil_plants_powered: int = field(default=0)
-    geothermal_plants_powered: int = field(default=0)
-    wind_plants_powered: int = field(default=0)
-    solar_plants_powered: int = field(default=0)
-    hydro_plants_powered: int = field(default=0)
+    player_id: str = Field(default=None)
 
-    def __getitem__(self, key):
-        if isinstance(key, Resource):
-            return self.__getattribute__(key.name)
-        return self.__getattribute__(key)
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.player_id=self.pk
 
-    def __setitem__(self, key, value):
-        if isinstance(key, Resource):
-            return self.__setattr__(key.name, value)
-        self.__setattr__(key, value)
+    def lock(self, *args):
+        return RedLock(self.pk, *args)
 
-    async def get_networth(self, game):
-        net_worth = {
-            "plants_owned": {},
-            "money": self.money,
-            "resources": {},
-            "total": 0
-        }
+    def cancel_orders(self, pipe=None) -> int:
+        """Returns number of canceled orders"""
+        return Order.delete_many(Order.find(Order.player_id == self.player_id).all(), pipe)
 
-        for type in PowerPlantType:
-            value = 0
-
-            for i in range(1, getattr(self, f"{type.lower()}_plants_owned") + 1):
-                value += type.get_sell_price(i)
-
-            net_worth["plants_owned"][type.lower()] = {
-                "owned": getattr(self, f"{type.lower()}_plants_owned"),
-                "value_if_sold": value
-            }
-
-        data = (await DatasetData.list_by_game_id_where_tick(
-            game.dataset_id, game.game_id, game.current_tick - 1, game.current_tick - 1))[0]
-
+    def get_networth(self, game: Game, dataset_data: DatasetData = None) -> Networth:
+        # TODO: nije pod lockom jer bi kocilo tick, a ovo stalno uzimaju igraci
+        if dataset_data is None:
+            dataset_data = DatasetData.find(
+                DatasetData.tick==game.current_tick,
+                DatasetData.dataset_id==game.dataset_id
+            ).first()
+        total = self.money
+        resources_value = ResourcesModel()
         for resource in Resource:
-            final_price = data[f"{resource.name.lower()}_price"]
-            has = getattr(self, resource.name.lower())
-
-            net_worth["resources"][resource.name.lower()] = {
-                "final_price": final_price,
-                "player_has": has,
-                "value": final_price * has
-            }
-
-        net_worth["total"] += self.money
+            resource_value = dataset_data.resource_prices[resource] * self.resources[resource]
+            resources_value[resource] = resource_value
+            total += resource_value
+        power_plants_value = PowerPlantsModel()
         for type in PowerPlantType:
-            net_worth["total"] += net_worth["plants_owned"][type.lower()
-                                                            ]["value_if_sold"]
+            for i in range(1, self.power_plants_owned[type] + 1):
+                power_plants_value[type] += PowerPlantType.get_sell_price()
+            total += power_plants_value[type]
 
-        for resource in Resource:
-            net_worth["total"] += net_worth["resources"][resource.name.lower()
-                                                         ]["value"]
+        return Networth(
+            total = total,
+            money = self.money,
+            resources = self.resources,
+            resources_value = resources_value,
+            power_plants_owned = self.power_plants_owned,
+            power_plants_value = power_plants_value,
+        )
 
-        return net_worth
+    class Meta:
+        database = get_my_redis_connection()

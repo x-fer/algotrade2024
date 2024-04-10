@@ -1,17 +1,25 @@
-from dataclasses import dataclass, field
-from db.table import Table
+
+from typing import Any, Optional
+from db.db import get_my_redis_connection
+from redis_om import  Field, JsonModel
 from datetime import datetime
 
 
-@dataclass
-class Game(Table):
-    table_name = "games"
-    game_id: int
+class Game(JsonModel):
     game_name: str
-    is_contest: bool
-    dataset_id: int
-    start_time: datetime
+    is_contest: int = Field(index=True)
+    dataset_id: str
+    start_time: datetime = Field(index=False)
     total_ticks: int
     tick_time: int
-    current_tick: int = field(default=0)
-    is_finished: bool = field(default=False)
+    current_tick: int = Field(default=0)
+    is_finished: bool = Field(index=False, default=False)
+
+    game_id: str = Field(default=None)
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        self.game_id=self.pk
+
+    class Meta:
+        database = get_my_redis_connection()
