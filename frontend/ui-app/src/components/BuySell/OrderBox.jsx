@@ -1,7 +1,6 @@
 import React, { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import SelectResourceBar from "./SelectResourceBar";
-import instance from "../../api/apiInstance";
 import { DataContext } from "../DataProvider";
 import BuySell from "./BuySell";
 import EnergySell from "./EnergySell";
@@ -19,14 +18,15 @@ const OrderBox = () => {
       size: data.size,
       price: data.price,
     };
+    // TODO
 
-    instance
+    /* instance
       .post(`/game/${gameId}/player/${playerId}/orders/create`, order, {
         params: { team_secret: teamSecret },
       })
       .then((response) => {
         console.log(response);
-      });
+      }); */
   };
 
   const handleButtonClick = (action) => {

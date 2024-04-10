@@ -1,12 +1,13 @@
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { DataContext } from "../DataProvider";
-import instance from "../../api/apiInstance";
 
 const OrdersListItem = ({ order }) => {
   const { teamSecret, gameId, playerId } = useContext(DataContext);
 
-  const handleCancel = (order_id) => {
+  // TODO
+
+  /* const handleCancel = (order_id) => {
     instance
       .post(
         `/game/${gameId}/player/${playerId}/orders/cancel`,
@@ -18,7 +19,7 @@ const OrdersListItem = ({ order }) => {
       .then((response) => {
         console.log(response);
       });
-  };
+  }; */
 
   return (
     <div className="flex justify-between items-center p-2 rounded-3xl bg-secondary text-white shadow-xl">
@@ -46,12 +47,6 @@ const OrdersList = () => {
     { order_id: 2, resource: "BIOMASS", size: 50, price: 10, side: "SELL" },
     { order_id: 3, resource: "GAS", size: 90, price: 15, side: "BUY" },
   ]);
-
-  useEffect(() => {
-    axios.get("http://localhost:3001/orders").then((response) => {
-      setOrdersList(response.data);
-    });
-  }, []);
 
   return (
     <div className="flex flex-col py-4 h-full gap-4 rounded-3xl bg-primary">
