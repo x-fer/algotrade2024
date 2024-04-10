@@ -64,7 +64,7 @@ def market_prices(
     if resource is not None:
         query.append(Market.resource == resource.value)
 
-    all_prices: List[Market] = Market.find(*query)
+    all_prices: List[Market] = Market.find(*query).all()
     all_prices_dict = defaultdict(list)
     for price in all_prices:
         all_prices_dict[price.resource].append(price)

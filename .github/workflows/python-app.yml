@@ -34,6 +34,7 @@ jobs:
       with:
         redis-version: ${{ matrix.redis-version }}
         redis-port: 6379
+        redis-container-name: redis-stack-server
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
