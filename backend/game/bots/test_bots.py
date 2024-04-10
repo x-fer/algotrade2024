@@ -155,8 +155,8 @@ class TestResourceBot:
 @pytest.fixture
 def bot():
     bot = ResourceBot()
-    bot.last_buy_coeffs[Resource.coal] = 0.5
-    bot.last_sell_coeffs[Resource.coal] = 0.5
+    bot.last_buy_coeffs[Resource.COAL] = 0.5
+    bot.last_sell_coeffs[Resource.COAL] = 0.5
     return bot
 
 
@@ -167,32 +167,32 @@ def volume():
 
 class TestGetPrice:
     def test_get_price_0_0(self, bot):
-        price = bot.get_price(Resource.coal, 0, 0)
+        price = bot.get_price(Resource.COAL, 0, 0)
         assert_prices(bot, price)
 
     def test_get_price_0_1(self, bot):
-        price = bot.get_price(Resource.coal, 0, 0)
+        price = bot.get_price(Resource.COAL, 0, 0)
         assert_prices(bot, price)
 
     def test_get_price_1_0(self, bot):
-        price = bot.get_price(Resource.coal, 1, 0)
+        price = bot.get_price(Resource.COAL, 1, 0)
         assert_prices(bot, price)
 
     def test_get_price_2(self, bot):
-        price = bot.get_price(Resource.coal, 1, 0.2)
+        price = bot.get_price(Resource.COAL, 1, 0.2)
         assert_prices(bot, price)
-        price = bot.get_price(Resource.coal, 0.5, 0.76)
+        price = bot.get_price(Resource.COAL, 0.5, 0.76)
         assert_prices(bot, price)
-        price = bot.get_price(Resource.coal, 0.3, 0.2)
+        price = bot.get_price(Resource.COAL, 0.3, 0.2)
         assert_prices(bot, price)
 
 
 def assert_prices(bot: ResourceBot, price: BuySellPrice):
     assert min_price <= price.buy_price <= max_price
     assert min_price <= price.sell_price <= max_price
-    assert 0 <= bot.last_buy_coeffs[Resource.coal] <= 1
-    assert 0 <= bot.last_sell_coeffs[Resource.coal] <= 1
-    assert bot.last_sell_coeffs[Resource.coal] >= bot.last_buy_coeffs[Resource.coal]
+    assert 0 <= bot.last_buy_coeffs[Resource.COAL] <= 1
+    assert 0 <= bot.last_sell_coeffs[Resource.COAL] <= 1
+    assert bot.last_sell_coeffs[Resource.COAL] >= bot.last_buy_coeffs[Resource.COAL]
 
 
 def get_order(order_side, filled_size, size):
@@ -201,7 +201,7 @@ def get_order(order_side, filled_size, size):
         filled_size=filled_size, size=size, tick=0,
         timestamp=datetime.now(),
         order_side=order_side,
-        resource=Resource.coal
+        resource=Resource.COAL
     )
 
 

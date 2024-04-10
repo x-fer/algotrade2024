@@ -51,12 +51,13 @@ class Player(JsonModel):
         """Returns number of canceled orders"""
         return Order.delete_many(Order.find(Order.player_id == self.player_id).all(), pipe)
 
-    async def get_networth(self, game: Game):
+    def get_networth(self, game: Game, dataset_data: DatasetData = None):
         # TODO: nije pod lockom jer bi kocilo tick, a ovo stalno uzimaju igraci
-        dataset_data: DatasetData = DatasetData.find(
-            (DatasetData.tick==game.current_tick) & 
-            (DatasetData.dataset_id==game.dataset_id)
-        ).first()
+        if dataset_data is None:
+            dataset_data = DatasetData.find(
+                DatasetData.tick==game.current_tick,
+                DatasetData.dataset_id==game.dataset_id
+            ).first()
         total = self.money
         resources_value = ResourcesModel()
         for resource in Resource:

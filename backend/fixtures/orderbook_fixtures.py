@@ -61,7 +61,7 @@ def get_order(get_timestamp, get_order_id):
                      size=size,
                      order_side=order_side,
                      tick=tick,
-                     resource=Resource.coal)
+                     resource=Resource.COAL)
     return get_order
 
 

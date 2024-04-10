@@ -1,5 +1,4 @@
 from unittest.mock import Mock
-from model.order_types import OrderType
 from .orderbook import OrderBook
 from model import OrderSide, OrderStatus, Trade
 from fixtures.orderbook_fixtures import *
@@ -217,7 +216,6 @@ def test_second_order_is_market_order(get_order):
                             order_side=OrderSide.BUY, tick=1)
     second_order = get_order(player_id=2, price=5, size=50,
                              order_side=OrderSide.SELL, tick=1)
-    second_order.order_type = OrderType.MARKET
 
     trades = []
     orderbook.register_callback('on_trade', lambda trade: trades.append(trade))
@@ -236,8 +234,6 @@ def test_prev_price(get_order):
                             order_side=OrderSide.BUY, tick=1)
     second_order = get_order(player_id=2, price=5, size=50,
                              order_side=OrderSide.SELL, tick=1)
-    first_order.order_type = OrderType.MARKET
-    second_order.order_type = OrderType.MARKET
 
     trades = []
     orderbook.register_callback('on_trade', lambda trade: trades.append(trade))

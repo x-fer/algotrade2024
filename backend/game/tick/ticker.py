@@ -16,8 +16,10 @@ from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, Da
 from game.market import ResourceMarket, EnergyMarket
 from model.market import Market
 from model.resource import Energy
+from model.team import Team
 from .tick_data import TickData
-from logger import logger
+from logger import logger, score_logger
+from config import config
 from redlock.lock import RedLock
 
 
@@ -182,15 +184,41 @@ class Ticker:
             game.update(is_finished=is_finished)
             game.save(self.pipe)
             self.pipe.execute()
-        logger.game_log(tick_data.game.game_id,
-                        f"updated orders {len(tick_data.updated_orders)}")
-        logger.game_log(tick_data.game.game_id,
-                        f"updated trades {len(tick_data.tick_trades)}")
+            
+            if (game.current_tick % config['log_networth_delay'] == 0):
+                self._log_networth(game)
+        logger.game_log(tick_data.game.game_id, f"updated orders {len(tick_data.updated_orders)}")
+        logger.game_log(tick_data.game.game_id, f"updated trades {len(tick_data.tick_trades)}")
+
         self.game_data[tick_data.game.game_id].bot.run(self.pipe, tick_data)
         self.pipe.execute()
 
         # profiler.stop()
         # profiler.print()
+    def _log_networth(self, game: Game):
+        players: List[Player] = Player.find(
+            Player.game_id==game.game_id,
+            Player.is_bot==int(False)
+        ).all()
+        dataset_data = DatasetData.find(
+            (DatasetData.tick==game.current_tick) & 
+            (DatasetData.dataset_id==game.dataset_id)
+        ).first()
+        teams: List[Team] = Team.find().all()
+        teams: Dict[str, Team] = {team.pk: team for team in teams}
+        def get_name(player: Player):
+            team_name = teams[player.team_id].team_name
+            return f"{team_name}/{player.player_name}"
+        def get_score_name(player: Player):
+            name = get_name(player)
+            score = player.get_networth(game, dataset_data).total
+            return (name, score)
+        scores = list(map(get_score_name, players))
+        score_logger.log(
+            game_id=game.game_id,
+            game_name=game.game_name,
+            tick=game.current_tick,
+            scores=scores)
 
     def get_players_and_enter_context(self, game: Game, stack: ExitStack) -> Dict[str, Player]:
         players = Player.find(Player.game_id == game.game_id).all()

@@ -1,6 +1,6 @@
 from .team import Team
 from .game import Game
-from .player import Player, PowerPlantType
+from .player import Player
 from .datasets import Datasets
 from .order import Order
 from .order_types import *

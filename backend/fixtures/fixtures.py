@@ -179,7 +179,7 @@ def get_order():
             game_id=1,
             timestamp=datetime.now(),
             player_id=player_id,
-            resource=Resource.coal,
+            resource=Resource.COAL,
             price=price,
             tick=tick,
             size=size,
@@ -198,7 +198,7 @@ def get_player_dict(players: List[Player]) -> Dict[int, Player]:
 
 @pytest.fixture
 def coal_market():
-    return ResourceMarket(Resource.coal)
+    return ResourceMarket(Resource.COAL)
 
 
 @pytest.fixture

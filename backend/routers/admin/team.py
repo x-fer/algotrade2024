@@ -21,7 +21,7 @@ class CreateTeam(BaseModel):
 
 @router.post("/team/create")
 @limiter.exempt
-async def team_create(params: CreateTeam) -> Team:
+def team_create(params: CreateTeam) -> Team:
     team_secret = id_generator()
     team_name = params.team_name
 
@@ -34,13 +34,13 @@ async def team_create(params: CreateTeam) -> Team:
 
 @router.get("/team/list")
 @limiter.exempt
-async def team_list() -> List[Team]:
+def team_list() -> List[Team]:
     return Team.find().all()
 
 
 @router.post("/team/{team_id}/delete")
 @limiter.exempt
-async def team_delete(team_id: str) -> SuccessfulResponse:
+def team_delete(team_id: str) -> SuccessfulResponse:
     # team_id = await Team.delete(team_id=team_id)
 
     if Team.find(Team.team_id == team_id).count() == 0:

@@ -9,13 +9,13 @@ from model.order_types import OrderSide
 @pytest.fixture
 def sample_game():
     return Game(
-        game_id=1,
+        game_id="1",
         game_name="Sample Game",
         start_time=datetime(2024, 1, 1),
         current_tick=1,
         total_ticks=10,
         is_finished=False,
-        dataset_id=1,
+        dataset_id="1",
         bots="",
         tick_time=1000,
         is_contest=False
@@ -30,8 +30,8 @@ def sample_game_data(sample_game):
 @pytest.fixture
 def sample_players():
     return {
-        1: Player(player_id=1, game_id=1, player_name="Player 1", energy=0, team_id=1, wind_plants_owned=2, wind_plants_powered=2),
-        2: Player(player_id=2, game_id=1, player_name="Player 2", energy=0, team_id=1, coal=100, coal_plants_powered=2, coal_plants_owned=2)
+        1: Player(player_id="1", game_id="1", player_name="Player 1", energy=0, team_id="1", wind_plants_owned=2, wind_plants_powered=2),
+        2: Player(player_id="2", game_id="1", player_name="Player 2", energy=0, team_id="1", coal=100, coal_plants_powered=2, coal_plants_owned=2)
     }
 
 
@@ -50,20 +50,20 @@ def ticker(sample_game, sample_game_data):
 @pytest.fixture
 def sample_pending_orders():
     return [
-        Order(order_id=1, game_id=1, player_id=1, order_side=OrderSide.SELL,
-              order_status=OrderStatus.PENDING, resource=Resource.coal, price=50, size=100, tick=1, timestamp=datetime.now()),
-        Order(order_id=2, game_id=1, player_id=2, order_side=OrderSide.SELL, 
-              order_status=OrderStatus.PENDING, resource=Resource.oil, price=50, size=100, tick=1, timestamp=datetime.now())
+        Order(order_id="1", game_id="1", player_id="1", order_side=OrderSide.SELL,
+              order_status=OrderStatus.PENDING, resource=Resource.COAL, price=50, size=100, tick=1, timestamp=datetime.now()),
+        Order(order_id="2", game_id="1", player_id="2", order_side=OrderSide.SELL, 
+              order_status=OrderStatus.PENDING, resource=Resource.OIL, price=50, size=100, tick=1, timestamp=datetime.now())
     ]
 
 
 @pytest.fixture
 def sample_user_cancelled_orders():
     return [
-        Order(order_id=3, game_id=1, player_id=1, order_side=OrderSide.SELL,
-              order_status=OrderStatus.USER_CANCELLED, resource=Resource.coal, price=50, size=100, tick=1, timestamp=datetime.now()),
-        Order(order_id=4, game_id=1, player_id=2, order_side=OrderSide.SELL,
-              order_status=OrderStatus.USER_CANCELLED, resource=Resource.oil, price=50, size=100, tick=1, timestamp=datetime.now())
+        Order(order_id="3", game_id="1", player_id="1", order_side=OrderSide.SELL,
+              order_status=OrderStatus.USER_CANCELLED, resource=Resource.COAL, price=50, size=100, tick=1, timestamp=datetime.now()),
+        Order(order_id="4", game_id="1", player_id="2", order_side=OrderSide.SELL,
+              order_status=OrderStatus.USER_CANCELLED, resource=Resource.OIL, price=50, size=100, tick=1, timestamp=datetime.now())
     ]
 
 

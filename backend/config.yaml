@@ -15,6 +15,7 @@ drop_tables: ${DROP_TABLES}
 fill_datasets: ${FILL_DATASETS}
 fill_tables: ${FILL_TABLES}
 log_level: ${LOG_LEVEL}
+log_networth_delay: ${NETWORTH_TICKS}
 
 dataset:
   datasets_path: ./data
