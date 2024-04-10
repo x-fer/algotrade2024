@@ -1,23 +1,24 @@
-const fetchData = async (e) => {
+import axios from "axios";
+import ENDPOINT from "../../constants";
+
+const handleSubmit = (e) => {
   e.preventDefault();
 
-  try {
-    const response = await fetch("http://86.32.73.226:3000/game/list");
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const jsonData = await response.json();
-    console.log(jsonData);
-  } catch (error) {
-    console.error("Error fetching data:", error);
-  }
+  axios
+    .get(`${ENDPOINT}/game/list`)
+    .then((response) => {
+      console.log(response.data);
+    })
+    .catch((error) => {
+      console.log(error);
+    });
 };
 
 const EnergySell = () => {
   return (
     <div className="bg-secondary rounded-3xl p-4">
       <h1>EnergySell</h1>
-      <button className="" onClick={fetchData}>
+      <button className="" onClick={handleSubmit}>
         TEST
       </button>
     </div>

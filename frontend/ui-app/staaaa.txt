@@ -1,0 +1,35 @@
+package.json
+=======================
+"dev": "vite --host 0.0.0.0 --cors false",
+
+
+
+
+
+constants.js
+=======================
+const ENDPOINT = "http://localhost:8000";
+
+
+
+
+
+u main.py
+=======================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["localhost:8080"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+moze i ovako
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
