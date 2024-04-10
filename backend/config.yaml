@@ -43,7 +43,7 @@ dataset:
   energy_demand_multiplier: 30000
 
 player:
-  max_players_per_team: 100
+  max_players_per_team: 10
   starting_money: 50_000_000
   max_orders: 20
   max_energy_per_player: 0.4
@@ -53,16 +53,16 @@ bots:
   team_name: bots
   team_secret: oiajsdpifjapsndkcapis
   resource_sum: 1000
-  default_volume: 20000
-  min_volume: 5000
-  max_volume: 40000
+  default_volume: 200
+  min_volume: 50
+  max_volume: 400
   min_price: -100
   max_price: 100
   expiration_ticks: 3
   price_change_coeff: 0.25
-  extra_orders: 50
+  extra_orders: 4
   extra_orders_price_diff: 0.01
-  extra_orders_volume_diff: 0.0012
+  extra_orders_volume_diff: 0.1
   final_volume_multiplier: 1
   final_price_multiplier: 1
   log_when_no_orders: ${LOG_BOTS}

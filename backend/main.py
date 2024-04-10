@@ -51,7 +51,7 @@ app = FastAPI(
     description=short_description,
     openapi_tags=tags_metadata,
     lifespan=lifespan,
-    # docs_url=None TODO
+    # docs_url="https://github.com/x-fer/algotrade2024-docs" #TODO
 )
 
 app.state.limiter = limiter
