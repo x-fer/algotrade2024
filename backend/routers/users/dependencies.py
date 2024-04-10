@@ -45,7 +45,7 @@ def player_dep(
         raise HTTPException(403, "This player doesn't belong to your team")
     if player.game_id != game.game_id:
         raise HTTPException(400, f"This player is in game {player.game_id}")
-    if player.is_active is False:
+    if not player.is_active:
         raise HTTPException(400, "This player is inactive or already has been deleted")
     return player
 

@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from unittest.mock import patch
 from fastapi.testclient import TestClient
 
-from model import Player, Market, Resource
-from model.order_types import OrderStatus
+from model import Player, Market, Resource, OrderSide, Order, OrderStatus
 from .market import router
 import pytest
 from fixtures.fixtures import *
@@ -26,27 +25,27 @@ app.dependency_overrides[start_end_tick_dep] = mock_start_end_tick_dep
 
 @pytest.fixture(scope="session", autouse=True)
 def mock_transaction():
-    with patch("db.db.database.transaction") as mock_transaction:
-        yield mock_transaction
+    with patch("model.Player.lock") as mock:
+        yield mock
 
 
 def test_market_prices():
     mock_start_end_tick_dep.call_count = 0
     mock_check_game_active_dep.call_count = 0
     override_game_dep.tick = 4
-    with patch("model.Market.list_by_game_id_where_tick") as mock_list:
+    with patch("model.Market.find") as mock_list:
         mock_list.return_value = [
-            Market(game_id=1, tick=1, resource=Resource.coal, low=10, high=20,
+            Market(game_id=1, tick=1, resource=Resource.COAL, low=10, high=20,
                    open=15, close=18, market=15, volume=100),
-            Market(game_id=1, tick=2, resource=Resource.coal, low=10, high=20,
+            Market(game_id=1, tick=2, resource=Resource.COAL, low=10, high=20,
                    open=15, close=18, market=15, volume=100),
-            Market(game_id=1, tick=3, resource=Resource.coal, low=10, high=20,
+            Market(game_id=1, tick=3, resource=Resource.COAL, low=10, high=20,
                    open=15, close=18, market=15, volume=100),
-            Market(game_id=1, tick=1, resource=Resource.oil, low=10, high=20,
+            Market(game_id=1, tick=1, resource=Resource.OIL, low=10, high=20,
                    open=15, close=18, market=15, volume=100),
-            Market(game_id=1, tick=2, resource=Resource.oil, low=10, high=20,
+            Market(game_id=1, tick=2, resource=Resource.OIL, low=10, high=20,
                    open=15, close=18, market=15, volume=100),
-            Market(game_id=1, tick=3, resource=Resource.oil, low=10, high=20,
+            Market(game_id=1, tick=3, resource=Resource.OIL, low=10, high=20,
                    open=15, close=18, market=15, volume=100),
         ]
 
@@ -54,8 +53,8 @@ def test_market_prices():
         assert response.status_code == 200, response.text
         assert mock_check_game_active_dep.call_count == 1
         assert mock_start_end_tick_dep.call_count == 1
-        assert len(response.json()["COAL"]) == 3
-        assert len(response.json()["OIL"]) == 3
+        assert len(response.json()[Resource.COAL.value]) == 3
+        assert len(response.json()[Resource.OIL.value]) == 3
 
 
 def test_energy_set_price_player():
@@ -71,7 +70,6 @@ def test_energy_set_price_player():
         assert mock_check_game_active_dep.call_count == 1
         assert mock_player_dep.call_count == 1
         mock_update.assert_called_once_with(
-            player_id=1,
             energy_price=10
         )
 
@@ -89,36 +87,14 @@ def test_energy_set_price_player():
         assert mock_update.call_count == 0
 
 
-def test_order_list():
-
-    with patch("model.Order.list_orders_by_game_id") as mock_list, \
-            patch("model.Order.list_bot_orders_by_game_id") as mock_bot_list, \
-            patch("model.Order.list_best_orders_by_game_id") as mock_best_list:
-
-        # return all orders
+def test_order_list_all_orders():
+    with patch("model.Order.find") as mock_list:
         mock_list.return_value = [
             Order(game_id=1, order_id=1, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
-            ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.coal),
+            ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.COAL),
             Order(game_id=1, order_id=2, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
-            ), order_side=OrderSide.SELL, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.oil),
+            ), order_side=OrderSide.SELL, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.OIL),
         ]
-
-        # return bot orders (koristimo i za buy i za sell)
-        mock_bot_list.return_value = [
-            Order(game_id=1, order_id=3, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
-            ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.coal),
-            Order(game_id=1, order_id=4, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
-            ), order_side=OrderSide.SELL, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.oil),
-        ]
-
-        # return best orders (koristimo i za buy i za sell)
-        mock_best_list.return_value = [
-            Order(game_id=1, order_id=5, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
-            ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.coal),
-            Order(game_id=1, order_id=6, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
-            ), order_side=OrderSide.SELL, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.oil),
-        ]
-
         mock_check_game_active_dep.call_count = 0
         override_game_dep.tick = 4
 
@@ -127,7 +103,16 @@ def test_order_list():
         assert response.status_code == 200, response.text
         assert mock_check_game_active_dep.call_count == 1
         assert len(sum(response.json().values(), [])) == 2
-        assert "COAL" in response.json()
+        assert Resource.COAL.value in response.json()
+
+def test_order_list_bot_orders():
+    with patch("model.Order.find") as mock_list:
+        mock_list.return_value = [
+            Order(game_id=1, order_id=3, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
+            ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.COAL),
+            Order(game_id=1, order_id=4, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
+            ), order_side=OrderSide.SELL, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.OIL),
+        ]
 
         mock_check_game_active_dep.call_count = 0
         override_game_dep.tick = 4
@@ -137,9 +122,18 @@ def test_order_list():
         assert response.status_code == 200, response.text
         assert mock_check_game_active_dep.call_count == 1
         assert len(sum(response.json().values(), [])) == 2
-        assert "COAL" in response.json()
-        assert len(response.json()["COAL"]) == 1
-        assert len(response.json()["OIL"]) == 1
+        assert Resource.COAL.value in response.json()
+        assert len(response.json()[Resource.COAL.value]) == 1
+        assert len(response.json()[Resource.OIL.value]) == 1
+
+def test_order_list_best_orders():
+    with patch("model.Order.find") as mock_list:
+        mock_list.return_value = [
+            Order(game_id=1, order_id=5, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
+            ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.COAL),
+            Order(game_id=1, order_id=6, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
+            ), order_side=OrderSide.SELL, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.OIL),
+        ]
 
         mock_check_game_active_dep.call_count = 0
         override_game_dep.tick = 4
@@ -149,20 +143,20 @@ def test_order_list():
         assert response.status_code == 200, response.text
         assert mock_check_game_active_dep.call_count == 1
         assert len(sum(response.json().values(), [])) == 4
-        assert "COAL" in response.json()
+        assert Resource.COAL.value in response.json()
 
         # cudno, ali jer ima sell + buy, a mi vratimo isto za oba
-        assert len(response.json()["COAL"]) == 2
-        assert len(response.json()["OIL"]) == 2
+        assert len(response.json()[Resource.COAL.value]) == 2
+        assert len(response.json()[Resource.OIL.value]) == 2
 
 
 def test_order_list_player():
-    with patch("model.Order.list") as mock_list:
+    with patch("model.Order.find") as mock_list:
         mock_list.return_value = [
             Order(game_id=1, order_id=1, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
-            ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.coal),
+            ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.COAL),
             Order(game_id=1, order_id=2, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
-            ), order_side=OrderSide.SELL, order_status=OrderStatus.PENDING, filled_size=0, expiration_tick=100, resource=Resource.oil),
+            ), order_side=OrderSide.SELL, order_status=OrderStatus.PENDING, filled_size=0, expiration_tick=100, resource=Resource.OIL),
         ]
 
         mock_check_game_active_dep.call_count = 0
@@ -177,15 +171,15 @@ def test_order_list_player():
         assert len(sum(response.json().values(), [])
                    ) == 4  # 2 active + 2 pending
 
-        assert "COAL" in response.json()
-        assert len(response.json()["COAL"]) == 2
-        assert len(response.json()["OIL"]) == 2
+        assert Resource.COAL.value in response.json()
+        assert len(response.json()[Resource.COAL.value]) == 2
+        assert len(response.json()[Resource.OIL.value]) == 2
 
 
 def test_order_get_player():
     with patch("model.Order.get") as mock_get:
         mock_get.return_value = Order(game_id=1, order_id=1, player_id=1, price=10, size=10, tick=1, timestamp=datetime.now(
-        ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.coal)
+        ), order_side=OrderSide.BUY, order_status=OrderStatus.ACTIVE, filled_size=0, expiration_tick=100, resource=Resource.COAL)
 
         mock_check_game_active_dep.call_count = 0
         mock_player_dep.call_count = 0
@@ -202,7 +196,7 @@ def test_order_get_player():
 @pytest.mark.asyncio
 async def test_order_create_player():
     response = client.post("/game/1/player/1/orders/create", json={
-        "resource": "COAL",
+        "resource": Resource.COAL.value,
         "price": 10,
         "size": 10,
         "side": "BUY",
@@ -211,7 +205,7 @@ async def test_order_create_player():
     assert response.status_code == 400, response.text
 
     response = client.post("/game/1/player/1/orders/create", json={
-        "resource": "COAL",
+        "resource": Resource.COAL.value,
         "price": 10,
         "size": 10,
         "side": "BUY",
@@ -221,7 +215,7 @@ async def test_order_create_player():
     assert response.status_code == 400, response.text
 
     response = client.post("/game/1/player/1/orders/create", json={
-        "resource": "COAL",
+        "resource": Resource.COAL.value,
         "price": 10,
         "size": 10,
         "side": "BUY",

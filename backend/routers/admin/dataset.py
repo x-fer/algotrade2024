@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.get("/dataset/list")
 @limiter.exempt
-async def dataset_list() -> List[Datasets]:
+def dataset_list() -> List[Datasets]:
     return [
         {**x.dict(),
          "max_ticks":  DatasetData.find(DatasetData.dataset_id == x.dataset_id).count()

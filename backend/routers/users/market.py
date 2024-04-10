@@ -55,12 +55,15 @@ def market_prices(
     """
     start_tick, end_tick = start_end
 
-    all_prices: List[Market] = Market.find(
-        (Market.game_id == game.game_id)
-        & (Market.tick >= start_tick)
-        & (Market.tick <= end_tick)
-        & (Market.resource == resource.value)
-    )
+    query = [
+        Market.game_id == game.game_id,
+        Market.tick >= start_tick,
+        Market.tick <= end_tick,
+    ]
+    if resource is not None:
+        query.append(Market.resource == resource.value)
+
+    all_prices: List[Market] = Market.find(*query)
     all_prices_dict = defaultdict(list)
     for price in all_prices:
         all_prices_dict[price.resource].append(price)

@@ -1,8 +1,8 @@
 #!/bin/bash
 echo "Starting python virtual environment"
-python -m venv .venv
-python -m pip install --upgrade pip
-nohup pip install -r requirements.txt > /dev/null 2>&1 &
+# python -m venv .venv
+# python -m pip install --upgrade pip
+# nohup pip install -r requirements.txt > /dev/null 2>&1 &
 
 echo "TODO Running redis server"
 

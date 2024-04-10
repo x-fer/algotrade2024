@@ -8,7 +8,7 @@ from logger import logger
 from model import Order, OrderSide, Player, Resource, Team
 from model.dataset_data import DatasetData
 
-from . import Bot
+from .bot import Bot
 
 
 resource_wanted_sum = config["bots"]["resource_sum"]

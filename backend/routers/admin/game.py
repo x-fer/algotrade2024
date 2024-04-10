@@ -30,22 +30,11 @@ class CreateGameParams(BaseModel):
 
 @router.post("/game/create")
 @limiter.exempt
-async def game_create(params: CreateGameParams) -> SuccessfulResponse:
+def game_create(params: CreateGameParams) -> SuccessfulResponse:
     Datasets.validate_ticks(params.dataset_id, params.total_ticks)
 
     if params.start_time < datetime.now():
         raise HTTPException(400, "Start time must be in the future")
-
-    # await Game.create(
-    #     game_name=params.game_name,
-    #     is_contest=params.contest,
-    #     dataset_id=params.dataset_id,
-    #     start_time=params.start_time,
-    #     total_ticks=params.total_ticks,
-    #     tick_time=params.tick_time,
-    #     is_finished=False,
-    #     current_tick=0
-    # )
 
     Game(
         game_name=params.game_name,
@@ -63,19 +52,19 @@ async def game_create(params: CreateGameParams) -> SuccessfulResponse:
 
 @router.get("/game/list")
 @limiter.exempt
-async def game_list() -> List[Game]:
+def game_list() -> List[Game]:
     return Game.find().all()
 
 
 @router.get("/game/{game_id}/player/list")
 @limiter.exempt
-async def player_list(game_id: str) -> List[Player]:
+def player_list(game_id: str) -> List[Player]:
     return Player.find(Player.game_id == game_id).all()
 
 
 @router.post("/game/{game_id}/delete")
 @limiter.exempt
-async def game_delete(game_id: str) -> SuccessfulResponse:
+def game_delete(game_id: str) -> SuccessfulResponse:
     # TODO ne baca exception ako je vec zavrsena
     # await Game.update(game_id=game_id, is_finished=True)
     g = Game.find(Game.game_id == game_id).first()
@@ -95,7 +84,7 @@ class NetworthData:
 
 @router.get("/game/{game_id}/networth")
 @limiter.exempt
-async def game_networth(game_id: str) -> List[NetworthData]:
+def game_networth(game_id: str) -> List[NetworthData]:
     # game = await Game.get(game_id=game_id)
     game = Game.find(Game.game_id == game_id).first()
 
@@ -115,7 +104,7 @@ async def game_networth(game_id: str) -> List[NetworthData]:
             "team_name": Team.find(Team.team_id == player.team_id).first().team_name,
             "player_id": player.player_id,
             "player_name": player.player_name,
-            "networth": (await player.get_networth(game)).total
+            "networth": (player.get_networth(game)).total
         })
 
     return team_networths
@@ -123,7 +112,7 @@ async def game_networth(game_id: str) -> List[NetworthData]:
 
 @router.websocket("/game/{game_id}/dashboard/graphs")
 @limiter.exempt
-async def dashboard(websocket: WebSocket, game_id: str):
+async def dashboard_graphs(websocket: WebSocket, game_id: str):
     await websocket.accept()
 
     try:
@@ -171,7 +160,7 @@ async def dashboard(websocket: WebSocket, game_id: str):
 
 @router.websocket("/game/{game_id}/dashboard/players")
 @limiter.exempt
-async def dashboard(websocket: WebSocket, game_id: str):
+async def dashboard_players(websocket: WebSocket, game_id: str):
     await websocket.accept()
 
     try:
@@ -216,7 +205,7 @@ async def dashboard(websocket: WebSocket, game_id: str):
 
 @router.websocket("/game/{game_id}/dashboard/orderbooks")
 @limiter.exempt
-async def dashboard(websocket: WebSocket, game_id: str):
+async def dashboard_orderbooks(websocket: WebSocket, game_id: str):
     await websocket.accept()
 
     try:
