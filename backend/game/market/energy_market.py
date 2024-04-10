@@ -58,7 +58,7 @@ class EnergyMarket:
         self.trades.append(Trade(
             trade_price=energy_price,
             trade_size=energy,
-            total_money=energy * energy_price,
+            total_price=energy * energy_price,
             tick=tick,
             buy_order_id="energy market",
             sell_order_id="energy market",

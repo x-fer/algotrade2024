@@ -109,7 +109,7 @@ def check_trade(traders):
         sell_order = trade.sell_order
 
         if buy_order is None or sell_order is None:
-            assert trade.total_money == 0
+            assert trade.total_price == 0
             assert trade.trade_size == 0
             assert trade.trade_price is None
             return {"can_buy": False, "can_sell": False}
@@ -117,16 +117,16 @@ def check_trade(traders):
         buyer_id = buy_order.player_id
         seller_id = sell_order.player_id
 
-        can_buy = traders[buyer_id].money >= trade.total_money
+        can_buy = traders[buyer_id].money >= trade.total_price
         can_sell = traders[seller_id].resources.coal >= trade.trade_size
 
         if not can_buy or not can_sell:
             return {"can_buy": can_buy, "can_sell": can_sell}
 
-        traders[buyer_id].money -= trade.total_money
+        traders[buyer_id].money -= trade.total_price
         traders[buyer_id].resources.coal += trade.trade_size
 
-        traders[seller_id].money += trade.total_money
+        traders[seller_id].money += trade.total_price
         traders[seller_id].resources.coal -= trade.trade_size
 
         return {"can_buy": True, "can_sell": True}

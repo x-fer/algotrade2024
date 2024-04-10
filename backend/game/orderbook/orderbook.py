@@ -156,11 +156,11 @@ class OrderBook():
     def _match_one(self, buy_order: Order, sell_order: Order, tick: int):
         trade_price = self._get_trade_price(buy_order, sell_order)
         trade_size = self._get_trade_size(buy_order, sell_order)
-        total_money = trade_price * trade_size
+        total_price = trade_price * trade_size
 
         trade = Trade(
             tick=tick,
-            total_money=total_money,
+            total_price=total_price,
             trade_size=trade_size,
             trade_price=trade_price)
         trade.buy_order = buy_order
@@ -178,8 +178,8 @@ class OrderBook():
             buy_order.filled_size += trade_size
             sell_order.filled_size += trade_size
 
-            buy_order.filled_money += total_money
-            sell_order.filled_money += total_money
+            buy_order.filled_money += total_price
+            sell_order.filled_money += total_price
 
             buy_order.filled_price = buy_order.filled_money / buy_order.filled_size
             sell_order.filled_price = sell_order.filled_money / sell_order.filled_size

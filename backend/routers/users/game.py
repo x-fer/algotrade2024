@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from datetime import datetime, timedelta
+from operator import attrgetter
 from typing import Dict, List
 
 from fastapi import APIRouter, Depends
@@ -7,7 +8,9 @@ from pydantic import BaseModel, Field
 
 from model import Game
 from model.dataset_data import DatasetData
+from model.power_plant_model import PowerPlantsApiModel, ResourcesApiModel
 from routers.users.dependencies import game_dep, start_end_tick_dep
+
 
 router = APIRouter()
 
@@ -39,7 +42,9 @@ def server_time() -> datetime:
     response_description="List of games",
 )
 def game_list() -> List[GameData]:
-    return Game.find().all()
+    games = Game.find().all()
+    games.sort(key=attrgetter("start_time"))
+    return games
 
 
 class GameTimeData(GameData):
@@ -58,8 +63,16 @@ def get_game(game: Game = Depends(game_dep)) -> GameTimeData:
         milliseconds=game.current_tick * game.tick_time
     )
     return GameTimeData(
-        **asdict(game), current_time=datetime.now(), next_tick_time=next_tick_time
-    )
+        game_id = game.game_id,
+        game_name = game.game_name,
+        is_contest = game.is_contest,
+        start_time = game.start_time,
+        total_ticks = game.total_ticks,
+        tick_time = game.tick_time,
+        current_tick = game.current_tick,
+        is_finished = game.is_finished,
+        current_time=datetime.now(),
+        next_tick_time=next_tick_time)
 
 
 class DatasetListResponseItem(BaseModel):
@@ -68,15 +81,9 @@ class DatasetListResponseItem(BaseModel):
         ...,
         description="Time when this measurment took place in the real world. Year is not accurate",
     )
-    coal: int
-    uranium: int
-    biomass: int
-    gas: int
-    oil: int
-    geothermal: int
-    wind: int
-    solar: int
-    hydro: int
+    resource_prices: ResourcesApiModel
+    power_plants_output: PowerPlantsApiModel
+
     energy_demand: int = Field(
         ..., description="Volume of energy that was demanded in the tick"
     )

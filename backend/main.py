@@ -13,10 +13,7 @@ import psutil
 import os
 from logger import logger
 from docs import tags_metadata, short_description
-from redis_om import Migrator
-
-
-Migrator().run()
+from fastapi.middleware.cors import CORSMiddleware
 
 
 tick_event = asyncio.Event()
@@ -55,6 +52,15 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins="Access-Control-Allow-Origin",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 
 @app.exception_handler(Exception)

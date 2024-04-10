@@ -5,7 +5,7 @@ from model import Player, Team
 from config import config
 from model.game import Game
 from model.player import Networth
-from model.power_plant_model import PowerPlantsModel, ResourcesModel
+from model.power_plant_model import PowerPlantsApiModel, ResourcesApiModel
 from .dependencies import game_dep, player_dep, check_game_active_dep, team_dep
 from routers.model import SuccessfulResponse
 
@@ -22,10 +22,10 @@ class PlayerData(BaseModel):
     money: int
     energy: int
 
-    resources: ResourcesModel
+    resources: ResourcesApiModel
 
-    power_plants_owned: PowerPlantsModel
-    power_plants_powered: PowerPlantsModel
+    power_plants_owned: PowerPlantsApiModel
+    power_plants_powered: PowerPlantsApiModel
 
 
 @router.get(

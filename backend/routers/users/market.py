@@ -17,6 +17,7 @@ from model.player import Player
 from model.resource import Energy, ResourceOrEnergy
 from model.trade import Trade
 from routers.model import SuccessfulResponse
+from logger import logger
 
 from .dependencies import (
     check_game_active_dep,
@@ -63,7 +64,7 @@ def market_prices(
     if resource is not None:
         query.append(Market.resource == resource.value)
 
-    all_prices: List[Market] = Market.find(*query)
+    all_prices: List[Market] = Market.find(*query).all()
     all_prices_dict = defaultdict(list)
     for price in all_prices:
         all_prices_dict[price.resource].append(price)
@@ -362,11 +363,11 @@ class UserTrade(BaseModel):
     sell_order_id: str = Field(..., description="order_id of seller side in this trade")
     tick: int = Field(..., description="Tick when this trade took place")
 
-    filled_money: int = Field(
+    total_price: int = Field(
         ..., description="Total value of the trade = filled_size * filled_price"
     )
-    filled_size: int = Field(..., description="Ammount of resources that was traded")
-    filled_price: int = Field(
+    trade_size: int = Field(..., description="Ammount of resources that was traded")
+    trade_price: int = Field(
         ..., description="Price at which the unit of resource was traded"
     )
 
@@ -386,16 +387,15 @@ def get_trades_player(
     """
     start_tick, end_tick = start_end
 
-    condition = (
-        (Trade.tick <= end_tick)
-        & (Trade.tick >= end_tick)
-        & (Trade.resource == resource.value)
-    )
+    conditions = [Trade.tick <= end_tick, Trade.tick >= start_tick]
+    if resource is not None:
+        conditions.append(Trade.resource == resource.value)
 
-    buy_trades = Trade.find((Trade.buy_order_id == player.player_id) & condition).all()
+    buy_trades = Trade.find(Trade.buy_order_id == player.player_id, *conditions).all()
     sell_trades = Trade.find(
-        (Trade.sell_order_id == player.player_id) & condition
+        Trade.sell_order_id == player.player_id, *conditions
     ).all()
+    logger.info(f"{player.player_name} {len(buy_trades)}, {len(sell_trades)}")
     return {
         OrderSide.BUY: buy_trades,
         OrderSide.SELL: sell_trades,
