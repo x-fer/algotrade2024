@@ -1,6 +1,7 @@
+from typing import Dict, List
 from unittest.mock import Mock
 from .orderbook import OrderBook
-from model import OrderSide, OrderStatus, Trade
+from model import OrderSide, OrderStatus, Trade, Player
 from fixtures.orderbook_fixtures import *
 
 
@@ -43,7 +44,8 @@ class TestCancelTrade():
 
 class TestCheckTrade():
     def test_when_both_true(self, get_order):
-        check_trade = lambda *kwargs: {'can_buy': True, 'can_sell': True}
+        def check_trade(*args, **kwargs):
+            return {'can_buy': True, 'can_sell': True}
 
         orderbook = OrderBook()
         orderbook.register_callback('check_trade', check_trade)
@@ -66,11 +68,13 @@ class TestCheckTrade():
         assert trade.buy_order.order_status == OrderStatus.COMPLETED
         assert trade.sell_order.order_status == OrderStatus.COMPLETED
         assert trade.total_money == price * size
-        assert trade.filled_size == size
+        assert trade.trade_price == price
+        assert trade.trade_size == size
         assert trade.tick == 1
 
     def test_when_both_false(self, get_order):
-        check_trade = lambda *kwargs: {'can_buy': False, 'can_sell': False}
+        def check_trade(*args, **kwargs):
+            return {'can_buy': False, 'can_sell': False}
 
         orderbook = OrderBook()
         orderbook.register_callback('check_trade', check_trade)
@@ -94,8 +98,9 @@ class TestCheckTrade():
         assert sell_order.filled_money == 0
         assert sell_order.filled_size == 0
 
-    def test_when_one_false(self, get_order):
-        check_trade = lambda *kwargs: {'can_buy': True, 'can_sell': False}
+    def test_when_one_false(self, get_order):        
+        def check_trade(*args, **kwargs):
+            return {'can_buy': True, 'can_sell': False}
 
         orderbook = OrderBook()
         orderbook.register_callback('check_trade', check_trade)
@@ -132,11 +137,13 @@ class TestCheckTrade():
         assert len(orderbook.match_trades) == 1
 
 
-def test_zero_sum(traders, on_add_true, check_trade, get_random_order):
+def test_zero_sum(traders, traders_list, on_add_true, check_trade, get_random_order):
     on_add = on_add_true
 
-    money_sum = sum([x['money'] for x in traders])
-    stocks_sum = sum([x['stocks'] for x in traders])
+    traders: Dict[str, Player]
+
+    money_sum = sum([x.money for x in traders_list])
+    stocks_sum = sum([x.resources.coal for x in traders_list])
 
     orderbook = OrderBook()
     orderbook.register_callback('check_add', on_add)
@@ -149,8 +156,8 @@ def test_zero_sum(traders, on_add_true, check_trade, get_random_order):
         orderbook.match(order.tick)
     orderbook.cancel_all()
 
-    money_sum_after = sum([x['money'] for x in traders])
-    stocks_sum_after = sum([x['stocks'] for x in traders])
+    money_sum_after = sum([x.money for x in traders_list])
+    stocks_sum_after = sum([x.resources.coal for x in traders_list])
 
     assert money_sum == money_sum_after
     assert stocks_sum == stocks_sum_after
@@ -192,7 +199,8 @@ def test_size_less_than_zero(get_order):
 
 
 def test_rejected(get_order):
-    on_add = lambda *kwargs: False
+    def on_add(*args, **kwargs):
+        return False
     orderbook = OrderBook()
     orderbook.register_callback('check_add', on_add)
     order = get_order(player_id=1, price=5, size=50,
@@ -235,7 +243,7 @@ def test_prev_price(get_order):
     second_order = get_order(player_id=2, price=5, size=50,
                              order_side=OrderSide.SELL, tick=1)
 
-    trades = []
+    trades: List[Trade] = []
     orderbook.register_callback('on_trade', lambda trade: trades.append(trade))
     orderbook.prev_price = 10
 
@@ -245,7 +253,7 @@ def test_prev_price(get_order):
     orderbook.match(tick=1)
 
     assert len(trades) == 1
-    assert trades[0].filled_price == 10
+    assert trades[0].total_money == 5 * 50
 
 
 def test_invalid_callback_type():

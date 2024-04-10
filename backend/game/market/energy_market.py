@@ -56,8 +56,6 @@ class EnergyMarket:
     def create_trade(self, player: Player, tick, energy: int, energy_price: int):
         player.money += energy * player.energy_price
         self.trades.append(Trade(
-            buy_order=None,
-            sell_order=None,
             trade_price=energy_price,
             trade_size=energy,
             total_money=energy * energy_price,
