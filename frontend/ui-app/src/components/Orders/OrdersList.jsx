@@ -1,10 +1,10 @@
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { Context } from "../Context";
+import { DataContext } from "./DataProvider";
 import instance from "../api/apiInstance";
 
 const OrdersListItem = ({ order }) => {
-  const { teamSecret, gameId, playerId } = useContext(Context);
+  const { teamSecret, gameId, playerId } = useContext(DataContext);
 
   const handleCancel = (order_id) => {
     instance

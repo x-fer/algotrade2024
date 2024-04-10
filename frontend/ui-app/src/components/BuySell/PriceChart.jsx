@@ -39,7 +39,7 @@ const RenderLineChart = () => (
 
 const PriceChart = () => {
   return (
-    <div className="w-full h-full rounded-3xl bg-black p-8">
+    <div className="w-[50vw] h-[50vh] rounded-3xl bg-black p-8">
       <RenderLineChart />
     </div>
   );

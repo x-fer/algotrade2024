@@ -1,6 +1,5 @@
 import React, { useContext } from "react";
-import { Context } from "../Context";
-
+import { DataContext } from "./DataProvider";
 const Settings = () => {
   const {
     gameId,
@@ -9,7 +8,7 @@ const Settings = () => {
     setPlayerId,
     teamSecret,
     setTeamSecret,
-  } = useContext(Context);
+  } = useContext(DataContext);
 
   return (
     <div className="flex flex-col mt-2 p-4 rounded-3xl bg-primary text-white">

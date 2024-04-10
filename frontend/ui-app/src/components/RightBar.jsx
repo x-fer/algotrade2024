@@ -1,6 +1,6 @@
 import React from "react";
 import PriceChart from "./PriceChart";
-import Order from "./Order";
+import Order from "./BuySell/Order";
 import OrdersList from "./OrdersList";
 import Settings from "./Settings";
 const RightBar = () => {

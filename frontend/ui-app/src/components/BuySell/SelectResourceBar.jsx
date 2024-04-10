@@ -1,9 +1,9 @@
 import { useState } from "react";
-import Uranium from "../assets/uranium.png";
-import Oil from "../assets/oil.png";
-import Gas from "../assets/gas.png";
-import Coal from "../assets/coal.png";
-import Biomass from "../assets/corn.png";
+import Uranium from "../../assets/uranium.png";
+import Oil from "../../assets/oil.png";
+import Gas from "../../assets/gas.png";
+import Coal from "../../assets/coal.png";
+import Biomass from "../../assets/corn.png";
 
 const Resources = [
   { name: "Biomass", image: Biomass, type: "BIOMASS" },

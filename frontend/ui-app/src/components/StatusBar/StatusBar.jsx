@@ -1,10 +1,10 @@
 import { useContext, useEffect, useState } from "react";
 import StatusBarItem from "./StatusBarItem";
-import instance from "../api/apiInstance";
-import { Context } from "../Context";
+import instance from "../../api/apiInstance";
+import { DataContext } from "../DataProvider";
 
 const StatusBar = () => {
-  const { gameId, playerId, teamSecret } = useContext(Context);
+  const { gameId, playerId, teamSecret } = useContext(DataContext);
   const [status, setStatus] = useState({});
 
   useEffect(() => {
@@ -17,10 +17,8 @@ const StatusBar = () => {
       });
   });
 
-  // TODO add settings if gameId, playerId, teamSecret are not set
-
   return (
-    <div className="flex justify-around p-4 rounded-3xl bg-primary text-white gap-4">
+    <div className="flex justify-around p-4 rounded-3xl bg-primary text-white gap-6">
       <StatusBarItem ammount={10230} unit="€" />
       <StatusBarItem ammount={230} unit="biomass" />
       <StatusBarItem ammount={870} unit="coal" />
