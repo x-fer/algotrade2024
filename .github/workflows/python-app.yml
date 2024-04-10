@@ -33,7 +33,6 @@ jobs:
       uses: supercharge/redis-github-action@1.4.0
       with:
         redis-version: ${{ matrix.redis-version }}
-        redis-container-name: redis/redis-stack-server:latest
         redis-port: 6379
     - name: Lint with flake8
       run: |
