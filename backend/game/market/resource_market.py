@@ -80,8 +80,7 @@ class ResourceMarket:
         elif seller.is_bot:
             can_sell = True
         else:
-            can_sell = seller[self.resource.name] >= trade.trade_size
-
+            can_sell = seller.resources[self.resource] >= trade.trade_size
         return {"can_buy": can_buy, "can_sell": can_sell}
 
     def _on_trade(self, trade: Trade):
@@ -96,7 +95,6 @@ class ResourceMarket:
             logger.warning(f"Trading between two bots {buyer.player_name} {buyer_id}({buyer.game_id}) and {seller.player_name} {seller_id}({seller.game_id}) in game ({self.game_id}). This is probably due to invalid reseting of the game.")
             if buyer_id != seller_id:
                 logger.critical(f"Trading between two different bots {buyer.player_name} {buyer_id}({buyer.game_id}) and {seller.player_name} {seller_id}({seller.game_id}) in game ({self.game_id}). This is probably due to invalid reseting of the game.")
-            
 
         if not buyer.is_bot:
             buyer.money -= trade.total_money
