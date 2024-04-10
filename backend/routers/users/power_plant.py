@@ -147,4 +147,5 @@ def turn_on(
         if plant_count < plant.number:
             raise HTTPException(status_code=400, detail="Not enough power plants")
         player.power_plants_powered = plant.number
+        player.save()
     return SuccessfulResponse()

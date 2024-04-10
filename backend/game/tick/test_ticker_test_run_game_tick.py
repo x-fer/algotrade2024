@@ -1,12 +1,12 @@
 import pytest
+from game.bots.resource_bot import ResourceBot
 from model import Game
 from game.tick import Ticker
 from unittest.mock import patch
 from game.tick.tick_fixtures import *
 
 
-@pytest.mark.asyncio
-async def test_run_game_tick(
+def test_run_game_tick(
     sample_game, sample_game_data, tick_data,
 ):
     with patch.object(Ticker, 'get_tick_data', return_value=tick_data), \
@@ -16,22 +16,25 @@ async def test_run_game_tick(
             patch.object(Ticker, 'save_electricity_orders'), \
             patch.object(Ticker, 'save_tick_data'), \
             patch.object(Ticker, 'save_market_data'), \
+            patch.object(Ticker, '_log_networth'), \
+            patch.object(Game, 'get', return_value=sample_game), \
             patch.object(Game, 'update'), \
-            patch.object(Ticker, 'run_bots'):
+            patch.object(Game, 'save'), \
+            patch.object(ResourceBot, 'run'):
 
         ticker = Ticker()
         ticker.game_data[sample_game.game_id] = sample_game_data
         old_tick = sample_game.current_tick
 
-        await ticker.run_game_tick(sample_game)
+        ticker.run_game_tick(sample_game)
 
         assert sample_game.current_tick == old_tick + 1
-        Ticker.get_tick_data.assert_called_once_with(sample_game)
+        Ticker.get_tick_data.assert_called_once_with(sample_game, {})
         Ticker.run_markets.assert_called_once()
         Ticker.run_power_plants.assert_called_once()
         Ticker.run_electricity_market.assert_called_once()
         Ticker.save_electricity_orders.assert_called_once()
         Ticker.save_tick_data.assert_called_once()
-        Game.update.assert_called_once_with(
-            game_id=sample_game.game_id, current_tick=sample_game.current_tick)
-        Ticker.run_bots.assert_called_once_with(tick_data)
+        Game.update.assert_called_once_with(is_finished=False)
+        Game.save.assert_called_once()
+        ResourceBot.run.assert_called_once()

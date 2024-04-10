@@ -159,12 +159,12 @@ class OrderBook():
         total_money = trade_price * trade_size
 
         trade = Trade(
-            buy_order=buy_order,
-            sell_order=sell_order,
             tick=tick,
             total_money=total_money,
             trade_size=trade_size,
             trade_price=trade_price)
+        trade.buy_order = buy_order
+        trade.sell_order = sell_order
 
         status = self._invoke_callbacks('check_trade', trade)
 

@@ -108,7 +108,7 @@ def player_delete(
         raise HTTPException(400, "Players cannot be deleted in contest mode")
     with Player.lock():
         player = Player.get(player.pk)
-        if player.is_active:
+        if not player.is_active:
             raise HTTPException(400, "Cannot delete already deleted player")
         player.update(is_active=False)
     return SuccessfulResponse()

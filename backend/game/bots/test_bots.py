@@ -5,7 +5,7 @@ from game.bots.resource_bot import BuySellVolume, ResourceBot
 from .bot import Bot
 from .bots import Bots
 import pytest
-from model import Resource, OrderSide
+from model import Resource, OrderSide, Player, Order
 
 from fixtures.fixtures import *
 from .resource_bot import BuySellPrice, resource_wanted_sum, min_volume, max_volume, default_volume, min_price, max_price
@@ -92,11 +92,11 @@ class TestResourceBot:
 
     def test_get_resources_sum(self, get_player, get_tick_data):
         bot = ResourceBot()
-        p1 = get_player()
-        p2 = get_player()
+        p1: Player = get_player()
+        p2: Player = get_player()
         for resource in Resource:
-            p1[resource] = 5
-            p2[resource] = 10
+            p1.resources[resource] = 5
+            p2.resources[resource] = 10
         players = get_player_dict([p1, p2])
         tick_data = get_tick_data(players=players)
 
@@ -201,7 +201,7 @@ def get_order(order_side, filled_size, size):
         filled_size=filled_size, size=size, tick=0,
         timestamp=datetime.now(),
         order_side=order_side,
-        resource=Resource.COAL
+        resource=Resource.COAL.value
     )
 
 

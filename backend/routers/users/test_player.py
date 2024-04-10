@@ -1,14 +1,15 @@
 from fastapi import FastAPI
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from model import Player
+from model.player import Networth
 from .player import router
 import pytest
 from fixtures.fixtures import *
 from routers.users.dependencies import game_dep, team_dep, check_game_active_dep, player_dep
 
-from routers.users.fixtures import mock_check_game_active_dep, override_game_dep, override_team_dep, mock_player_dep
+from routers.users.fixtures import mock_check_game_active_dep, override_game_dep, override_team_dep, mock_player_dep, set_mock_find
 
 app = FastAPI()
 client = TestClient(app)
@@ -29,112 +30,108 @@ def mock_transaction():
 
 def test_player_list():
     # mora vratiti samo is_active=True
-    with patch("routers.users.player.Player.list") as mock_list:
-        mock_list.return_value = [
-            Player(player_id=1, game_id=1, team_id=1,
+    with patch("routers.users.player.Player.find") as mock_list:
+        set_mock_find(mock_list, 'all', [
+            Player(pk="1", game_id="1", team_id="1",
                    player_name="player_1", money=100),
-        ]
+        ])
 
-        response = client.get(f"/game/1/player/list?team_secret=secret")
+        response = client.get("/game/1/player/list?team_secret=secret")
 
     assert response.status_code == 200
     assert len(response.json()) == 1
-    assert response.json()[0]["player_id"] == 1
+    assert response.json()[0]["player_id"] == "1"
 
 
 def test_player_create_first():
-    with patch("routers.users.player.Player.create") as mock_create, \
-            patch("routers.users.player.Player.count") as mock_count:
-        mock_create.return_value = 1
-        mock_count.return_value = 0
+    with patch("routers.users.player.Player.find") as mock_count:
+        set_mock_find(mock_count, 'count', 0)
 
-        response = client.post(f"/game/1/player/create?team_secret=secret")
+        response = client.post("/game/1/player/create?team_secret=secret")
 
     assert response.status_code == 200
-    assert response.json()["player_id"] == 1
+    assert "player_id" in response.json()
 
 
 def test_player_create_second():
-    with patch("routers.users.player.Player.create") as mock_create, \
-            patch("routers.users.player.Player.count") as mock_count:
-        mock_create.return_value = 1
-        mock_count.return_value = 1
+    with patch("routers.users.player.Player.find") as mock_count:
+        set_mock_find(mock_count, 'count', 1)
 
-        response = client.post(f"/game/1/player/create?team_secret=secret")
+        response = client.post("/game/1/player/create?team_secret=secret")
 
     assert response.status_code == 400
     assert response.json() == {
         "detail": "Only one player per team can be created in contest mode"}
 
 
-def test_player_create_possible_bodies():
-    # player_create: PlayerCreate | None | dict = None
-    with patch("routers.users.player.Player.create") as mock_create, \
-            patch("routers.users.player.Player.count") as mock_count:
-        mock_create.return_value = 1
-        mock_count.return_value = 0
+def test_player_create_no_body():
+    with patch("routers.users.player.Player.find") as mock_count:
+        set_mock_find(mock_count, 'count', 0)
 
-        # no body
-        response = client.post(f"/game/1/player/create?team_secret=secret")
+        response = client.post("/game/1/player/create?team_secret=secret")
 
         assert response.status_code == 200
-        assert mock_create.call_args.kwargs["player_name"] == "team_1_0"
+        assert response.json()["player_name"] == "team_1_0"
 
-        # empty dict
+def test_player_create_no_name():
+    with patch("routers.users.player.Player.find") as mock_count:
+        set_mock_find(mock_count, 'count', 0)
+        response = client.post("/game/1/player/create?team_secret=secret", json={})
+
+        assert response.status_code == 200
+        assert response.json()["player_name"] == "team_1_0"
+
+def test_player_create_player_name():
+    with patch("routers.users.player.Player.find") as mock_count:
+        set_mock_find(mock_count, 'count', 0)
         response = client.post(
-            f"/game/1/player/create?team_secret=secret", json={})
+            "/game/1/player/create?team_secret=secret", json={"player_name": "player_1"})
 
         assert response.status_code == 200
-        assert mock_create.call_args.kwargs["player_name"] == "team_1_0"
-
-        # player_name in body
-        response = client.post(
-            f"/game/1/player/create?team_secret=secret", json={"player_name": "player_1"})
-
-        assert response.status_code == 200
-        assert mock_create.call_args.kwargs["player_name"] == "player_1"
+        assert response.json()["player_name"] == "player_1"
 
 
 def test_player_get():
-
     # oponasamo pravi depencency, ali brojimo koliko puta je pozvan
     mock_check_game_active_dep.call_count = 0
 
     with patch("routers.users.player.Player.get") as mock_get:
+        mock_get.return_value = Player(
+            pk="1", game_id="1", team_id="1",
+            player_name="player_1", money=100)
 
-        mock_get.return_value = Player(player_id=1, game_id=1, team_id=1,
-                                       player_name="player_1", money=100)
+        response = client.get("/game/1/player/1?team_secret=secret")
 
-        response = client.get(f"/game/1/player/1?team_secret=secret")
-
-    assert mock_check_game_active_dep.call_count == 1
+    # Za dohvatiti igraca, vise nemamo dependency da je igra upaljena
+    assert mock_check_game_active_dep.call_count == 0
 
     assert response.status_code == 200
-    assert response.json()["player_id"] == 1
+    assert response.json()["player_id"] == "1"
     assert response.json()["player_name"] == "player_1"
     assert response.json()["money"] == 100
 
 
-def test_player_delete():
-    # non contest mode
-
+def test_player_delete_non_contest_mode():
     mock_player_dep.call_count = 0
-    override_game_dep.contest = False
+    override_game_dep.contest = int(False)
 
-    with patch("routers.users.player.Player.update") as mock_update:
-        response = client.get(f"/game/1/player/1/delete?team_secret=secret")
-        assert mock_update.call_count == 1
+    with patch("model.Player.update") as mock_update, \
+        patch("model.Player.get") as mock_get, patch("model.Player.lock"):
+        # Player se dohvaca dvaput jer je jednom u transactionu
+        mock_get.return_value = Player(pk="1", game_id="1", team_id="1", player_name="player_1", money=100)
+        response = client.get("/game/1/player/1/delete?team_secret=secret")
 
+    assert response.status_code == 200, response.json()
     assert mock_player_dep.call_count == 1
     assert response.status_code == 200
+    assert mock_update.call_count == 1
 
-    # contest mode
-
+def test_player_delete_contest_mode():
     mock_player_dep.call_count = 0
-    override_game_dep.contest = True
+    override_game_dep.contest = int(True)
 
     with patch("routers.users.player.Player.update") as mock_update:
-        response = client.get(f"/game/1/player/1/delete?team_secret=secret")
+        response = client.get("/game/1/player/1/delete?team_secret=secret")
         assert mock_update.call_count == 0
 
     assert mock_player_dep.call_count == 1
@@ -144,18 +141,18 @@ def test_player_delete():
 
 
 def test_player_net_worth():
-    sample_return = {
-        "plants_owned": {"coal": {"owned": 1, "value_if_sold": 100}},
-        "money": 100,
-        "resources": {"coal": {"coal": 100}},
-        "total": 200
-    }
+    sample_return = Networth()
 
     with patch("routers.users.player.Player.get_networth") as mock_get_networth:
         mock_get_networth.return_value = sample_return
-        response = client.get(f"/game/1/player/1/networth?team_secret=secret")
+        response = client.get("/game/1/player/1/networth?team_secret=secret")
 
         assert mock_get_networth.call_count == 1
 
     assert response.status_code == 200
-    assert response.json() == sample_return
+    assert response.json()["total"] == 0
+    assert response.json()["money"] == 0
+    assert "resources" in response.json()
+    assert "resources_value" in response.json()
+    assert "power_plants_owned" in response.json()
+    assert "power_plants_value" in response.json()

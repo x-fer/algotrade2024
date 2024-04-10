@@ -1,7 +1,7 @@
 from copy import deepcopy
 import pytest
 from fixtures.fixtures import *
-from model.order_types import OrderSide, OrderStatus
+from model import OrderSide, OrderStatus, ResourcesModel
 
 
 def test_run_markets_no_match(get_tick_data, get_order, ticker, get_player, coal_market, get_markets):
@@ -13,8 +13,8 @@ def test_run_markets_no_match(get_tick_data, get_order, ticker, get_player, coal
     fresh_order1 = deepcopy(order1)
     fresh_order2 = deepcopy(order2)
 
-    player1 = get_player(money=100, coal=0)
-    player2 = get_player(money=0, coal=100)
+    player1 = get_player(money=100, resources=ResourcesModel(coal=0))
+    player2 = get_player(money=0, resources=ResourcesModel(coal=100))
 
     player_dict = get_player_dict([player1, player2])
 
@@ -38,13 +38,13 @@ def test_run_markets_no_match(get_tick_data, get_order, ticker, get_player, coal
 
 
 def test_run_markets_match(get_tick_data, get_order, ticker, get_player, coal_market, get_markets):
-    order1 = get_order(player_id=1, price=5, size=50,
+    order1 = get_order(player_id="1", price=5, size=50,
                        order_side=OrderSide.BUY, tick=1)
-    order2 = get_order(player_id=2, price=5, size=25,
+    order2 = get_order(player_id="2", price=5, size=25,
                        order_side=OrderSide.SELL, tick=1)
 
-    player1 = get_player(money=1000, coal=0)
-    player2 = get_player(money=0, coal=100)
+    player1 = get_player(money=1000, resources=ResourcesModel(coal=0))
+    player2 = get_player(money=0, resources=ResourcesModel(coal=100))
 
     player_dict = get_player_dict([player1, player2])
 
@@ -81,8 +81,8 @@ def test_run_markets_match_insufficient_funds(get_tick_data, get_order, ticker, 
     order2 = get_order(player_id=2, price=5, size=25,
                        order_side=OrderSide.SELL, tick=1)
 
-    player1 = get_player(money=124, coal=0)  # needs 125
-    player2 = get_player(money=0, coal=100)
+    player1 = get_player(money=124, resources=ResourcesModel(coal=0))  # needs 125
+    player2 = get_player(money=0, resources=ResourcesModel(coal=100))
 
     player_dict = get_player_dict([player1, player2])
 
@@ -119,8 +119,8 @@ def test_run_markets_match_insufficient_resources(get_tick_data, get_order, tick
     order2 = get_order(player_id=2, price=5, size=25,
                        order_side=OrderSide.SELL, tick=1)
 
-    player1 = get_player(money=1000, coal=0)
-    player2 = get_player(money=0, coal=24)  # needs 25
+    player1 = get_player(money=1000, resources=ResourcesModel(coal=0))
+    player2 = get_player(money=0, resources=ResourcesModel(coal=24))  # needs 25
 
     player_dict = get_player_dict([player1, player2])
 
@@ -159,8 +159,8 @@ def test_run_markets_cancel(get_tick_data, get_order, ticker, get_player, coal_m
     order2 = get_order(player_id=2, price=5, size=25,
                        order_side=OrderSide.SELL, tick=1)
 
-    player1 = get_player(money=1000, coal=0)
-    player2 = get_player(money=0, coal=100)
+    player1 = get_player(money=1000, resources=ResourcesModel(coal=100))
+    player2 = get_player(money=0, resources=ResourcesModel(coal=1000))
 
     player_dict = get_player_dict([player1, player2])
 

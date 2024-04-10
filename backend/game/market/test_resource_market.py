@@ -1,11 +1,11 @@
-from model import Order, Player, OrderSide, OrderStatus
+from model import Order, Player, OrderSide, OrderStatus, ResourcesModel
 from fixtures.fixtures import get_player_dict
 from fixtures.fixtures import *
 
 
 def test_when_transaction_successful(get_player, get_order, coal_market):
-    player_1: Player = get_player(money=100, coal=0)
-    player_2: Player = get_player(money=0, coal=100)
+    player_1: Player = get_player(money=100, resources=ResourcesModel(coal=0))
+    player_2: Player = get_player(money=0, resources=ResourcesModel(coal=100))
     order_1: Order = get_order(
         player_id=player_1.player_id, price=1, size=100, order_side=OrderSide.BUY, tick=1)
     order_2: Order = get_order(
@@ -23,9 +23,9 @@ def test_when_transaction_successful(get_player, get_order, coal_market):
     assert updated[order_3.order_id].order_status == OrderStatus.ACTIVE
 
     assert player_1.money == 0
-    assert player_1.coal == 100
+    assert player_1.resources.coal == 100
     assert player_2.money == 100
-    assert player_2.coal == 0
+    assert player_2.resources.coal == 0
 
     assert updated[order_1.order_id].filled_size == 100
     assert updated[order_1.order_id].filled_money == 100
@@ -33,8 +33,8 @@ def test_when_transaction_successful(get_player, get_order, coal_market):
 
 
 def test_cancel_before_match(get_player, get_order, coal_market):
-    player_1: Player = get_player(money=100, coal=0)
-    player_2: Player = get_player(money=0, coal=100)
+    player_1: Player = get_player(money=100, resources=ResourcesModel(coal=0))
+    player_2: Player = get_player(money=0, resources=ResourcesModel(coal=100))
     order_1: Order = get_order(
         player_id=player_1.player_id, price=1, size=100, order_side=OrderSide.BUY, tick=1)
     order_2: Order = get_order(
@@ -55,9 +55,9 @@ def test_cancel_before_match(get_player, get_order, coal_market):
     assert updated[order_3.order_id].order_status == OrderStatus.ACTIVE
 
     assert player_1.money == 100
-    assert player_1.coal == 0
+    assert player_1.resources.coal == 0
     assert player_2.money == 0
-    assert player_2.coal == 100
+    assert player_2.resources.coal == 100
 
     assert updated[order_1.order_id].filled_size == 0
     assert updated[order_1.order_id].filled_money == 0
@@ -65,8 +65,8 @@ def test_cancel_before_match(get_player, get_order, coal_market):
 
 
 def test_user_low_balance(get_player, get_order, coal_market):
-    player_1: Player = get_player(money=0, coal=0)
-    player_2: Player = get_player(money=0, coal=100)
+    player_1: Player = get_player(money=0, resources=ResourcesModel(coal=0))
+    player_2: Player = get_player(money=0, resources=ResourcesModel(coal=100))
     order_1: Order = get_order(
         player_id=player_1.player_id, price=1, size=100, order_side=OrderSide.BUY, tick=1)
     order_2: Order = get_order(
@@ -84,9 +84,9 @@ def test_user_low_balance(get_player, get_order, coal_market):
     assert updated[order_3.order_id].order_status == OrderStatus.ACTIVE
 
     assert player_1.money == 0
-    assert player_1.coal == 0
+    assert player_1.resources.coal == 0
     assert player_2.money == 0
-    assert player_2.coal == 100
+    assert player_2.resources.coal == 100
 
     assert updated[order_1.order_id].filled_size == 0
     assert updated[order_1.order_id].filled_money == 0
@@ -94,8 +94,8 @@ def test_user_low_balance(get_player, get_order, coal_market):
 
 
 def test_user_low_resources(get_player, get_order, coal_market):
-    player_1: Player = get_player(money=100, coal=0)
-    player_2: Player = get_player(money=0, coal=0)
+    player_1: Player = get_player(money=100, resources=ResourcesModel(coal=0))
+    player_2: Player = get_player(money=0, resources=ResourcesModel(coal=0))
     order_1: Order = get_order(
         player_id=player_1.player_id, price=1, size=100, order_side=OrderSide.BUY, tick=1)
     order_2: Order = get_order(
@@ -113,9 +113,9 @@ def test_user_low_resources(get_player, get_order, coal_market):
     assert updated[order_3.order_id].order_status == OrderStatus.ACTIVE
 
     assert player_1.money == 100
-    assert player_1.coal == 0
+    assert player_1.resources.coal == 0
     assert player_2.money == 0
-    assert player_2.coal == 0
+    assert player_2.resources.coal == 0
 
     assert updated[order_1.order_id].filled_size == 0
     assert updated[order_1.order_id].filled_money == 0

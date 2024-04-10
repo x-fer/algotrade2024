@@ -32,9 +32,6 @@ class PowerPlantType(str, Enum):
 
         return sell_plant_price
 
-    def get_produced_energy(self, dataset_row: dict):
-        return dataset_row[self._get_config_name()]
-
     def is_renewable(self):
         name = self._get_config_name()
         return False if name in ["coal", "uranium", "biomass", "gas", "oil"] else True

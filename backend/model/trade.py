@@ -2,14 +2,11 @@ from typing import Optional
 from redis_om import JsonModel, Field
 
 from db.db import get_my_redis_connection
+from model.order import Order
 from model.resource import ResourceOrEnergy
-
-from .order import Order
 
 
 class Trade(JsonModel):
-    buy_order: Optional[Order] = Field(exclude=True, default=None)
-    sell_order: Optional[Order] = Field(exclude=True, default=None)
     tick: int = Field(index=True)
 
     total_money: int
@@ -21,7 +18,10 @@ class Trade(JsonModel):
     sell_order_id: str = Field(index=True, default=None)
 
     def __post_init__(self):
-        if self.buy_order is not None:
+        if hasattr(self, "buy_order"):
+            assert hasattr(self, "sell_order")
+            self.buy_order: Order
+            self.sell_order: Order
             self.buy_order_id = self.buy_order.pk
             self.buy_order_id = self.buy_order.pk
             assert self.buy_order.resource == self.sell_order.resource

@@ -18,7 +18,7 @@ def test_not_sell_when_too_high_price(market: EnergyMarket, get_player):
     player_1: Player = get_player(money=0, energy=100, energy_price=200)
     player_dict = get_player_dict([player_1])
 
-    orders = market.match(player_dict, demand=100, max_price=100)
+    orders = market.match(player_dict, tick=0, demand=100, max_price=100)
 
     assert player_1.money == 0
     assert len(orders) == 0
@@ -29,7 +29,7 @@ def test_not_sell_when_filled(market: EnergyMarket, get_player):
     player_2: Player = get_player(money=0, energy=100, energy_price=60)
     player_dict = get_player_dict([player_1, player_2])
 
-    orders = market.match(player_dict, demand=100, max_price=100)
+    orders = market.match(player_dict, tick=0, demand=100, max_price=100)
 
     assert player_1.money == 100*50
     assert player_2.money == 0
@@ -41,7 +41,7 @@ def test_sell_partial(market: EnergyMarket, get_player):
     player_2: Player = get_player(money=0, energy=100, energy_price=60)
     player_dict = get_player_dict([player_1, player_2])
 
-    orders = market.match(player_dict, demand=150, max_price=100)
+    orders = market.match(player_dict, tick=0, demand=150, max_price=100)
 
     assert player_1.money == 100*50
     assert player_2.money == 50*60
@@ -55,7 +55,7 @@ def test_monopoly(market: EnergyMarket, get_player):
     player_2: Player = get_player(money=0, energy=100, energy_price=50)
     player_dict = get_player_dict([player_1, player_2])
 
-    orders = market.match(player_dict, demand=100, max_price=100)
+    orders = market.match(player_dict, tick=0, demand=100, max_price=100)
 
     assert player_1.money == 30*50
     assert player_2.money == 50*50
@@ -68,7 +68,7 @@ def test_sell_split_when_equal_price(market: EnergyMarket, get_player):
     player_3: Player = get_player(money=0, energy=100, energy_price=50)
     player_dict = get_player_dict([player_1, player_2, player_3])
 
-    orders = market.match(player_dict, demand=100, max_price=100)
+    orders = market.match(player_dict, tick=0, demand=100, max_price=100)
 
     print(orders)
     assert player_1.money == 25*50
@@ -84,7 +84,7 @@ def test_sell_split_when_equal_price_with_monopoly(market: EnergyMarket, get_pla
     player_2: Player = get_player(money=0, energy=100, energy_price=50)
     player_dict = get_player_dict([player_1, player_2])
 
-    orders = market.match(player_dict, demand=100, max_price=100)
+    orders = market.match(player_dict, tick=0, demand=100, max_price=100)
 
     assert player_1.money == 30*50
     assert player_2.money == 30*50
