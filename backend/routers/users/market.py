@@ -174,8 +174,12 @@ def is_better_order(order_1: Order, order_2: Order):
 
 
 def orders_to_dict(orders: List[Order]) -> Dict[ResourceOrEnergy, Dict[OrderSide, List[Order]]]:
-    orders_dict = defaultdict(lambda: defaultdict(list))
+    orders_dict = dict()
     for order in orders:
+        if order.resource.value not in orders_dict:
+            orders_dict[order.resource.value] = dict()
+        if order.order_side.value not in orders_dict[order.resource.value]:
+            orders_dict[order.resource.value][order.order_side.value] = list()
         orders_dict[order.resource.value][order.order_side.value].append(order)
     return orders_dict
 
@@ -186,7 +190,7 @@ def orders_to_dict(orders: List[Order]) -> Dict[ResourceOrEnergy, Dict[OrderSide
 )
 def order_list_player(
     game: Game = Depends(game_dep), player: Player = Depends(player_dep)
-) -> Dict[ResourceOrEnergy, List[OrderResponse]]:
+) -> Dict[str, Dict[str, List[OrderResponse]]]:
     """List orders you placed in market that are still active."""
     active_orders = Order.find(
         Order.player_id == player.player_id,

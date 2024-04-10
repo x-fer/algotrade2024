@@ -13,12 +13,12 @@ from model.resource import Resource
 
 
 class Networth(BaseModel):
-    total: int = pydantic.Field(..., description="Total players networth. This is your score in competition rounds!")
-    money: int
-    resources: ResourcesModel = Field(..., description="Resources owned by the player")
-    resources_value: ResourcesModel = Field(..., description="Players networth based on resources prices on the market")
-    power_plants_owned: PowerPlantsModel = Field(..., description="Power plants owned by the player")
-    power_plants_value: PowerPlantsModel = Field(..., description="Players networth based only on power plants sell prices")
+    total: int = pydantic.Field(0, description="Total players networth. This is your score in competition rounds!")
+    money: int = pydantic.Field(0)
+    resources: ResourcesModel = pydantic.Field(default_factory=ResourcesModel, description="Resources owned by the player")
+    resources_value: ResourcesModel = pydantic.Field(default_factory=ResourcesModel, description="Players networth based on resources prices on the market")
+    power_plants_owned: PowerPlantsModel = pydantic.Field(default_factory=PowerPlantsModel, description="Power plants owned by the player")
+    power_plants_value: PowerPlantsModel = pydantic.Field(default_factory=PowerPlantsModel, description="Players networth based only on power plants sell prices")
 
 
 class Player(JsonModel):
@@ -51,7 +51,7 @@ class Player(JsonModel):
         """Returns number of canceled orders"""
         return Order.delete_many(Order.find(Order.player_id == self.player_id).all(), pipe)
 
-    def get_networth(self, game: Game, dataset_data: DatasetData = None):
+    def get_networth(self, game: Game, dataset_data: DatasetData = None) -> Networth:
         # TODO: nije pod lockom jer bi kocilo tick, a ovo stalno uzimaju igraci
         if dataset_data is None:
             dataset_data = DatasetData.find(
