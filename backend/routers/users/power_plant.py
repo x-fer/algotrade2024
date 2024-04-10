@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from model import Player, PowerPlantType
-from model.power_plant_model import PowerPlantsModel
+from model.power_plant_model import PowerPlantsApiModel, PowerPlantsModel
 from .dependencies import check_game_active_dep, player_dep
 from config import config
 from routers.model import SuccessfulResponse
@@ -11,16 +11,16 @@ router = APIRouter(dependencies=[Depends(check_game_active_dep)])
 
 
 class PowerPlantData(BaseModel):
-    power_plants_powered: PowerPlantsModel = Field(
+    power_plants_powered: PowerPlantsApiModel = Field(
         ..., description="Number of plants of this type powered on"
     )
-    power_plants_owned: PowerPlantsModel = Field(
+    power_plants_owned: PowerPlantsApiModel = Field(
         ..., description="Number of plants of this type owned by the player"
     )
-    buy_price: PowerPlantsModel = Field(
+    buy_price: PowerPlantsApiModel = Field(
         ..., description="Price at which you can buy your next power plant of this type"
     )
-    sell_price: PowerPlantsModel = Field(
+    sell_price: PowerPlantsApiModel = Field(
         ..., description="Price at which you can sell this power plant"
     )
 

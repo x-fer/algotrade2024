@@ -67,7 +67,7 @@ def player_list(game_id: str) -> List[Player]:
 def game_delete(game_id: str) -> SuccessfulResponse:
     # TODO ne baca exception ako je vec zavrsena
     # await Game.update(game_id=game_id, is_finished=True)
-    g = Game.find(Game.game_id == game_id).first()
+    g = Game.get(game_id)
     g.update(is_finished=True)
     g.save()
     return SuccessfulResponse()
@@ -86,7 +86,7 @@ class NetworthData:
 @limiter.exempt
 def game_networth(game_id: str) -> List[NetworthData]:
     # game = await Game.get(game_id=game_id)
-    game = Game.find(Game.game_id == game_id).first()
+    game = Game.get(game_id)
 
     if game.current_tick == 0:
         raise HTTPException(
@@ -118,7 +118,7 @@ async def dashboard_graphs(websocket: WebSocket, game_id: str):
     try:
         while True:
             # game = await Game.get(game_id=game_id)
-            game = Game.find(Game.game_id == game_id).first()
+            game = Game.get(game_id)
 
             current_tick = game.current_tick
 
@@ -166,7 +166,7 @@ async def dashboard_players(websocket: WebSocket, game_id: str):
     try:
         while True:
             # game = await Game.get(game_id=game_id)
-            game = Game.find(Game.game_id == game_id).first()
+            game = Game(game_id)
 
             current_tick = game.current_tick
 
@@ -211,7 +211,7 @@ async def dashboard_orderbooks(websocket: WebSocket, game_id: str):
     try:
         while True:
             # game = await Game.get(game_id=game_id)
-            game = Game.find(Game.game_id == game_id).first()
+            game = Game.get(game_id)
 
             # orders = await Order.list(game_id=game_id, order_status=OrderStatus.ACTIVE)
             orders = Order.find(

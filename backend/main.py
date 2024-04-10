@@ -14,9 +14,12 @@ import os
 from logger import logger
 from docs import tags_metadata, short_description
 from redis_om import Migrator
+from fastapi.middleware.cors import CORSMiddleware
+import sys
 
 
-Migrator().run()
+if "pytest" not in sys.modules:
+    Migrator().run()
 
 
 tick_event = asyncio.Event()
@@ -55,6 +58,15 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins="*",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 
 @app.exception_handler(Exception)

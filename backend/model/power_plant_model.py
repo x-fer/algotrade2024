@@ -1,4 +1,6 @@
 from enum import Enum
+
+from pydantic import BaseModel
 from db.db import get_my_redis_connection
 from redis_om import EmbeddedJsonModel, Field
 
@@ -39,3 +41,24 @@ class PowerPlantsModel(EmbeddedJsonModel, EnumGetterSettr):
 
     class Meta:
         database = get_my_redis_connection()
+
+
+
+class ResourcesApiModel(BaseModel):
+    coal: int
+    uranium: int
+    biomass: int
+    gas: int
+    oil: int
+
+
+class PowerPlantsApiModel(BaseModel):
+    coal: int
+    uranium: int
+    biomass: int
+    gas: int
+    oil: int
+    geothermal: int
+    wind: int
+    solar: int
+    hydro: int

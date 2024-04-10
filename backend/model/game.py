@@ -9,7 +9,7 @@ class Game(JsonModel):
     game_name: str
     is_contest: int = Field(index=True)
     dataset_id: str
-    start_time: datetime = Field(index=False)
+    start_time: datetime = Field(index=False, sortable=True)
     total_ticks: int
     tick_time: int
     current_tick: int = Field(default=0)
