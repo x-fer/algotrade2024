@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import { DataContext } from "./DataProvider";
+
 const Settings = () => {
   const {
     gameId,

@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
-import { DataContext } from "./DataProvider";
-import instance from "../api/apiInstance";
+import { DataContext } from "../DataProvider";
+import instance from "../../api/apiInstance";
 
 const OrdersListItem = ({ order }) => {
   const { teamSecret, gameId, playerId } = useContext(DataContext);
@@ -21,7 +21,7 @@ const OrdersListItem = ({ order }) => {
   };
 
   return (
-    <div className="flex justify-between items-center my-4 p-2 rounded-3xl bg-primary text-white">
+    <div className="flex justify-between items-center p-2 rounded-3xl bg-secondary text-white">
       <div className="flex justify-between  ml-2">
         <p>
           {order.quantity} {order.name} at {order.price}&nbsp; [{order.side[0]}]
@@ -41,8 +41,6 @@ const OrdersListItem = ({ order }) => {
 };
 
 const OrdersList = () => {
-  //TODO remove hardcoded data after testing
-
   const [ordersList, setOrdersList] = useState([
     { order_id: 1, resource: "COAL", size: 10, price: 20, side: "BUY" },
     { order_id: 2, resource: "BIOMASS", size: 50, price: 10, side: "SELL" },
@@ -56,19 +54,25 @@ const OrdersList = () => {
   }, []);
 
   return (
-    <div>
-      {ordersList.map((order) => (
-        <OrdersListItem
-          key={order.order_id}
-          order={{
-            id: order.order_id,
-            name: order.resource,
-            quantity: order.size,
-            price: order.price,
-            side: order.side,
-          }}
-        />
-      ))}
+    <div className="flex flex-col py-4 h-full gap-4 rounded-3xl bg-primary">
+      <div className="text-white">
+        <h2>My orders</h2>
+      </div>
+
+      <div className="flex flex-col h-full p-4  gap-4 rounded-3xl  ">
+        {ordersList.map((order) => (
+          <OrdersListItem
+            key={order.order_id}
+            order={{
+              id: order.order_id,
+              name: order.resource,
+              quantity: order.size,
+              price: order.price,
+              side: order.side,
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 };

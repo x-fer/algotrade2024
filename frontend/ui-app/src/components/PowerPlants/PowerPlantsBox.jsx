@@ -18,7 +18,7 @@ const PowerPlantsBox = () => {
   const [selectedType, setSelectedType] = useState("");
 
   return (
-    <div className="flex p-4 bg-primary rounded-3xl gap-4">
+    <div className="flex p-4 gap-4 rounded-3xl bg-primary">
       <div className="flex flex-col justify-around h-full gap-4 bg-primary rounded-3xl ">
         {PowerPlantTypes.map((type) => (
           <SelectPowerPlant
