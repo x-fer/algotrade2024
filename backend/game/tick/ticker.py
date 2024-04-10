@@ -340,7 +340,7 @@ class Ticker:
                 filled_money=players[player_id].energy_price * energy,
                 filled_price=players[player_id].energy_price,
                 expiration_tick=tick,
-                resource=Energy.energy.value
+                resource=Energy.ENERGY.value
             ).save(self.pipe)
 
     def save_tick_data(self, tick_data: TickData):

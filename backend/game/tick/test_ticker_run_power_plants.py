@@ -15,8 +15,8 @@ async def test_run_power_plants(sample_game, sample_players, sample_game_data,
 
     for player_id, player in updated_tick_data.players.items():
         total_energy = sum([
-            player[plant_type.name.lower() + "_plants_powered"] *
-            plant_type.get_produced_energy(updated_tick_data.dataset_row)
+            player.power_plants_powered[plant_type] *
+            updated_tick_data.dataset_row.power_plants_output[plant_type]
             for plant_type in PowerPlantType
         ])
         assert player.energy == total_energy
