@@ -1,4 +1,4 @@
-const ENDPOINT = "http://localhost:8000";
-export default ENDPOINT;
+export const ENDPOINT = "http://localhost:8000";
 
-// Add correct constants
+export const GRAPH_FETCH_INTERVAL = 1000;
+export const PLAYER_FETCH_INTERVAL = 5000;

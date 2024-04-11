@@ -41,13 +41,13 @@ const OrderBox = () => {
           selectedResource={selectedResource}
           setSelectedResource={setSelectedResource}
         />
-        {selectedResource !== "ELECTRICITY" ? (
-          <BuySell handleButtonClick={handleButtonClick} register={register} />
-        ) : (
+        {!selectedResource ? (
           <EnergySell
             handleButtonClick={handleButtonClick}
             register={register}
           />
+        ) : (
+          <BuySell handleButtonClick={handleButtonClick} register={register} />
         )}
       </div>
     </form>
