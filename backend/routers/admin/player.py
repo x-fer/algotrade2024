@@ -12,8 +12,6 @@ router = APIRouter()
 @router.get("/game/{game_id}/player/{player_id}/delete")
 @limiter.exempt
 def player_delete(player_id: str, game: Game = Depends(game_dep)) -> SuccessfulResponse:
-    # await Player.update(player_id=player.player_id, is_active=False)
-
     p = Player.find(Player.pk == player_id).first()
 
     if p is None:

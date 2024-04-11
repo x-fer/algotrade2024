@@ -13,19 +13,23 @@ class Trade(JsonModel):
     trade_size: int
     trade_price: int
 
-    resource: ResourceOrEnergy = Field(index=True, default=None)
-    buy_order_id: str = Field(index=True, default=None)
-    sell_order_id: str = Field(index=True, default=None)
+    resource: ResourceOrEnergy = Field(index=True, default="energy")
+    buy_order_id: str = Field(index=True, default="0")
+    sell_order_id: str = Field(index=True, default="0")
 
-    def __post_init__(self):
-        if hasattr(self, "buy_order"):
-            assert hasattr(self, "sell_order")
-            self.buy_order: Order
-            self.sell_order: Order
-            self.buy_order_id = self.buy_order.pk
-            self.buy_order_id = self.buy_order.pk
-            assert self.buy_order.resource == self.sell_order.resource
-            self.resource = self.buy_order.resource.value
+    buy_player_id: str = Field(index=True, default="0")
+    sell_player_id: str = Field(index=True, default="0")
+
+    def __setattr__(self, name, value):
+        if name == "buy_order":
+            self.resource = value.resource
+            self.buy_order_id = value.pk
+            self.buy_player_id = value.player_id
+        elif name == "sell_order":
+            self.resource = value.resource
+            self.sell_order_id = value.pk
+            self.sell_player_id = value.player_id
+        return super().__setattr__(name, value)
 
     class Meta:
         database = get_my_redis_connection()

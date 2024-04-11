@@ -66,11 +66,9 @@ def player_list(game_id: str) -> List[Player]:
 @router.post("/game/{game_id}/delete")
 @limiter.exempt
 def game_delete(game_id: str) -> SuccessfulResponse:
-    # TODO ne baca exception ako je vec zavrsena
-    # await Game.update(game_id=game_id, is_finished=True)
     try:
         g = Game.get(game_id)
-        g.update(is_finished=True)
+        g.is_finished=True
         g.save()
         return SuccessfulResponse()
     except Exception:

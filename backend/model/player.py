@@ -52,7 +52,6 @@ class Player(JsonModel):
         return Order.delete_many(Order.find(Order.player_id == self.player_id).all(), pipe)
 
     def get_networth(self, game: Game, dataset_data: DatasetData = None) -> Networth:
-        # TODO: nije pod lockom jer bi kocilo tick, a ovo stalno uzimaju igraci
         if dataset_data is None:
             dataset_data = DatasetData.find(
                 DatasetData.tick==game.current_tick,
@@ -67,7 +66,9 @@ class Player(JsonModel):
         power_plants_value = PowerPlantsModel()
         for type in PowerPlantType:
             for i in range(1, self.power_plants_owned[type] + 1):
-                power_plants_value[type] += PowerPlantType.get_sell_price()
+                power_plants_value[type] += PowerPlantType.get_sell_price(
+                    type, i
+                )
             total += power_plants_value[type]
 
         return Networth(
