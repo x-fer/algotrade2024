@@ -13,8 +13,8 @@ import {
 import { DataContext } from "../DataProvider";
 
 const RenderLineChart = ({ data }) => (
-  <ResponsiveContainer width="100%" height="100%">
-    <LineChart data={data} margin={{ top: 5, right: 20, bottom: 20, left: 20 }}>
+  <ResponsiveContainer>
+    <LineChart data={data} margin={{ top: 0, right: 5, bottom: 14, left: 10 }}>
       <Line
         type="monotone"
         dataKey="price"
@@ -39,7 +39,7 @@ const PriceChart = () => {
 
   if (!selectedResource) {
   } else {
-    if (selectedResource.type === "ELECTRICITY") {
+    if (selectedResource.key === "electricity") {
       data = Object.values(graphData).map((item) => {
         return { tick: item["tick"], price: item["max_energy_price"] };
       });
@@ -54,7 +54,7 @@ const PriceChart = () => {
   }
 
   return (
-    <div className="w-[42vw] h-[50vh] rounded-3xl bg-black p-8">
+    <div className="w-[42vw] h-[50vh] rounded-3xl p-8">
       <RenderLineChart data={data} />
     </div>
   );

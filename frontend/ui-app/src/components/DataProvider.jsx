@@ -3,6 +3,7 @@ import {
   ENDPOINT,
   GRAPH_FETCH_INTERVAL,
   GRAPH_LAST_N,
+  ORDERS_LIST_FETCH_INTERVAL,
   PLAYER_FETCH_INTERVAL,
 } from "../constants";
 import axios from "axios";
@@ -18,8 +19,8 @@ const DataProvider = ({ children }) => {
     localStorage.getItem("teamSecret") || ""
   );
 
-  const [selectedResource, setSelectedResource] = useState("");
-  const [selectedPowerPlant, setSelectedPowerPlant] = useState("");
+  const [selectedResource, setSelectedResource] = useState(null);
+  const [selectedPowerPlant, setSelectedPowerPlant] = useState(null);
 
   const [playerData, setPlayerData] = useState({});
   const [playerTimer, setPlayerTimer] = useState(0);
@@ -39,9 +40,14 @@ const DataProvider = ({ children }) => {
       setPlayerTimer((prev) => prev + 1);
     }, PLAYER_FETCH_INTERVAL);
 
+    const ordersListTimerInterval = setInterval(() => {
+      setOrdersListTimer((prev) => prev + 1);
+    }, ORDERS_LIST_FETCH_INTERVAL);
+
     return () => {
       clearInterval(graphTimerInterval);
       clearInterval(playerTimerInterval);
+      clearInterval(ordersListTimerInterval);
     };
   }, []);
 
@@ -62,6 +68,7 @@ const DataProvider = ({ children }) => {
       })
       .then((response) => {
         setPlayerData(response.data);
+        console.log(response.data);
       })
       .catch((error) => {
         console.error(error);
@@ -96,6 +103,27 @@ const DataProvider = ({ children }) => {
   useEffect(() => {
     fetchGraphData();
   }, [graphTimer]);
+
+  function fetchOrdersListData() {
+    if (!gameId || !playerId || !teamSecret) {
+      return;
+    }
+
+    axios
+      .get(`${ENDPOINT}/game/${gameId}/player/${playerId}/orders/`, {
+        params: { team_secret: teamSecret },
+      })
+      .then((response) => {
+        setOrdersListData(response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+
+  useEffect(() => {
+    fetchOrdersListData();
+  }, [ordersListTimer]);
 
   return (
     <DataContext.Provider
