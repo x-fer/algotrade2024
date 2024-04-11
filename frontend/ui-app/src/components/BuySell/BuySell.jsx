@@ -1,11 +1,18 @@
+import { useContext } from "react";
+import { DataContext } from "../DataProvider";
+
 const BuySell = ({ handleButtonClick, register }) => {
+  const { selectedResource } = useContext(DataContext);
+
   return (
     <div className=" bg-secondary rounded-3xl p-4">
+      <p className="text-xl">{selectedResource?.name}</p>
+
       <div className="grid grid-cols-3 gap-4 mx-4">
         <div className="flex flex-col items-start">
           <label className="font-l">Quantity:</label>
           <input
-            className="bg-tertiary  p-2 rounded-2xl w-full"
+            className="bg-tertiary  p-2 rounded-2xl w-full mt-2"
             type="number"
             id="size"
             name="size"
@@ -16,7 +23,7 @@ const BuySell = ({ handleButtonClick, register }) => {
         <div className="flex flex-col items-start">
           <label className="font-l">Price:</label>
           <input
-            className="bg-tertiary  p-2 rounded-2xl w-full"
+            className="bg-tertiary  p-2 rounded-2xl w-full mt-2"
             type="number"
             id="price"
             name="price"
@@ -25,9 +32,9 @@ const BuySell = ({ handleButtonClick, register }) => {
         </div>
 
         <div className="flex flex-col items-start">
-          <label className="font-l">Valid for:</label>
+          <label className="font-l">Valid for (ticks):</label>
           <input
-            className="bg-tertiary  p-2 rounded-2xl w-full"
+            className="bg-tertiary  p-2 rounded-2xl w-full mt-2"
             type="number"
             id="expiration_length"
             name="expiration_length"

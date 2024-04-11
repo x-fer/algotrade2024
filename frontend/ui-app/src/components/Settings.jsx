@@ -12,7 +12,7 @@ const Settings = () => {
   } = useContext(DataContext);
 
   return (
-    <div className="flex flex-col mt-2 p-4 rounded-3xl bg-primary text-white shadow-xl">
+    <div className="flex flex-col  p-4 rounded-3xl bg-primary text-white shadow-xl">
       <div className="flex flex-col">
         <label className="font-l">Game Id</label>
         <input

@@ -27,7 +27,7 @@ const SelectResourceButton = ({
 }) => {
   return (
     <button
-      className={`bg-tertiary  hover:bg-seconday border-[3px] text-white text-xl p-4 rounded-3xl  ${
+      className={`bg-tertiary  hover:bg-seconday border-[3px] text-white text-xl p-2 rounded-3xl  ${
         active ? "border-red" : "border-tertiary"
       }`}
       type="button"
@@ -40,7 +40,7 @@ const SelectResourceButton = ({
 
 const SelectResourceBar = ({ selectedResource, setSelectedResource }) => {
   return (
-    <div className="flex justify-between">
+    <div className="flex justify-around">
       {Resources.map((item) => (
         <SelectResourceButton
           key={item.name}

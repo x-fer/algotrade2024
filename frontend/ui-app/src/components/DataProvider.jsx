@@ -114,7 +114,31 @@ const DataProvider = ({ children }) => {
         params: { team_secret: teamSecret },
       })
       .then((response) => {
-        setOrdersListData(response.data);
+        let ordersObject = response.data;
+
+        let orders = [];
+
+        for (let resource in ordersObject) {
+          for (let side in ordersObject[resource]) {
+            ordersObject[resource][side].forEach((order) => {
+              orders.push({
+                resource: resource,
+                side: side,
+                order_id: order.order_id,
+                player_id: order.player_id,
+                price: order.price,
+                size: order.size,
+                tick: order.tick,
+                timestamp: order.timestamp,
+                order_status: order.order_status,
+                filled_size: order.filled_size,
+                expiration_tick: order.expiration_tick,
+              });
+            });
+          }
+        }
+
+        setOrdersListData(orders);
       })
       .catch((error) => {
         console.error(error);
@@ -142,6 +166,7 @@ const DataProvider = ({ children }) => {
 
         playerData,
         graphData,
+        ordersListData,
       }}
     >
       {children}

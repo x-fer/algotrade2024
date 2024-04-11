@@ -23,12 +23,12 @@ const RenderLineChart = ({ data }) => (
         dot={false}
       />
       <XAxis dataKey="tick">
-        <Label value="Time" offset={0} position="bottom" />
+        <Label value="Tick" offset={0} position="bottom" />
       </XAxis>
       <YAxis>
         <Label value="Price" offset={0} angle={-90} position="insideLeft" />
       </YAxis>
-      <Tooltip label={[{ hej: 2 }]} />
+      <Tooltip />
     </LineChart>
   </ResponsiveContainer>
 );
