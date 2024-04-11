@@ -204,10 +204,13 @@ class Ticker:
             Player.game_id == game.game_id,
             Player.is_bot == int(False)
         ).all()
-        dataset_data = DatasetData.find(
-            (DatasetData.tick == game.current_tick) &
-            (DatasetData.dataset_id == game.dataset_id)
-        ).first()
+        try:
+            dataset_data = DatasetData.find(
+                (DatasetData.tick == game.current_tick) &
+                (DatasetData.dataset_id == game.dataset_id)
+            ).first()
+        except Exception:
+            logger.warning(f"Error logging networth of game {game.game_id}, DatasetData not found")
         teams: List[Team] = Team.find().all()
         teams: Dict[str, Team] = {team.pk: team for team in teams}
 
