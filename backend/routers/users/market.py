@@ -385,7 +385,7 @@ class UserTrade(BaseModel):
 def get_trades_player(
     start_end=Depends(start_end_tick_dep),
     player: Player = Depends(player_dep),
-    resource: Resource = Query(default=None),
+    resource: ResourceOrEnergy = Query(default=None),
 ) -> Dict[OrderSide, List[UserTrade]]:
     """
     Trade is when two orders match.

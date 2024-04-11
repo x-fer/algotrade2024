@@ -57,7 +57,7 @@ class Ticker:
     async def end_game(self, game: Game):
         try:
             logger.info(f"Ending game {game.game_id} {game.game_name}")
-            game.update(is_finished=True)
+            game.is_finished=True
             game.save()
             self._log_networth(game)
             if self.game_data.get(game.game_id) is not None:

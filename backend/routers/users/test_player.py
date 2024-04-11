@@ -115,7 +115,7 @@ def test_player_delete_non_contest_mode():
     mock_player_dep.call_count = 0
     override_game_dep.contest = int(False)
 
-    with patch("model.Player.update") as mock_update, \
+    with patch("model.Player.save") as mock_save, \
         patch("model.Player.get") as mock_get, patch("model.Player.lock"):
         # Player se dohvaca dvaput jer je jednom u transactionu
         mock_get.return_value = Player(pk="1", game_id="1", team_id="1", player_name="player_1", money=100)
@@ -124,7 +124,7 @@ def test_player_delete_non_contest_mode():
     assert response.status_code == 200, response.json()
     assert mock_player_dep.call_count == 1
     assert response.status_code == 200
-    assert mock_update.call_count == 1
+    assert mock_save.call_count == 1
 
 def test_player_delete_contest_mode():
     mock_player_dep.call_count = 0
