@@ -98,12 +98,12 @@ async def test_end_game(ticker):
     ticker.game_data["1"] = Mock()
     ticker.game_futures["1"] = Mock()
 
-    mock_game_update = Mock()
+    mock_game_save = Mock()
 
-    with patch('model.Game.update', new=mock_game_update):
+    with patch('model.Game.save', new=mock_game_save), patch("game.tick.Ticker._log_networth"):
         await ticker.end_game(game)
 
-        mock_game_update.assert_called_once_with(is_finished=True)
+        assert game.is_finished
 
         assert "1" not in ticker.game_data
 

@@ -94,7 +94,8 @@ def energy_set_price_player(
         raise HTTPException(status_code=400, detail="Price must be greater than 0")
 
     with player.lock():
-        player.update(energy_price=price.price)
+        player.energy_price=price.price
+        player.save()
 
     return SuccessfulResponse()
 
@@ -317,7 +318,7 @@ def order_create_player(
             game_id=game.game_id,
             player_id=player.player_id,
             order_side=order.side.value,
-            order_status=OrderStatus.PENDING,
+            order_status=OrderStatus.PENDING.value,
             timestamp=datetime.now(),
             price=order.price,
             size=order.size,
@@ -346,9 +347,11 @@ def order_cancel_player(
                 status_code=400, detail="You can only cancel your own orders"
             )
         elif order_to_cancel.order_status == OrderStatus.PENDING.value:
-            Order.update(order_status=OrderStatus.CANCELLED.value)
+            order.order_status=OrderStatus.CANCELLED.value
+            order.save()
         elif order_to_cancel.order_status == OrderStatus.ACTIVE.value:
-            Order.update(order_status=OrderStatus.USER_CANCELLED.value)
+            order.order_status=OrderStatus.USER_CANCELLED.value
+            order.save()
         else:
             raise HTTPException(
                 status_code=400,
@@ -358,9 +361,12 @@ def order_cancel_player(
 
 
 class UserTrade(BaseModel):
-    trade_id: str
     buy_order_id: str = Field(..., description="order_id of buyer side in this trade")
     sell_order_id: str = Field(..., description="order_id of seller side in this trade")
+
+    buy_player_id: str
+    sell_player_id: str
+
     tick: int = Field(..., description="Tick when this trade took place")
 
     total_price: int = Field(
@@ -379,7 +385,7 @@ class UserTrade(BaseModel):
 def get_trades_player(
     start_end=Depends(start_end_tick_dep),
     player: Player = Depends(player_dep),
-    resource: Resource = Query(default=None),
+    resource: ResourceOrEnergy = Query(default=None),
 ) -> Dict[OrderSide, List[UserTrade]]:
     """
     Trade is when two orders match.
@@ -391,11 +397,10 @@ def get_trades_player(
     if resource is not None:
         conditions.append(Trade.resource == resource.value)
 
-    buy_trades = Trade.find(Trade.buy_order_id == player.player_id, *conditions).all()
+    buy_trades = Trade.find(Trade.buy_player_id == player.player_id, *conditions).all()
     sell_trades = Trade.find(
-        Trade.sell_order_id == player.player_id, *conditions
+        Trade.sell_player_id == player.player_id, *conditions
     ).all()
-    logger.info(f"{player.player_name} {len(buy_trades)}, {len(sell_trades)}")
     return {
         OrderSide.BUY: buy_trades,
         OrderSide.SELL: sell_trades,

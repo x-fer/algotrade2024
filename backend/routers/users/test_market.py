@@ -63,15 +63,14 @@ def test_energy_set_price_player():
     mock_player_dep.call_count = 0
     override_game_dep.tick = 4
 
-    with patch("model.Player.update") as mock_update:
+    with patch("model.Player.save") as mock_save:
         response = client.post(
             "/game/1/player/1/energy/set_price", json={"price": 10})
         assert response.status_code == 200, response.text
         assert mock_check_game_active_dep.call_count == 1
         assert mock_player_dep.call_count == 1
-        mock_update.assert_called_once_with(
-            energy_price=10
-        )
+        mock_save.assert_called_once()
+        mock_save.call_args_list[0].energy_price == 1
 
 def test_energy_set_price_player_negative_price():
     mock_check_game_active_dep.call_count = 1

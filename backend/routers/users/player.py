@@ -1,3 +1,4 @@
+from operator import attrgetter
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -34,11 +35,13 @@ class PlayerData(BaseModel):
 def player_list(
     game: Game = Depends(game_dep), team: Team = Depends(team_dep)
 ) -> List[PlayerData]:
-    return Player.find(
+    players = Player.find(
         Player.game_id == game.game_id,
         Player.team_id == team.team_id,
         Player.is_active == int(True)
     ).all()
+    players.sort(key=attrgetter("player_name"))
+    return players
 
 
 class PlayerCreate(BaseModel):
@@ -106,11 +109,12 @@ def player_delete(
     """
     if game.is_contest:
         raise HTTPException(400, "Players cannot be deleted in contest mode")
-    with Player.lock():
+    with player.lock():
         player = Player.get(player.pk)
         if not player.is_active:
             raise HTTPException(400, "Cannot delete already deleted player")
-        player.update(is_active=False)
+        player.is_active=False
+        player.save()
     return SuccessfulResponse()
 
 
@@ -165,7 +169,7 @@ def player_reset(
 
     reset_player.money = config["player"]["starting_money"]
 
-    with Player.lock():
+    with player.lock():
         pipe = Player.db().pipeline()
         reset_player.cancel_orders(pipe)
         reset_player.save()

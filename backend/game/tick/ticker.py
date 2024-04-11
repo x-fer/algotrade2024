@@ -15,8 +15,9 @@ from game.bots.resource_bot import ResourceBot
 from model import Player, PowerPlantType, Game, Order, OrderStatus, Resource, DatasetData, OrderSide
 from game.market import ResourceMarket, EnergyMarket
 from model.market import Market
-from model.resource import Energy
+from model.resource import Energy, ResourceOrEnergy
 from model.team import Team
+from model.trade import Trade
 from .tick_data import TickData
 from logger import logger, score_logger
 from config import config
@@ -56,8 +57,9 @@ class Ticker:
     async def end_game(self, game: Game):
         try:
             logger.info(f"Ending game {game.game_id} {game.game_name}")
-            # TODO: check if this works
-            game.update(is_finished=True)
+            game.is_finished=True
+            game.save()
+            self._log_networth(game)
             if self.game_data.get(game.game_id) is not None:
                 del self.game_data[game.game_id]
                 self.game_futures[game.game_id].cancel()
@@ -202,10 +204,13 @@ class Ticker:
             Player.game_id == game.game_id,
             Player.is_bot == int(False)
         ).all()
-        dataset_data = DatasetData.find(
-            (DatasetData.tick == game.current_tick) &
-            (DatasetData.dataset_id == game.dataset_id)
-        ).first()
+        try:
+            dataset_data = DatasetData.find(
+                (DatasetData.tick == game.current_tick) &
+                (DatasetData.dataset_id == game.dataset_id)
+            ).first()
+        except Exception:
+            logger.warning(f"Error logging networth of game {game.game_id}, DatasetData not found")
         teams: List[Team] = Team.find().all()
         teams: Dict[str, Team] = {team.pk: team for team in teams}
 
@@ -334,27 +339,26 @@ class Ticker:
 
     def save_electricity_orders(self, game: Game, players: Dict[str, Player],
                                 energy_sold: Dict[str, int], tick: int):
+        """Save electricity trades, not orders"""
         for player_id, energy in energy_sold.items():
-            Order(
-                game_id=game.game_id,
-                player_id=player_id,
-                order_side=OrderSide.SELL,
-                timestamp=datetime.now(),
-                order_status=OrderStatus.COMPLETED,
-                price=players[player_id].energy_price,
-                size=energy,
-                tick=tick,
-                filled_size=energy,
-                filled_money=players[player_id].energy_price * energy,
-                filled_price=players[player_id].energy_price,
-                expiration_tick=tick,
-                resource=Energy.ENERGY.value
+            Trade(            
+                tick = tick,
+                total_price = players[player_id].energy_price * energy,
+                trade_size = energy,
+                trade_price = players[player_id].energy_price,
+                resource = ResourceOrEnergy.ENERGY.value,
+                buy_order_id = "energy_market_demand",
+                sell_order_id  = "energy",
+                buy_player_id = "energy_market",
+                sell_player_id = player_id
             ).save(self.pipe)
 
     def save_tick_data(self, tick_data: TickData):
         list(map(methodcaller('save', self.pipe), tick_data.players.values()))
         list(map(methodcaller('save', self.pipe),
              tick_data.updated_orders.values()))
+        # for trade in tick_data.tick_trades:
+        #     logger.info(f"TRADE: {trade}")
         list(map(methodcaller('save', self.pipe), tick_data.tick_trades))
 
     def save_market_data(self, tick_data: TickData):

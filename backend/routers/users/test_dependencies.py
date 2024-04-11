@@ -36,10 +36,10 @@ def test_team_dep():
 
 def test_game_dep():
     # exception raised in get
-    with patch("model.Game.find") as mock:
+    with patch("model.Game.get") as mock:
         mock.side_effect = Exception()
         try:
-            game_dep(1)
+            game_dep("1")
             assert False  # pragma: no cover
         except HTTPException as e:
             assert e.status_code == 403
