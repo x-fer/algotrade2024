@@ -367,6 +367,8 @@ class UserTrade(BaseModel):
     buy_player_id: str
     sell_player_id: str
 
+    resource: ResourceOrEnergy
+
     tick: int = Field(..., description="Tick when this trade took place")
 
     total_price: int = Field(

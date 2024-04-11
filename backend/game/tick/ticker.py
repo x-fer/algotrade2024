@@ -347,8 +347,8 @@ class Ticker:
                 trade_size = energy,
                 trade_price = players[player_id].energy_price,
                 resource = ResourceOrEnergy.ENERGY.value,
-                buy_order_id = "energy_market_demand",
-                sell_order_id  = "energy",
+                buy_order_id = "energy_market",
+                sell_order_id  = "energy_production",
                 buy_player_id = "energy_market",
                 sell_player_id = player_id
             ).save(self.pipe)
