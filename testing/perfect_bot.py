@@ -1,22 +1,16 @@
 
+import os
 import numpy as np
 import pandas as pd
+from os import walk
 
-datasets = [
-    "../dataset/chunks/df_2431_2011-11-06 03:30:00_2012-02-15 09:30:00.csv",
-    "../dataset/chunks/df_2739_2014-11-02 02:30:00_2015-02-24 04:30:00.csv",
-    "../dataset/chunks/df_3023_2012-11-04 03:30:00_2013-03-10 01:30:00.csv",
-    "../dataset/chunks/df_3023_2013-11-03 03:30:00_2014-03-09 01:30:00.csv",
-    "../dataset/chunks/df_3024_2016-11-06 02:30:00_2017-03-12 01:30:00.csv",
-    "../dataset/chunks/df_3477_2018-03-11 04:30:00_2018-08-03 00:30:00.csv",
-    "../dataset/chunks/df_4375_2015-05-02 19:30:00_2015-11-01 01:30:00.csv",
-    "../dataset/chunks/df_4670_2014-04-21 12:30:00_2014-11-02 01:30:00.csv",
-    "../dataset/chunks/df_5484_2016-03-13 04:30:00_2016-10-27 15:30:00.csv",
-    "../dataset/chunks/df_5512_2012-03-19 10:30:00_2012-11-04 01:30:00.csv",
-    "../dataset/chunks/df_5710_2011-03-13 04:30:00_2011-11-06 01:30:00.csv",
-    "../dataset/chunks/df_5710_2013-03-10 04:30:00_2013-11-03 01:30:00.csv",
-    "../dataset/chunks/df_5710_2017-03-12 04:30:00_2017-11-05 01:30:00.csv",
-]
+dataset_path = "../dataset/chunks"
+
+dataset_files = []
+for (dirpath, dirnames, filenames) in walk(dataset_path):
+    for f in filenames:
+        dataset_files.append(os.path.join(dataset_path, f))
+    break
 
 
 price_multiplier = {
@@ -92,7 +86,7 @@ def get_networth(df, money, has_plants, resource):
 
 def main():
 
-    for dataset_path in datasets:
+    for dataset_path in dataset_files:
 
         # print("Dataset:", dataset_path)
 
