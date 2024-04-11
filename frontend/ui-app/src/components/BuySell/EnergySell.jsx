@@ -8,16 +8,6 @@ const EnergySell = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    /* axios
-      .get(`${ENDPOINT}/game/${gameId}/player/${playerId}/`, {
-        params: { team_secret: teamSecret },
-      })
-      .then((response) => {
-        console.log(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      }); */
 
     console.log(playerData);
   };

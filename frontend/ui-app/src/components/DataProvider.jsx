@@ -2,10 +2,10 @@ import { createContext, useEffect, useState } from "react";
 import {
   ENDPOINT,
   GRAPH_FETCH_INTERVAL,
+  GRAPH_LAST_N,
   PLAYER_FETCH_INTERVAL,
 } from "../constants";
 import axios from "axios";
-import { set } from "react-hook-form";
 
 export const DataContext = createContext();
 
@@ -18,11 +18,17 @@ const DataProvider = ({ children }) => {
     localStorage.getItem("teamSecret") || ""
   );
 
+  const [selectedResource, setSelectedResource] = useState("");
+  const [selectedPowerPlant, setSelectedPowerPlant] = useState("");
+
   const [playerData, setPlayerData] = useState({});
   const [playerTimer, setPlayerTimer] = useState(0);
 
   const [graphData, setGraphData] = useState([]);
   const [graphTimer, setGraphTimer] = useState(0);
+
+  const [ordersListData, setOrdersListData] = useState([]);
+  const [ordersListTimer, setOrdersListTimer] = useState(0);
 
   useEffect(() => {
     const graphTimerInterval = setInterval(() => {
@@ -56,7 +62,6 @@ const DataProvider = ({ children }) => {
       })
       .then((response) => {
         setPlayerData(response.data);
-        console.log(response.data);
       })
       .catch((error) => {
         console.error(error);
@@ -66,6 +71,31 @@ const DataProvider = ({ children }) => {
   useEffect(() => {
     fetchPlayerData();
   }, [playerTimer]);
+
+  function fetchGraphData() {
+    if (!gameId || !playerId || !teamSecret) {
+      return;
+    }
+
+    axios
+      .get(`${ENDPOINT}/game/${gameId}/dataset/`, {
+        params: {
+          team_secret: teamSecret,
+          start_tick: -GRAPH_LAST_N,
+          end_tick: -1,
+        },
+      })
+      .then((response) => {
+        setGraphData(response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  }
+
+  useEffect(() => {
+    fetchGraphData();
+  }, [graphTimer]);
 
   return (
     <DataContext.Provider
@@ -77,7 +107,13 @@ const DataProvider = ({ children }) => {
         teamSecret,
         setTeamSecret,
 
+        selectedResource,
+        setSelectedResource,
+        selectedPowerPlant,
+        setSelectedPowerPlant,
+
         playerData,
+        graphData,
       }}
     >
       {children}

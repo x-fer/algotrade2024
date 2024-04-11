@@ -6,8 +6,7 @@ import BuySell from "./BuySell";
 import EnergySell from "./EnergySell";
 
 const OrderBox = () => {
-  const { gameId, playerId, teamSecret } = useContext(DataContext);
-  const [selectedResource, setSelectedResource] = useState("");
+  const { selectedResource, setSelectedResource } = useContext(DataContext);
 
   const { register, handleSubmit, setValue } = useForm();
 
@@ -18,15 +17,6 @@ const OrderBox = () => {
       size: data.size,
       price: data.price,
     };
-    // TODO
-
-    /* instance
-      .post(`/game/${gameId}/player/${playerId}/orders/create`, order, {
-        params: { team_secret: teamSecret },
-      })
-      .then((response) => {
-        console.log(response);
-      }); */
   };
 
   const handleButtonClick = (action) => {
@@ -41,7 +31,7 @@ const OrderBox = () => {
           selectedResource={selectedResource}
           setSelectedResource={setSelectedResource}
         />
-        {!selectedResource ? (
+        {selectedResource.type === "ELECTRICITY" ? (
           <EnergySell
             handleButtonClick={handleButtonClick}
             register={register}

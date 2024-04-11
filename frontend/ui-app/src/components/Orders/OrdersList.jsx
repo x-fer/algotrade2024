@@ -5,22 +5,6 @@ import { DataContext } from "../DataProvider";
 const OrdersListItem = ({ order }) => {
   const { teamSecret, gameId, playerId } = useContext(DataContext);
 
-  // TODO
-
-  /* const handleCancel = (order_id) => {
-    instance
-      .post(
-        `/game/${gameId}/player/${playerId}/orders/cancel`,
-        { ids: [order_id] },
-        {
-          params: { team_secret: teamSecret },
-        }
-      )
-      .then((response) => {
-        console.log(response);
-      });
-  }; */
-
   return (
     <div className="flex justify-between items-center p-2 rounded-3xl bg-secondary text-white shadow-xl">
       <div className="flex justify-between  ml-2">
