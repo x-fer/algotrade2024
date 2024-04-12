@@ -13,7 +13,7 @@ import {
 import { DataContext } from "../DataProvider";
 
 const RenderLineChart = ({ data }) => (
-  <ResponsiveContainer>
+  <ResponsiveContainer className="">
     <LineChart data={data} margin={{ top: 0, right: 5, bottom: 14, left: 10 }}>
       <Line
         type="monotone"
@@ -54,7 +54,7 @@ const PriceChart = () => {
   }
 
   return (
-    <div className="w-[42vw] h-[50vh] rounded-3xl p-8">
+    <div className="w-[42vw] h-[50vh] rounded-3xl mx-4 mb-4 p-4 bg-secondary">
       <RenderLineChart data={data} />
     </div>
   );

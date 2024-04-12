@@ -21,7 +21,7 @@ const EnergySell = ({ register, handleButtonClick }) => {
         <label className="font-l">Set sell price:</label>
         <div className="flex items-center">
           <input
-            className="bg-tertiary  p-2 rounded-2xl w-[15vw] mt-2"
+            className="bg-primary  p-2 rounded-2xl w-[15vw] mt-2"
             type="number"
             id="energy_price"
             name="energy_price"

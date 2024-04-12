@@ -12,7 +12,7 @@ const BuySell = ({ handleButtonClick, register }) => {
         <div className="flex flex-col items-start">
           <label className="font-l">Quantity:</label>
           <input
-            className="bg-tertiary  p-2 rounded-2xl w-full mt-2"
+            className="bg-primary  p-2 rounded-2xl w-full mt-2"
             type="number"
             id="size"
             name="size"
@@ -23,7 +23,7 @@ const BuySell = ({ handleButtonClick, register }) => {
         <div className="flex flex-col items-start">
           <label className="font-l">Price:</label>
           <input
-            className="bg-tertiary  p-2 rounded-2xl w-full mt-2"
+            className="bg-primary  p-2 rounded-2xl w-full mt-2"
             type="number"
             id="price"
             name="price"
@@ -34,7 +34,7 @@ const BuySell = ({ handleButtonClick, register }) => {
         <div className="flex flex-col items-start">
           <label className="font-l">Valid for (ticks):</label>
           <input
-            className="bg-tertiary  p-2 rounded-2xl w-full mt-2"
+            className="bg-primary  p-2 rounded-2xl w-full mt-2"
             type="number"
             id="expiration_length"
             name="expiration_length"
