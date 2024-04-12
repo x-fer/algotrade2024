@@ -1,5 +1,9 @@
 from redis_om import get_redis_connection
 from config import config
+from redis_om import Migrator
+
+
+Migrator().run()
 
 
 redis_port = config["redis"]["port"]

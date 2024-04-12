@@ -128,7 +128,7 @@ class PowerOn(BaseModel):
 
 @router.post(
     "/game/{game_id}/player/{player_id}/plant/on",
-    summary="Turn on number of power plants",
+    summary="Turn on number of power plants.",
 )
 def turn_on(
     plant: PowerOn, player: Player = Depends(player_dep)
@@ -146,6 +146,6 @@ def turn_on(
 
         if plant_count < plant.number:
             raise HTTPException(status_code=400, detail="Not enough power plants")
-        player.power_plants_powered = plant.number
+        player.power_plants_powered[type] = plant.number
         player.save()
     return SuccessfulResponse()

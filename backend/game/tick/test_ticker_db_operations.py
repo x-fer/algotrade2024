@@ -113,7 +113,7 @@ def test_save_electricity_orders(sample_game, sample_players):
     players = sample_players
     game = sample_game
     energy_sold = {"1": 100, "2": 200}
-    with patch("model.Order.save") as mock_order_create:
+    with patch("model.Trade.save") as mock_trade_create:
         ticker = Ticker()
 
         ticker.pipe = MagicMock()
@@ -122,7 +122,7 @@ def test_save_electricity_orders(sample_game, sample_players):
         )
 
         # Created two new energy orders
-        assert mock_order_create.call_count == 2
+        assert mock_trade_create.call_count == 2
 
 
 def test_save_market_data(ticker: Ticker, sample_game, tick_data):

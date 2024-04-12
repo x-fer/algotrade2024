@@ -24,14 +24,13 @@ class EnergyMarket:
         def get_energy(player: Player):
             return max_per_player if player.energy > max_per_player else player.energy
 
-        players_grouped: list[Player] = defaultdict(list)
+        players_grouped: Dict[List[Player]] = defaultdict(list)
         for player in players.values():
             if player.energy_price <= max_price and player.energy > 0:
                 players_grouped[player.energy_price].append(player)
 
         self.orders = {}
         self.trades = []
-
         for price in sorted(players_grouped.keys()):
             player_group: list[Player] = players_grouped[price]
             group_energy_sum = sum(get_energy(player) for player in player_group)
@@ -39,11 +38,9 @@ class EnergyMarket:
             for player in player_group:
                 if group_energy_sum > demand:
                     energy_to_sell = get_energy(player) * demand / group_energy_sum
-                    # print("PRINTIG 1", player.energy, energy_to_sell)
-                    # print("PRINTIG  ", demand, group_energy_sum)
                 else:
                     energy_to_sell = get_energy(player)
-                    # print("PRINTIG 2", player.energy, energy_to_sell)
+                # logger.info(f"selling energy {energy_to_sell}, {player.player_name}")
                 energy_to_sell = int(energy_to_sell)
                 self.create_trade(player, tick, energy_to_sell, price)
             demand -= group_energy_sum

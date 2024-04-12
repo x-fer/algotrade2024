@@ -65,7 +65,7 @@ def create_teams_and_games():
         ),
         Game(
             game_name="Natjecanje",
-            is_contest=int(False), #TODO
+            is_contest=int(True),
             dataset_id=datasets[1].dataset_id,
             start_time=datetime.now() + timedelta(milliseconds=5000),
             total_ticks=1800,

@@ -66,11 +66,9 @@ def player_list(game_id: str) -> List[Player]:
 @router.post("/game/{game_id}/delete")
 @limiter.exempt
 def game_delete(game_id: str) -> SuccessfulResponse:
-    # TODO ne baca exception ako je vec zavrsena
-    # await Game.update(game_id=game_id, is_finished=True)
     try:
         g = Game.get(game_id)
-        g.update(is_finished=True)
+        g.is_finished=True
         g.save()
         return SuccessfulResponse()
     except Exception:
@@ -138,6 +136,7 @@ async def dashboard_graphs(websocket: WebSocket, game_id: str):
 
         try:
             while True:
+                game = Game.get(game_id)
                 current_tick = game.current_tick
 
                 if current_tick == 0:
@@ -192,6 +191,8 @@ async def dashboard_players(websocket: WebSocket, game_id: str):
 
         try:
             while True:
+                game = Game.get(game_id)
+
                 current_tick = game.current_tick
 
                 if current_tick == 0:
@@ -234,6 +235,8 @@ async def dashboard_orderbooks(websocket: WebSocket, game_id: str):
 
         try:
             while True:
+                game = Game.get(game_id)
+
                 # orders = await Order.list(game_id=game_id, order_status=OrderStatus.ACTIVE)
                 orders = Order.find(
                     (Order.game_id == game.game_id) &

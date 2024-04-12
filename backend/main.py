@@ -13,7 +13,6 @@ import psutil
 import os
 from logger import logger
 from docs import tags_metadata, short_description
-from redis_om import Migrator
 from fastapi.middleware.cors import CORSMiddleware
 
 
