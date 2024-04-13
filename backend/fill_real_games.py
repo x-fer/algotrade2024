@@ -26,25 +26,25 @@ if __name__ == "__main__":
 
     games = [
         # Game(
-        #     game_name="First contest round",
+        #     game_name="Third contest round",
         #     is_contest=int(True),
-        #     dataset_id=datasets[6].dataset_id,
+        #     dataset_id=datasets[8].dataset_id,
         #     start_time=datetime.now() + timedelta(milliseconds=15*1000*60),
         #     total_ticks=1800,
         #     tick_time=1000
         # ),
-        Game(
-            game_name="Fifth normal round",
-            is_contest=int(False),
-            dataset_id=datasets[13].dataset_id,
-            start_time=datetime.now() + timedelta(milliseconds=5000),
-            total_ticks=5000,
-            tick_time=3000
-        ),
+        # Game(
+        #     game_name="Eigth normal round",
+        #     is_contest=int(False),
+        #     dataset_id=datasets[13].dataset_id,
+        #     start_time=datetime.now() + timedelta(milliseconds=5000),
+        #     total_ticks=3000,
+        #     tick_time=3000
+        # ),
     ]
-    for game in games:
-        game.save()
-        print(game.pk)
+    # for game in games:
+    #     game.save()
+    #     print(game.pk, game.game_name)
 
     # bots_team_name = config["bots"]["team_name"]
     # bots_team_secret = config["bots"]["team_secret"]

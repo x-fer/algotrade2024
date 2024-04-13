@@ -117,13 +117,27 @@ def dataset_list(
     return all_entries_dict
 
 
+class EnergyTrade(BaseModel):
+    tick: int = Field(index=True)
+
+    total_price: int
+    trade_size: int
+    trade_price: int
+
+    sell_player_id: str
+    game_id: str
+
+    resource: ResourceOrEnergy
+
+
 @router.get(
     "/game/{game_id}/energy_demand",
     summary="Get total sold energy for last ticks",
 )
 def get_energy_trades(
+    game: Game = Depends(game_dep),
     start_end=Depends(start_end_tick_dep),
-) -> Dict[int, List[Trade]]:
+) -> Dict[int, List[EnergyTrade]]:
     """
     Dictionary where keys are ticks and values are fullfiled demand in that tick
     Total price is combined money spent by our resource market for energy for this tick
@@ -133,7 +147,8 @@ def get_energy_trades(
     energy_trades: List[Trade] = Trade.find(
         Trade.tick <= end_tick,
         Trade.tick >= start_tick,
-        Trade.resource == ResourceOrEnergy.ENERGY.value
+        Trade.resource == ResourceOrEnergy.ENERGY.value,
+        Trade.game_id == game.game_id
         ).all()
     
     energy_trades_by_tick = dict()

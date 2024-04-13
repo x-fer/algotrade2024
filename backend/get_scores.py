@@ -33,7 +33,19 @@ lines = []
 with open('scores/01HVAB7VVCN6DYYAYHM8142WGB_First contest round.txt', "r") as f:
     for line in f:
         lines.append(line)
-    last_line = line
+    last_line_1 = line
+
+with open('scores/01HVB6VYT63CFMDPR42GM6N37B_Second contest round.txt', "r") as f:
+    for line in f:
+        lines.append(line)
+    last_line_2 = line
+
+with open('scores/01HVBSHM3NEW37N5RWDN749XGM_Third contest round.txt', "r") as f:
+    for line in f:
+        lines.append(line)
+    last_line_3 = line
+
+last_line = last_line_3
 
 # text = "1196, [(Polacy Robacy/Polacy_Robacy, 107251400), (Jerry & Totally Spies/Botko, 94323634), (Pip install v2/pom, 37574900), (Održavanje dalekovoda/, 136683600), (si_intl/dfg, 53925395), (Evolutionary Enigmas/ttt, 224211978), (Data Diggers/diggy, 220143262), (Kako mislis mene nema?/ElonMusk Kukulele, 167075037), (OptiMinds/OptiMindsPlayer, 62426452), (Kruno/Casey Jones, 163297233), (Maas/Maas, 39749469), (green48/test2, 100015214), (Cekmi/ivkalu_bot, 43196913), (brokeRS/brrsbot, 270338065), (Between exams/string, 322312528), (Kodirani Kapital/Kodirani Kapital, 1196722622), (Warsaw Mesh Trade AI/croatia_on_steroids, 310802358), (Three and a half men/test, 326151613), (UW2/mati, 320454914), (LIMA/LIMA_1, 56961157), (Šampioni Hackathona/testko3, 392445174)]"
 def parse_one(text):
@@ -69,6 +81,17 @@ def one_to_dict(team_scores):
         scores_dict[team_name] = score
     return scores_dict
 
+
+def get_real_scores(team_scores):
+    team_scores.sort(reverse=True)
+    real_scores = dict()
+    for i, value in enumerate(team_scores):
+        score, team_name = value
+        score = leaderboard_scores[i]
+        real_scores[team_name] = score
+    return real_scores
+
+
 # all_scores_dict = {team_name: [] for team_name in team_names}
 
 # scores = []
@@ -84,8 +107,27 @@ def one_to_dict(team_scores):
 
 # print(len(scores))
 
-print_last()
+# print_last()
 
 # print(last_line)
 
 # DataFrame
+
+
+# GET TOTAL SCORE
+prva = get_real_scores(parse_one(last_line_1))
+druga = get_real_scores(parse_one(last_line_2))
+treca = get_real_scores(parse_one(last_line_3))
+
+ukupno = dict()
+
+for team in prva:
+    ukupno[team] = prva[team] + druga[team] + treca[team]
+
+ukupno_list = []
+for team, score in ukupno.items():
+    ukupno_list.append((score, team))
+ukupno_list.sort(reverse=True)
+
+for score, team in ukupno_list:
+    print(f"{score} {team}")

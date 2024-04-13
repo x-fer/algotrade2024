@@ -14,6 +14,7 @@ class Trade(JsonModel):
     trade_price: int
 
     resource: ResourceOrEnergy = Field(index=True, default="energy")
+    game_id: str = Field(index=True, default="game")
     buy_order_id: str = Field(index=True, default="0")
     sell_order_id: str = Field(index=True, default="0")
 
@@ -25,10 +26,12 @@ class Trade(JsonModel):
             self.resource = value.resource
             self.buy_order_id = value.pk
             self.buy_player_id = value.player_id
+            self.game_id = value.game_id
         elif name == "sell_order":
             self.resource = value.resource
             self.sell_order_id = value.pk
             self.sell_player_id = value.player_id
+            self.game_id = value.game_id
         return super().__setattr__(name, value)
 
     class Meta:

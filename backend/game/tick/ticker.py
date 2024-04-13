@@ -343,6 +343,7 @@ class Ticker:
         for player_id, energy in energy_sold.items():
             Trade(            
                 tick = tick,
+                game_id = game.game_id,
                 total_price = players[player_id].energy_price * energy,
                 trade_size = energy,
                 trade_price = players[player_id].energy_price,
