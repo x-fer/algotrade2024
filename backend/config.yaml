@@ -3,7 +3,7 @@ server:
   host: 0.0.0.0
 
 redis:
-  port: 6379
+  port: 6479
   host: localhost
 
 admin:

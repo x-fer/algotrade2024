@@ -31,7 +31,7 @@ file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(file_formatter)
 
 logger.addHandler(console_handler)
-# logger.addHandler(file_handler)
+logger.addHandler(file_handler)
 
 class GameLogger(logging.Logger):
     def game_log(self, game_id: str, msg: object, *args, **kwargs):

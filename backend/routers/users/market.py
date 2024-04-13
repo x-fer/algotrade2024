@@ -47,9 +47,9 @@ class MarketPricesResponse(BaseModel):
 )
 def market_prices(
     start_end=Depends(start_end_tick_dep),
-    resource: Resource | Energy = Query(default=None),
+    resource: Resource = Query(default=None),
     game: Game = Depends(game_dep),
-) -> Dict[Resource | Energy, List[MarketPricesResponse]]:
+) -> Dict[Resource, List[MarketPricesResponse]]:
     """
     Returns market data for resources for queried ticks.
     If no trades were made in this tick, data from previous tick is taken.
@@ -67,7 +67,8 @@ def market_prices(
     all_prices: List[Market] = Market.find(*query).all()
     all_prices_dict = defaultdict(list)
     for price in all_prices:
-        all_prices_dict[price.resource].append(price)
+        if price.resource.value != ResourceOrEnergy.ENERGY.value:
+            all_prices_dict[price.resource.value].append(price)
     return all_prices_dict
 
 
@@ -346,10 +347,10 @@ def order_cancel_player(
             raise HTTPException(
                 status_code=400, detail="You can only cancel your own orders"
             )
-        elif order_to_cancel.order_status == OrderStatus.PENDING.value:
+        elif order_to_cancel.order_status.value == OrderStatus.PENDING.value:
             order.order_status=OrderStatus.CANCELLED.value
             order.save()
-        elif order_to_cancel.order_status == OrderStatus.ACTIVE.value:
+        elif order_to_cancel.order_status.value == OrderStatus.ACTIVE.value:
             order.order_status=OrderStatus.USER_CANCELLED.value
             order.save()
         else:
@@ -407,3 +408,6 @@ def get_trades_player(
         OrderSide.BUY: buy_trades,
         OrderSide.SELL: sell_trades,
     }
+
+
+

@@ -6,7 +6,8 @@ from typing import Dict, List
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from model import Game
+from model import Game, Trade
+from model.resource import ResourceOrEnergy
 from model.dataset_data import DatasetData
 from model.power_plant_model import PowerPlantsApiModel, ResourcesApiModel
 from routers.users.dependencies import game_dep, start_end_tick_dep
@@ -114,3 +115,31 @@ def dataset_list(
     for entry in all_entries:
         all_entries_dict[entry.tick] = entry
     return all_entries_dict
+
+
+@router.get(
+    "/game/{game_id}/energy_demand",
+    summary="Get total sold energy for last ticks",
+)
+def get_energy_trades(
+    start_end=Depends(start_end_tick_dep),
+) -> Dict[int, List[Trade]]:
+    """
+    Dictionary where keys are ticks and values are fullfiled demand in that tick
+    Total price is combined money spent by our resource market for energy for this tick
+    """
+    start_tick, end_tick = start_end
+
+    energy_trades: List[Trade] = Trade.find(
+        Trade.tick <= end_tick,
+        Trade.tick >= start_tick,
+        Trade.resource == ResourceOrEnergy.ENERGY.value
+        ).all()
+    
+    energy_trades_by_tick = dict()
+    for tick in range(start_tick, end_tick+1):
+        energy_trades_by_tick[tick] = []
+    for trade in energy_trades:
+        if trade.tick in energy_trades_by_tick:
+            energy_trades_by_tick[trade.tick].append(trade)
+    return energy_trades_by_tick

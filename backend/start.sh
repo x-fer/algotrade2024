@@ -20,8 +20,8 @@ python run_migrations.py
 if [[ "$TESTING" == 1 ]]; then
     echo "Running main with reload"
     export WATCHFILES_FORCE_POLLING=1
-    uvicorn main:app --reload --host=0.0.0.0 --port=3000 --log-level critical
+    uvicorn main:app --reload --host=0.0.0.0 --port=8000 --log-level critical
 else
     echo "Running uvicorn main with 4 workers"
-    uvicorn main:app --workers 4 --host=0.0.0.0 --port=3000 --log-level warning
+    uvicorn main:app --workers 4 --host=0.0.0.0 --port=8000
 fi

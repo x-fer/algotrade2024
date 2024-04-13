@@ -1,13 +1,13 @@
 from db.db import get_my_redis_connection
 from model.enum_type import get_enum
-from .resource import Resource, Energy
 from redis_om import JsonModel, Field
+from model.resource import ResourceOrEnergy, Resource, Energy
 
 
 class Market(JsonModel):
     game_id: str = Field(index=True)
     tick: int = Field(index=True)
-    resource: Resource | Energy
+    resource: ResourceOrEnergy = Field(index=True)
     low: int
     high: int
     open: int

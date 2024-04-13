@@ -13,8 +13,10 @@ from typing import List
 from model.team import Team
 from routers.model import SuccessfulResponse
 from db import limiter
+from model.resource import Energy, ResourceOrEnergy
 import asyncio
 from logger import logger
+from operator import attrgetter
 
 
 router = APIRouter()
@@ -237,18 +239,31 @@ async def dashboard_orderbooks(websocket: WebSocket, game_id: str):
             while True:
                 game = Game.get(game_id)
 
-                # orders = await Order.list(game_id=game_id, order_status=OrderStatus.ACTIVE)
-                orders = Order.find(
-                    (Order.game_id == game.game_id) &
-                    (Order.order_status == OrderStatus.ACTIVE.value)
+                bots = Player.find(Player.is_bot == int(True)).all()
+                bot_ids = set(map(attrgetter("pk"), bots))
+
+                active_orders = Order.find(
+                    Order.game_id == game.game_id,
+                    Order.order_status == OrderStatus.ACTIVE.value
+                ).all()
+                pending_orders = Order.find(
+                    Order.game_id == game.game_id,
+                    Order.order_status == OrderStatus.PENDING.value
                 ).all()
 
+                def is_bot_order(order: Order):
+                    return order.player_id in bot_ids
+
+                all_orders = active_orders + list(filter(is_bot_order, pending_orders))
+
                 # orders = [dataclasses.asdict(order) for order in orders]
-                orders = [order.dict() for order in orders]
-
-                orders_by_resource = defaultdict(
-                    lambda: {str(OrderSide.BUY): [], str(OrderSide.SELL): []})
-
+                orders = [order.dict() for order in all_orders]
+                # orders_by_resource = defaultdict(
+                #     lambda: {str(OrderSide.BUY): [], str(OrderSide.SELL): []})
+                orders_by_resource = dict()
+                for resource in ResourceOrEnergy:
+                    orders_by_resource[str(resource)] = {str(OrderSide.BUY): [], str(OrderSide.SELL): []}
+                
                 for order in orders:
                     orders_by_resource[str(order["resource"])
                                     ][str(order["order_side"])].append(order)

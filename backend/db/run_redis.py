@@ -63,14 +63,14 @@ def create_teams_and_games():
             total_ticks=2300,
             tick_time=3000
         ),
-        Game(
-            game_name="Natjecanje",
-            is_contest=int(True),
-            dataset_id=datasets[1].dataset_id,
-            start_time=datetime.now() + timedelta(milliseconds=5000),
-            total_ticks=1800,
-            tick_time=1000,
-        )
+        # Game(
+        #     game_name="Natjecanje",
+        #     is_contest=int(True),
+        #     dataset_id=datasets[1].dataset_id,
+        #     start_time=datetime.now() + timedelta(milliseconds=5000),
+        #     total_ticks=1800,
+        #     tick_time=1000,
+        # )
     ]
     for game in games:
         game.save()
